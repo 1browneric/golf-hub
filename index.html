@@ -104,7 +104,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
 .chead span{font-family:var(--font-caps);font-weight:700;font-size:9px;letter-spacing:.12em;color:var(--steel)}
 /* bottom nav — raised white golf-ball buttons, label underneath */
 .nav{flex:0 0 auto;background:linear-gradient(180deg,var(--red),var(--red-dark));border-top:1px solid rgba(255,255,255,.14);display:flex;
-     padding:0 8px calc(env(safe-area-inset-bottom) + 12px)}
+     padding:0 8px calc(env(safe-area-inset-bottom) + 12px);position:relative;z-index:10}
 .navb{flex:1;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px}
 /* golf ball: vector sphere (assets/golf-ball.svg) — dimples + shading + specular, raised above the top edge */
 .ball{width:46px;height:46px;border-radius:50%;margin-top:-17px;display:flex;align-items:center;justify-content:center;
