@@ -1,0 +1,580 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>The Golf Hub</title>
+<meta name="theme-color" content="#0C2340">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Golf Hub">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Montserrat:wght@400;500;600;700;800&family=Graduate&family=Barlow:wght@400;500;600;700;800&family=Spline+Sans+Mono:wght@400;500;600;700&family=Yellowtail&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0C2340; --navy-deep:#081830; --red:#B22234; --red-dark:#8F1B2A;
+  --cream:#F4EFE4; --cream-alt:#F1EADA; --steel:#8FA0B8; --success:#1E8E4F;
+  --green-pos:#3FBE77;
+  --line:rgba(143,160,184,0.20); --card-line:rgba(143,160,184,0.22);
+  --font-title:'Libre Baskerville',Georgia,serif;
+  --font-caps:'Montserrat',system-ui,sans-serif;
+  --font-collegiate:'Graduate',serif;
+  --font-body:'Barlow',system-ui,sans-serif;
+  --font-data:'Spline Sans Mono',monospace;
+  --font-script:'Yellowtail',cursive;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream);overflow:hidden;}
+.app{max-width:430px;margin:0 auto;height:100dvh;background:var(--navy-deep);
+     display:flex;flex-direction:column;position:relative;overflow:hidden}
+/* top bar */
+.topbar{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;
+        padding:calc(env(safe-area-inset-top) + 12px) 20px 12px;}
+.brand{display:flex;align-items:center;gap:10px}
+.brand img{width:30px;height:30px;object-fit:contain}
+.brand span{font-family:var(--font-caps);font-weight:800;font-size:13px;letter-spacing:.2em;color:var(--steel)}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--navy);border:1px solid rgba(143,160,184,.35);
+        display:flex;align-items:center;justify-content:center;font-family:var(--font-caps);font-weight:700;font-size:12px;color:var(--steel)}
+/* scroll */
+.scroll{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+.scroll::-webkit-scrollbar{display:none}
+.scroll{scrollbar-width:none}
+.screen{display:none;padding:6px 20px 30px}
+.screen.on{display:block}
+.eyebrow{font-family:var(--font-caps);font-weight:700;font-size:11px;letter-spacing:.2em;color:var(--steel)}
+.h-title{font-family:var(--font-title);font-weight:700;color:var(--cream)}
+.mono{font-family:var(--font-data)}
+.card{background:var(--navy);border:1px solid rgba(143,160,184,.2);border-radius:18px}
+/* hero */
+.hero{background:linear-gradient(160deg,var(--navy),var(--navy-deep));border:1px solid var(--card-line);
+      border-radius:22px;padding:22px 22px 20px}
+.hero .big{font-family:var(--font-data);font-weight:600;font-size:58px;line-height:.9;letter-spacing:-.02em}
+.pill{display:inline-flex;align-items:center;gap:5px;background:rgba(30,142,79,.16);border:1px solid rgba(30,142,79,.45);
+      border-radius:20px;padding:4px 10px}
+.pill .v{font-family:var(--font-data);font-weight:600;font-size:13px;color:var(--green-pos)}
+.lab{font-family:var(--font-caps);font-weight:600;letter-spacing:.14em;color:var(--steel)}
+.hero-strip{display:flex;gap:18px;margin-top:14px;padding-top:16px;border-top:1px solid rgba(143,160,184,.18)}
+.hero-strip .n{font-family:var(--font-data);font-weight:600;font-size:18px}
+.hero-strip .k{font-family:var(--font-caps);font-weight:600;font-size:9px;letter-spacing:.1em;color:var(--steel);margin-top:2px}
+/* buttons */
+.btn{border:none;cursor:pointer;font-family:var(--font-caps);border-radius:14px}
+.btn-red{background:var(--red);color:var(--cream);font-weight:800;font-size:14px;letter-spacing:.1em;padding:16px}
+.btn-out{background:transparent;color:var(--cream);border:1.5px solid rgba(143,160,184,.5);font-weight:700;font-size:12px;letter-spacing:.08em;padding:16px 8px}
+.sectlab{font-family:var(--font-caps);font-weight:700;font-size:11px;letter-spacing:.2em;color:var(--steel)}
+/* module grid */
+.grid{display:grid;grid-template-columns:1fr;gap:12px}
+.mod{cursor:pointer;background:var(--navy);border:1px solid rgba(143,160,184,.2);border-radius:18px;padding:18px 20px;min-height:72px;
+     display:flex;align-items:center;justify-content:space-between;gap:12px}
+.mod .t{font-family:var(--font-title);font-weight:700;font-size:18px}
+.mright{text-align:right;flex:0 0 auto}
+.mod .s{font-family:var(--font-body);font-size:12px;color:var(--steel);margin-top:3px}
+/* latest round */
+.mini{flex:1;background:var(--navy-deep);border-radius:10px;padding:9px 6px;text-align:center}
+.mini .v{font-family:var(--font-data);font-weight:600;font-size:14px}
+.mini .k{font-family:var(--font-caps);font-weight:600;font-size:8px;letter-spacing:.08em;color:var(--steel);margin-top:3px}
+/* rounds list */
+.rrow{display:flex;align-items:center;justify-content:space-between;background:var(--navy);
+      border:1px solid rgba(143,160,184,.2);border-radius:14px;padding:14px 16px;margin-bottom:10px}
+.rrow .c{font-family:var(--font-title);font-weight:700;font-size:15px}
+.rrow .d{font-family:var(--font-body);font-size:11px;color:var(--steel);margin-top:2px}
+.sgbar{height:8px;background:var(--navy-deep);border-radius:4px;position:relative;overflow:hidden}
+.sgbar .mid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(143,160,184,.4)}
+/* tracker */
+.chip{background:var(--navy);border:1px solid rgba(143,160,184,.2);border-radius:10px;padding:8px 14px}
+.chip .k{font-family:var(--font-caps);font-weight:700;font-size:10px;letter-spacing:.1em;color:var(--steel)}
+.chip .v{font-family:var(--font-data);font-weight:600;font-size:13px}
+.step{width:36px;height:36px;border-radius:50%;font-size:22px;cursor:pointer;line-height:1;color:var(--cream)}
+.step.minus{border:1.5px solid rgba(143,160,184,.4);background:transparent}
+.step.plus{border:none;background:var(--red);font-size:20px}
+.stepval{font-family:var(--font-data);font-weight:600;font-size:32px;min-width:30px;display:inline-block;text-align:center}
+.toggle{flex:1;text-align:center;background:var(--navy-deep);border-radius:10px;padding:10px 4px}
+.toggle .k{font-family:var(--font-caps);font-weight:700;font-size:9px;letter-spacing:.1em;color:var(--steel)}
+.toggle .v{font-family:var(--font-body);font-weight:700;font-size:13px;margin-top:4px}
+/* club table */
+.ctable{background:var(--navy);border:1px solid rgba(143,160,184,.2);border-radius:18px;padding:6px 4px}
+.chead,.crow{display:flex;padding:10px 16px}
+.crow{border-top:1px solid rgba(143,160,184,.12);align-items:center}
+.chead span{font-family:var(--font-caps);font-weight:700;font-size:9px;letter-spacing:.12em;color:var(--steel)}
+/* bottom nav — raised white golf-ball buttons, label underneath */
+.nav{flex:0 0 auto;background:linear-gradient(180deg,var(--red),var(--red-dark));border-top:1px solid rgba(255,255,255,.14);display:flex;
+     padding:0 8px calc(env(safe-area-inset-bottom) + 12px)}
+.navb{flex:1;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px}
+/* golf ball: vector sphere (assets/golf-ball.svg) — dimples + shading + specular, raised above the top edge */
+.ball{width:46px;height:46px;border-radius:50%;margin-top:-17px;display:flex;align-items:center;justify-content:center;
+      background:#fff url("assets/golf-ball.svg") center/100% 100% no-repeat;
+      box-shadow:0 6px 14px rgba(3,8,20,.5)}
+.navb svg{width:22px;height:22px;stroke:var(--navy)}
+.navb.act svg{stroke:var(--red)}
+.navb .k{font-family:var(--font-caps);font-weight:700;font-size:8px;letter-spacing:.1em;color:rgba(244,239,228,.72)}
+.navb.act .k{color:var(--cream)}
+/* how I'm playing — scoring graph + SG by category */
+.gcard{background:linear-gradient(160deg,var(--navy),var(--navy-deep));border:1px solid var(--card-line);border-radius:22px;padding:20px 18px 16px}
+.gtop{display:flex;align-items:flex-end;justify-content:space-between;margin-top:12px}
+.gtop .big{font-family:var(--font-data);font-weight:600;font-size:44px;line-height:.9}
+.gdate{display:flex;justify-content:space-between;font-family:var(--font-data);font-size:9.5px;color:var(--steel);margin-top:4px;padding:0 2px}
+.sghead{display:flex;align-items:baseline;justify-content:space-between;margin:24px 2px 12px}
+.sghead .l{font-family:var(--font-caps);font-weight:700;font-size:11px;letter-spacing:.16em;color:var(--steel)}
+.sghead .r{font-family:var(--font-caps);font-weight:600;font-size:10px;letter-spacing:.12em;color:var(--steel)}
+.sgrow{display:flex;align-items:center;gap:12px;background:var(--navy);border:1px solid rgba(143,160,184,.18);border-radius:14px;padding:13px 14px;margin-bottom:8px}
+.sgrow .nm{flex:1;font-weight:600;font-size:14px}
+.sgval{font-family:var(--font-data);font-weight:600;font-size:16px;min-width:44px;text-align:right}
+.arw{width:20px;text-align:center;font-size:15px;font-weight:700}
+.pos{color:var(--green-pos)} .neg{color:#E06070}
+/* weather refresh button */
+.wxbtn{background:none;border:none;padding:3px;cursor:pointer;display:inline-flex;line-height:0}
+.wxbtn svg{width:15px;height:15px;stroke:var(--steel)}
+.wxbtn:active svg{stroke:var(--cream)}
+.spin{animation:spin .8s linear infinite;transform-origin:50% 50%}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="brand"><img src="assets/kc-white.png" alt=""><span>THE GOLF HUB</span></div>
+    <div class="avatar">EB</div>
+  </div>
+
+  <div class="scroll" id="scroll">
+
+    <!-- ============ HOME ============ -->
+    <section class="screen on" data-screen="home">
+
+      <div class="grid">
+        <div class="mod" data-go="rounds">
+          <div class="mleft">
+            <div class="t">My Rounds</div>
+          </div>
+          <div class="mright">
+            <div class="mono" style="font-weight:600;font-size:24px;line-height:.9">84.2</div>
+            <div class="lab" style="font-weight:600;font-size:8px;letter-spacing:.12em;margin-top:3px">SEASON AVG</div>
+          </div>
+        </div>
+        <div class="mod" data-go="tracker">
+          <div class="mleft">
+            <div class="t">Round Tracker</div>
+          </div>
+        </div>
+        <div class="mod" data-go="club">
+          <div class="mleft">
+            <div class="t">My Bag</div>
+          </div>
+          <div class="mright"><img src="assets/titleist-cream.png" alt="Titleist" style="height:24px;width:auto;display:block"></div>
+        </div>
+        <div class="mod" data-go="caddie">
+          <div class="mleft">
+            <div class="t">Caddie</div>
+          </div>
+          <div class="mright">
+            <div id="wx-tile-temp" class="mono" style="font-weight:600;font-size:24px;line-height:.9">—</div>
+            <div id="wx-tile-cond" class="lab" style="font-weight:600;font-size:8px;letter-spacing:.12em;margin-top:3px">KANSAS CITY</div>
+          </div>
+        </div>
+        <div class="mod" data-go="plan">
+          <div class="mleft">
+            <div class="t">Improvement</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="gcard" style="margin-top:16px">
+        <div class="lab" style="font-weight:700;font-size:11px;letter-spacing:.2em">HOW I'M PLAYING</div>
+        <div class="gtop">
+          <div>
+            <div class="big">84.2</div>
+            <div class="lab" style="font-size:11px;margin-top:6px">SEASON AVG · +12.4 TO PAR</div>
+          </div>
+          <div style="text-align:right">
+            <div class="pill"><span style="color:var(--green-pos);font-size:11px">▾</span><span class="v">1.0</span></div>
+            <div class="lab" style="font-size:10px;letter-spacing:.12em;margin-top:6px">30 DAYS</div>
+          </div>
+        </div>
+        <svg viewBox="0 0 320 112" style="width:100%;height:104px;margin-top:16px;display:block;overflow:visible">
+          <defs><linearGradient id="gb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B22234"/><stop offset="1" stop-color="#8F1B2A"/></linearGradient></defs>
+          <!-- bars: strokes over par, rising off the par baseline -->
+          <rect x="12"  y="32" width="40" height="60" rx="5" fill="url(#gb)"/>
+          <rect x="76"  y="41" width="40" height="51" rx="5" fill="url(#gb)"/>
+          <rect x="140" y="32" width="40" height="60" rx="5" fill="url(#gb)"/>
+          <rect x="204" y="32" width="40" height="60" rx="5" fill="url(#gb)"/>
+          <rect x="268" y="37" width="40" height="55" rx="5" fill="url(#gb)"/>
+          <!-- par baseline -->
+          <line x1="6" y1="92" x2="314" y2="92" stroke="#8FA0B8" stroke-width="1" stroke-dasharray="3 3" opacity="0.75"/>
+          <!-- score (+ to par) above each bar -->
+          <g font-family="Spline Sans Mono" font-size="10" text-anchor="middle">
+            <text x="32"  y="26"><tspan fill="#F4EFE4">85 </tspan><tspan fill="#B22234">(+13)</tspan></text>
+            <text x="96"  y="35"><tspan fill="#F4EFE4">83 </tspan><tspan fill="#B22234">(+11)</tspan></text>
+            <text x="160" y="26"><tspan fill="#F4EFE4">85 </tspan><tspan fill="#B22234">(+13)</tspan></text>
+            <text x="224" y="26"><tspan fill="#F4EFE4">84 </tspan><tspan fill="#B22234">(+13)</tspan></text>
+            <text x="288" y="31"><tspan fill="#F4EFE4">84 </tspan><tspan fill="#B22234">(+12)</tspan></text>
+          </g>
+        </svg>
+        <div class="gdate"><span>Apr 18</span><span>Apr 25</span><span>May 16</span><span>Jun 7</span><span>Jul 12</span></div>
+      </div>
+
+      <div class="card" style="padding:20px;margin-top:16px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px">
+          <span class="lab" style="font-weight:700;font-size:11px;letter-spacing:.16em">STROKES GAINED</span>        </div>
+        <div id="sgbars-hub"></div>
+      </div>
+
+      <div class="sectlab" style="margin:26px 0 14px">LATEST ROUNDS</div>
+      <div id="latest-list"></div>
+
+      <div style="display:flex;gap:10px;margin-top:26px">
+        <button class="btn btn-red" style="flex:2" data-go="tracker">START A ROUND</button>
+        <button class="btn btn-out" style="flex:1" data-go="rounds">LOG PAST</button>
+      </div>
+    </section>
+
+    <!-- ============ MY ROUNDS ============ -->
+    <section class="screen" data-screen="rounds">
+      <div class="eyebrow">SEASON 2026</div>
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-top:6px">
+        <div class="h-title" style="font-size:32px">My Rounds</div>
+        <div style="text-align:right">
+          <div class="mono" style="font-weight:600;font-size:30px;line-height:.9">84.2</div>
+          <div class="lab" style="font-weight:600;font-size:9px;letter-spacing:.14em;margin-top:3px">SEASON AVG</div>
+        </div>
+      </div>
+      <div class="card" style="padding:20px;margin-top:20px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px">
+          <span class="lab" style="font-weight:700;font-size:11px;letter-spacing:.16em">STROKES GAINED</span>        </div>
+        <div id="sgbars-rounds"></div>
+      </div>
+
+      <div class="sectlab" style="margin:24px 0 12px">ALL ROUNDS</div>
+      <div id="rounds-list"></div>
+    </section>
+
+    <!-- ============ LIVE ROUND TRACKER ============ -->
+    <section class="screen" data-screen="tracker" style="padding-left:0;padding-right:0">
+      <div style="padding:0 20px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div class="lab" style="font-weight:700;font-size:10px;letter-spacing:.16em">LIVE ROUND · SUNFLOWER HILLS</div>
+            <div class="h-title" style="font-size:26px;margin-top:4px">Hole <span id="hole-num">4</span></div>
+          </div>
+          <div style="text-align:right">
+            <div class="mono" style="font-weight:600;font-size:22px">+2</div>
+            <div class="lab" style="font-weight:600;font-size:9px;letter-spacing:.1em">THRU <span id="thru">3</span></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:12px">
+          <div class="chip"><span class="k">PAR </span><span class="v">4</span></div>
+          <div class="chip"><span class="k">TIPS </span><span class="v">438y</span></div>
+          <div class="chip"><span class="k">HCP </span><span class="v">5</span></div>
+        </div>
+      </div>
+
+      <!-- COURSE BOOK -->
+      <div class="card" style="margin:16px 20px 0;overflow:hidden">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid rgba(143,160,184,.18)">
+          <span class="lab" style="font-weight:700;font-size:10px;letter-spacing:.16em">COURSE BOOK · PAR THE COURSE</span>
+          <span style="font-family:var(--font-caps);font-weight:700;font-size:10px;letter-spacing:.08em;color:var(--red)">PIN SHEET</span>
+        </div>
+        <div style="display:flex">
+          <svg viewBox="0 0 160 260" style="width:56%;height:260px;display:block;background:#0a2035">
+            <path d="M40 250 C30 180 55 150 70 120 C82 96 78 70 92 40" fill="none" stroke="#16324e" stroke-width="46" stroke-linecap="round"/>
+            <path d="M40 250 C30 180 55 150 70 120 C82 96 78 70 92 40" fill="none" stroke="#1E8E4F" stroke-width="40" stroke-linecap="round" opacity="0.55"/>
+            <ellipse cx="52" cy="150" rx="12" ry="9" fill="#C9B98A"/>
+            <ellipse cx="104" cy="92" rx="10" ry="8" fill="#C9B98A"/>
+            <ellipse cx="98" cy="40" rx="26" ry="20" fill="#1E8E4F"/>
+            <ellipse cx="98" cy="40" rx="26" ry="20" fill="none" stroke="#3FBE77" stroke-width="1.5"/>
+            <circle cx="88" cy="46" r="8" fill="none" stroke="#F4EFE4" stroke-width="1.5" stroke-dasharray="3 3"/>
+            <circle cx="106" cy="35" r="2.6" fill="#B22234"/>
+            <line x1="106" y1="35" x2="106" y2="22" stroke="#B22234" stroke-width="1.5"/>
+            <path d="M106 22 l7 3 -7 3Z" fill="#B22234"/>
+            <circle cx="40" cy="248" r="3" fill="#F4EFE4"/>
+          </svg>
+          <div style="width:44%;padding:16px 16px 16px 14px">
+            <div style="font-family:var(--font-caps);font-weight:800;font-size:10px;letter-spacing:.12em;color:var(--red)">CADDIE</div>
+            <div class="h-title" style="font-size:16px;line-height:1.2;margin-top:6px">Play the fat side</div>
+            <div style="font-size:12px;color:var(--steel);line-height:1.45;margin-top:8px">Pin back-right, tucked. Aim center-left of green — leave uphill putt. Bunker guards short-right.</div>
+            <div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(143,160,184,.18)">
+              <div class="mono" style="font-weight:600;font-size:15px">168 <span style="font-size:11px;color:var(--steel)">to pin</span></div>
+              <div class="mono" style="font-weight:600;font-size:13px;color:var(--steel);margin-top:3px">152 front · 174 back</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCORE ENTRY -->
+      <div class="card" style="margin:14px 20px 0;padding:18px">
+        <div style="display:flex;gap:14px">
+          <div style="flex:1;text-align:center">
+            <div class="lab" style="font-weight:700;font-size:10px;letter-spacing:.14em;margin-bottom:10px">STROKES</div>
+            <div style="display:flex;align-items:center;justify-content:center;gap:14px">
+              <button class="step minus" data-step="strokes" data-dir="-1">−</button>
+              <span class="stepval" id="strokes">4</span>
+              <button class="step plus" data-step="strokes" data-dir="1">+</button>
+            </div>
+          </div>
+          <div style="width:1px;background:rgba(143,160,184,.18)"></div>
+          <div style="flex:1;text-align:center">
+            <div class="lab" style="font-weight:700;font-size:10px;letter-spacing:.14em;margin-bottom:10px">PUTTS</div>
+            <div style="display:flex;align-items:center;justify-content:center;gap:14px">
+              <button class="step minus" data-step="putts" data-dir="-1">−</button>
+              <span class="stepval" id="putts">2</span>
+              <button class="step plus" data-step="putts" data-dir="1">+</button>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:18px">
+          <div class="toggle"><div class="k">FAIRWAY</div><div class="v" style="color:var(--green-pos)">Hit</div></div>
+          <div class="toggle"><div class="k">GIR</div><div class="v" style="color:var(--green-pos)">Yes</div></div>
+          <div class="toggle"><div class="k">PENALTY</div><div class="v" style="color:var(--steel)">0</div></div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:16px">
+          <button class="btn btn-out" style="flex:1;padding:14px" data-hole="-1">PREV</button>
+          <button class="btn btn-red" style="flex:2;font-size:13px;padding:14px" data-hole="1">NEXT HOLE</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CLUB DATA ============ -->
+    <section class="screen" data-screen="club">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
+        <div class="h-title" style="font-family:var(--font-script);font-weight:400;font-size:40px;line-height:1.05;color:#fff;margin-left:5px">My Bag</div>
+        <img src="assets/titleist-white.png" alt="Titleist" style="height:20px;width:auto;margin-right:2px">
+      </div>
+      <div class="ctable" style="margin-top:16px">
+        <div class="chead">
+          <span style="flex:2">CLUB</span>
+          <span style="flex:1;text-align:right">CARRY</span>
+          <span style="flex:1;text-align:right">TOTAL</span>
+        </div>
+        <div id="club-list"></div>
+      </div>
+    </section>
+
+    <!-- ============ CADDIE ============ -->
+    <section class="screen" data-screen="caddie">
+      <div class="eyebrow">KANSAS CITY</div>
+      <div class="h-title" style="font-size:32px;margin-top:6px">Caddie</div>
+
+      <!-- LIVE KANSAS CITY WEATHER (Open-Meteo, refreshes on load) -->
+      <div class="card" style="padding:0;margin-top:20px;overflow:hidden">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:18px 20px">
+          <div>
+            <div id="wx-when" class="mono" style="font-size:12px;color:var(--cream)">—</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+              <div class="lab" style="font-weight:700;font-size:9px;letter-spacing:.14em">CURRENT CONDITIONS</div>
+              <button id="wx-refresh" class="wxbtn" aria-label="Refresh weather"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v4h-4"/></svg></button>
+            </div>
+          </div>
+          <div style="text-align:right">
+            <div id="wx-temp" class="mono" style="font-weight:600;font-size:46px;line-height:.82">—</div>
+            <div id="wx-cond" style="font-size:12px;color:var(--steel);margin-top:4px">Loading…</div>
+          </div>
+        </div>
+        <div style="display:flex;border-top:1px solid rgba(143,160,184,.16)">
+          <div style="flex:1;text-align:center;padding:12px 4px"><div id="wx-feels" class="mono" style="font-weight:600;font-size:16px">—</div><div class="lab" style="font-weight:600;font-size:8px;letter-spacing:.1em;margin-top:3px">FEELS LIKE</div></div>
+          <div style="width:1px;background:rgba(143,160,184,.16)"></div>
+          <div style="flex:1;text-align:center;padding:12px 4px"><div id="wx-hum" class="mono" style="font-weight:600;font-size:16px">—</div><div class="lab" style="font-weight:600;font-size:8px;letter-spacing:.1em;margin-top:3px">HUMIDITY</div></div>
+          <div style="width:1px;background:rgba(143,160,184,.16)"></div>
+          <div style="flex:1;text-align:center;padding:12px 4px"><div id="wx-hilo" class="mono" style="font-weight:600;font-size:16px">—</div><div class="lab" style="font-weight:600;font-size:8px;letter-spacing:.1em;margin-top:3px">HI · LO</div></div>
+        </div>
+      </div>
+
+      <!-- PLAYS LIKE (elevation) -->
+      <div style="background:linear-gradient(160deg,var(--navy),var(--navy-deep));border:1px solid var(--card-line);border-radius:22px;padding:24px 22px;margin-top:14px;text-align:center">
+        <div class="lab" style="font-weight:700;font-size:10px;letter-spacing:.16em">PLAYS LIKE</div>
+        <div class="mono" style="font-weight:600;font-size:60px;line-height:.9;margin-top:8px">176</div>
+        <div style="font-size:13px;color:var(--steel);margin-top:8px">168 actual · +8 for elevation</div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:14px">
+        <div class="card" style="flex:1;padding:14px;text-align:center"><div class="mono" style="font-weight:600;font-size:18px">7i</div><div class="lab" style="font-weight:600;font-size:9px;letter-spacing:.1em;margin-top:3px">SUGGESTED CLUB</div></div>
+        <div class="card" style="flex:1;padding:14px;text-align:center"><div class="mono" style="font-weight:600;font-size:18px">+8y</div><div class="lab" style="font-weight:600;font-size:9px;letter-spacing:.1em;margin-top:3px">ELEVATION</div></div>
+      </div>
+    </section>
+
+    <!-- ============ IMPROVEMENT PLAN ============ -->
+    <section class="screen" data-screen="plan">
+      <div class="eyebrow">FOCUS AREAS</div>
+      <div class="h-title" style="font-size:32px;margin-top:6px">Improvement Plan</div>
+      <div style="font-size:13px;color:var(--steel);margin-top:6px;line-height:1.5">Built from your strokes-gained leaks. Approach play is costing you the most vs a 5-handicap.</div>
+      <div id="plan-list"></div>
+    </section>
+
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="nav">
+    <div class="navb act" data-go="home" data-nav="home">
+      <div class="ball"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M4 11l8-7 8 7M6 10v9h12v-9" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="k">HUB</div>
+    </div>
+    <div class="navb" data-go="rounds" data-nav="rounds">
+      <div class="ball"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M4 19V5M4 19h16M8 16v-4M12 16V8M16 16v-7" stroke-linecap="round"/></svg></div>
+      <div class="k">ROUNDS</div>
+    </div>
+    <div class="navb" data-go="tracker" data-nav="tracker">
+      <div class="ball"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M6 3v18M6 4h11l-2 3 2 3H6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="k">PLAY</div>
+    </div>
+    <div class="navb" data-go="caddie" data-nav="caddie">
+      <div class="ball"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11 7.5 10.6 3.5"/><path d="M10.6 3.5 9.1 4.1"/><path d="M13.2 7.5 13.8 3.7"/><path d="M13.8 3.7 15.3 4.3"/><path d="M9.3 8 Q9.3 6.9 10.4 6.9 L14.2 6.9 Q15.3 6.9 15.3 8 L15.3 18 Q15.3 20.4 12.9 20.4 L11.7 20.4 Q9.3 20.4 9.3 18 Z"/><path d="M9.3 9.6 Q6.8 14 9.6 19"/><path d="M9.9 14 14.7 14"/></svg></div>
+      <div class="k">CADDIE</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  // per-round SG vs a 5-handicap (each round)
+  var ROUNDS=[
+    {course:'Sunflower Hills',loc:'Bonner Springs',date:'Jul 12',par:72,score:84,vp:12,fw:7,gir:9,putts:39,sg:[2.2,0.2,-3.4,-1.7,-3.3,-2.6]},
+    {course:'Shoal Creek',loc:'Kansas City',date:'Jun 7',par:71,score:84,vp:13,fw:8,gir:8,putts:37,sg:[-1.7,-0.4,0.4,-0.7,-0.5,-2.5]},
+    {course:'Shoal Creek',loc:'Kansas City',date:'May 26',par:36,score:42,vp:6,fw:6,gir:6,putts:19,sg:[0.6,0.0,0.0,-1.5,-1.3,-0.9]},
+    {course:'Colbert Hills',loc:'Manhattan',date:'May 16',par:72,score:85,vp:13,fw:6,gir:6,putts:34,sg:[0.9,-1.4,-0.6,-2.6,0.8,-3.6]},
+    {course:'Fred Arbanas',loc:'Kansas City',date:'Apr 25',par:72,score:83,vp:11,fw:7,gir:7,putts:40,sg:[2.2,-0.7,-0.6,-1.6,-4.2,-0.7]},
+    {course:'Excelsior Springs',loc:'Excelsior Springs',date:'Apr 18',par:72,score:85,vp:13,fw:7,gir:3,putts:29,sg:[0.5,-1.2,-2.5,-4.0,1.2,-7.3]}
+  ];
+  // Eric's club distances — calm carry (total). spec = smaller sub-label (model/loft). Updated per Eric 2026-07-13.
+  var CLUBS=[
+    {name:'Driver',spec:'GT3 11° (C2 10g)',carry:'275',total:'295'},
+    {name:'Mini Driver',spec:'GT280 13°',carry:'240',total:'265'},
+    {name:'7 Wood',spec:'GT2 21° (A1)',carry:'225',total:'245'},
+    {name:'3 Hybrid',spec:'18°',carry:'220',total:'235'},
+    {name:'4 Iron',spec:'',carry:'215',total:'225'},
+    {name:'5 Hybrid',spec:'23°',carry:'200',total:'215'},
+    {name:'6 Iron',spec:'27°',carry:'193',total:'207'},
+    {name:'7 Iron',spec:'30°',carry:'184',total:'195'},
+    {name:'8 Iron',spec:'34°',carry:'168',total:'179'},
+    {name:'9 Iron',spec:'38°',carry:'152',total:'163'},
+    {name:'PW',spec:'43°',carry:'138',total:'144'},
+    {name:'AW',spec:'48°',carry:'127',total:'131'},
+    {name:'52°',spec:'',carry:'114',total:'119'},
+    {name:'56°',spec:'',carry:'103',total:'108'},
+    {name:'58°',spec:'',carry:'95',total:'98'}
+  ];
+  var PLAN=[
+    {tag:'PRIORITY · APPROACH',sg:'-0.4',color:'var(--red)',title:'150–175 yd control',detail:'Your dispersion balloons from 160+. Groove a stock 7-iron window on the range; track proximity for 10 rounds.'},
+    {tag:'HOLD · PUTTING',sg:'+1.1',color:'var(--green-pos)',title:'Keep the 6–12 ft stroke',detail:'Your biggest strength vs the field. Maintain with the gate drill twice a week.'},
+    {tag:'WATCH · SCORING',sg:'+3 avg',color:'var(--steel)',title:'Bogey avoidance on par 5s',detail:'Leaving too many pars on reachable par 5s. Commit to a layup number that leaves your 96y wedge.'}
+  ];
+
+  function el(html){var t=document.createElement('template');t.innerHTML=html.trim();return t.content.firstChild;}
+
+  var CATS=['Driver','176+','101-175','100 & In','Putting','Ball Strike'];
+  // Strokes gained = the Golf Rounds sheet's Season Trends "recent form" — the last
+  // half of 18-HOLE rounds only, vs a 5 HCP. 9-hole rounds are excluded (per the
+  // sheet). Phase 2 reads these straight from Season Trends so the app always matches.
+  var SGBARS=[['Driver',0.2],['176+',-0.1],['101-175',-1.5],['100 & In',-1.2],['Putting',-1.9],['Ball Strike',-2.5]];
+  function card(r){
+    var holes=r.par>=71?18:9, firDen=holes===18?'14':'7', girDen=holes===18?'18':'9';
+    var toPar=(r.vp>0?'+':'')+r.vp;
+    var stat=function(k,v){return '<div style="flex:1;text-align:center"><div class="mono" style="font-weight:600;font-size:14px">'+v+'</div><div class="lab" style="font-weight:600;font-size:8px;letter-spacing:.08em;margin-top:2px">'+k+'</div></div>';};
+    var cell=function(nm,v){var p=v>=0;return '<div style="background:var(--navy-deep);border-radius:9px;padding:8px 6px;text-align:center"><div class="mono" style="font-weight:600;font-size:13px;color:'+(p?'var(--green-pos)':'#E06070')+'">'+(p?'+':'')+v.toFixed(1)+'</div><div class="lab" style="font-weight:600;font-size:7.5px;letter-spacing:.04em;margin-top:2px">'+nm+'</div></div>';};
+    return '<div class="card" style="padding:16px 16px 14px;margin-bottom:10px;cursor:pointer">'+
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between">'+
+        '<div><div class="h-title" style="font-size:18px">'+r.course+'</div>'+
+        '<div style="font-family:var(--font-body);font-size:12px;color:var(--steel);margin-top:2px">'+r.loc+' · '+r.date+'</div></div>'+
+        '<div style="text-align:right"><div class="mono" style="font-weight:600;font-size:26px;line-height:1">'+r.score+'</div><div class="mono" style="font-size:12px;color:var(--red)">'+toPar+'</div></div>'+
+      '</div>'+
+      '<div style="display:flex;gap:6px;margin-top:14px;padding:10px 0;border-top:1px solid rgba(143,160,184,.16);border-bottom:1px solid rgba(143,160,184,.16)">'+
+        stat('FIR',r.fw+'/'+firDen)+stat('GIR',r.gir+'/'+girDen)+stat('PUTTS',r.putts)+'</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:12px">'+
+        CATS.map(function(nm,i){return cell(nm,r.sg[i]);}).join('')+'</div>'+
+    '</div>';
+  }
+  document.getElementById('rounds-list').innerHTML=ROUNDS.map(card).join('');
+
+  document.getElementById('sgbars-hub').innerHTML=document.getElementById('sgbars-rounds').innerHTML=SGBARS.map(function(a){
+    var v=a[1],pos=v>=0,half=Math.min(46,Math.abs(v)/4*46).toFixed(1);
+    return '<div style="margin-bottom:14px">'+
+      '<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-weight:600;font-size:13px">'+a[0]+'</span>'+
+      '<span class="mono" style="font-weight:600;font-size:13px;color:'+(pos?'var(--green-pos)':'var(--red)')+'">'+(pos?'+':'')+v.toFixed(1)+'</span></div>'+
+      '<div class="sgbar"><div class="mid"></div><div style="position:absolute;top:0;bottom:0;'+(pos?'left:50%':'right:50%')+';width:'+half+'%;background:'+(pos?'var(--green-pos)':'var(--red)')+';border-radius:4px"></div></div>'+
+    '</div>';
+  }).join('');
+
+  document.getElementById('latest-list').innerHTML=ROUNDS.slice(0,3).map(card).join('');
+
+  document.getElementById('club-list').innerHTML=CLUBS.map(function(c){
+    return '<div class="crow"><span style="flex:2;font-weight:600;font-size:14px;color:#fff">'+c.name+(c.spec?' <span style="font-weight:500;font-size:10px;color:var(--steel)">'+c.spec+'</span>':'')+'</span>'+
+      '<span class="mono" style="flex:1;text-align:right;font-weight:600;font-size:14px;color:#fff">'+c.carry+'</span>'+
+      '<span class="mono" style="flex:1;text-align:right;font-size:13px;color:var(--steel)">'+c.total+'</span></div>';
+  }).join('');
+
+  document.getElementById('plan-list').innerHTML=PLAN.map(function(f){
+    return '<div class="card" style="padding:18px;margin-top:14px">'+
+      '<div style="display:flex;align-items:center;justify-content:space-between"><span style="font-family:var(--font-caps);font-weight:800;font-size:10px;letter-spacing:.14em;color:var(--red)">'+f.tag+'</span><span class="mono" style="font-weight:600;font-size:13px;color:'+f.color+'">'+f.sg+'</span></div>'+
+      '<div class="h-title" style="font-size:18px;margin-top:8px">'+f.title+'</div>'+
+      '<div style="font-size:13px;color:var(--steel);line-height:1.45;margin-top:6px">'+f.detail+'</div></div>';
+  }).join('');
+
+  // ---- live Kansas City weather (Open-Meteo, no API key needed) ----
+  var WX_CODES={0:'Clear',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',45:'Fog',48:'Rime fog',
+    51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',56:'Freezing drizzle',57:'Freezing drizzle',
+    61:'Light rain',63:'Rain',65:'Heavy rain',66:'Freezing rain',67:'Freezing rain',
+    71:'Light snow',73:'Snow',75:'Heavy snow',77:'Snow grains',80:'Light showers',81:'Showers',
+    82:'Heavy showers',85:'Snow showers',86:'Snow showers',95:'Thunderstorms',96:'Thunderstorms',99:'Thunderstorms'};
+  function wxSet(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
+  function wxWhen(){
+    wxSet('wx-when',new Date().toLocaleString('en-US',{timeZone:'America/Chicago',weekday:'short',
+      month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}));
+  }
+  function wxLoad(){
+    wxWhen();
+    var sv=document.querySelector('#wx-refresh svg'); if(sv)sv.classList.add('spin');
+    fetch('https://api.open-meteo.com/v1/forecast?latitude=39.0997&longitude=-94.5786&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code&daily=temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&timezone=America/Chicago')
+      .then(function(r){return r.json();})
+      .then(function(j){
+        var c=j.current||{},d=j.daily||{};
+        var num=function(v,s){return (typeof v==='number'&&!isNaN(v))?Math.round(v)+s:'—';};
+        wxSet('wx-temp',num(c.temperature_2m,'°'));
+        wxSet('wx-cond',WX_CODES[c.weather_code]||'—');
+        wxSet('wx-tile-temp',num(c.temperature_2m,'°'));
+        wxSet('wx-tile-cond',WX_CODES[c.weather_code]||'—');
+        wxSet('wx-feels',num(c.apparent_temperature,'°'));
+        wxSet('wx-hum',num(c.relative_humidity_2m,'%'));
+        if(d.temperature_2m_max)wxSet('wx-hilo',num(d.temperature_2m_max[0],'°')+' · '+num(d.temperature_2m_min[0],'°'));
+      })
+      .catch(function(){wxSet('wx-cond','Weather unavailable');})
+      .finally(function(){if(sv)setTimeout(function(){sv.classList.remove('spin');},500);});
+  }
+  var wxBtn=document.getElementById('wx-refresh'); if(wxBtn)wxBtn.addEventListener('click',wxLoad);
+  wxLoad();
+  setInterval(wxWhen,60000);    // tick the clock every minute
+  setInterval(wxLoad,900000);   // refresh conditions every 15 min
+
+  // ---- navigation ----
+  var state={screen:'home',hole:4,strokes:4,putts:2};
+  var scroll=document.getElementById('scroll');
+  function show(scr){
+    state.screen=scr;
+    document.querySelectorAll('.screen').forEach(function(s){s.classList.toggle('on',s.dataset.screen===scr);});
+    document.querySelectorAll('.navb').forEach(function(b){b.classList.toggle('act',b.dataset.nav===scr);});
+    scroll.scrollTop=0;
+  }
+  document.addEventListener('click',function(e){
+    var go=e.target.closest('[data-go]'); if(go){show(go.dataset.go);return;}
+    var step=e.target.closest('[data-step]');
+    if(step){
+      var k=step.dataset.step,d=parseInt(step.dataset.dir,10);
+      state[k]=Math.max(k==='putts'?0:1,state[k]+d);
+      document.getElementById(k).textContent=state[k];
+      return;
+    }
+    var hb=e.target.closest('[data-hole]');
+    if(hb){
+      state.hole=Math.min(18,Math.max(1,state.hole+parseInt(hb.dataset.hole,10)));
+      state.strokes=4;state.putts=2;
+      document.getElementById('hole-num').textContent=state.hole;
+      document.getElementById('thru').textContent=state.hole-1;
+      document.getElementById('strokes').textContent=4;
+      document.getElementById('putts').textContent=2;
+    }
+  });
+})();
+</script>
+</body>
+</html>
