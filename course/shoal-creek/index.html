@@ -290,6 +290,7 @@ input,textarea,select{font-family:inherit}
 .stratrow.warn{color:#B22234}
 .stratrow.warn b{color:#B22234}
 .stratrow.muted{color:#8792A4}
+.prevsh{font-family:var(--mono);font-size:10px;color:#5C6B82;margin-top:3px;line-height:1.55}
 .pintip{font-family:'Barlow',sans-serif;font-size:12.5px;color:#16243A;line-height:1.5;
   background:#E7EEF6;border-left:3px solid var(--target);border-radius:8px;padding:9px 11px;margin-top:9px}
 .pintip b{color:#0C2340}
@@ -873,6 +874,17 @@ function clubFor(dist){
   return best;
 }
 const fmtClub = c => `${c} ${CADDY[c].c[0]} (${CADDY[c].c[1]})`;
+const PREV = {"1":[{"date":"Jun 7","score":"5","rel":"+1","putts":"2","shots":[{"club":"mini driver","db":"398","da":"195"},{"club":"5H","db":"195","da":""}]},{"date":"May 26","score":"6","rel":"+2","putts":"2","shots":[{"club":"Driver","db":"330","da":"142"},{"club":"PW","db":"142","da":""}]}],"2":[{"date":"Jun 7","score":"6","rel":"+2","putts":"3","shots":[{"club":"mini driver","db":"354","da":"158"},{"club":"9i","db":"158","da":"30"},{"club":"56","db":"30","da":""}]},{"date":"May 26","score":"5","rel":"+1","putts":"2","shots":[{"club":"7W","db":"320","da":"105"},{"club":"56","db":"105","da":"67"},{"club":"58","db":"67","da":""}]}],"3":[{"date":"Jun 7","score":"3","rel":"0","putts":"1","shots":[{"club":"9i","db":"168","da":"20"},{"club":"56","db":"20","da":""}]},{"date":"May 26","score":"3","rel":"0","putts":"2","shots":[{"club":"PW","db":"134","da":""}]}],"4":[{"date":"Jun 7","score":"6","rel":"+2","putts":"2","shots":[{"club":"driver","db":"384","da":"178"},{"club":"7i","db":"178","da":"30"},{"club":"56","db":"30","da":""}]},{"date":"May 26","score":"4","rel":"0","putts":"2","shots":[{"club":"MD","db":"355","da":"96"},{"club":"58","db":"96","da":""}]}],"5":[{"date":"Jun 7","score":"3","rel":"0","putts":"2","shots":[{"club":"8i","db":"178","da":""}]},{"date":"May 26","score":"3","rel":"0","putts":"2","shots":[{"club":"9I","db":"154","da":""}]}],"6":[{"date":"Jun 7","score":"4","rel":"0","putts":"2","shots":[{"club":"mini driver","db":"364","da":"134"},{"club":"PW","db":"134","da":""}]},{"date":"May 26","score":"4","rel":"0","putts":"2","shots":[{"club":"MD","db":"308","da":"44"},{"club":"44","db":"44","da":""}]}],"7":[{"date":"Jun 7","score":"5","rel":"0","putts":"2","shots":[{"club":"driver","db":"545","da":"320"},{"club":"7 wood","db":"320","da":"94"},{"club":"56","db":"94","da":""}]},{"date":"May 26","score":"6","rel":"+1","putts":"3","shots":[{"club":"Driver","db":"515","da":"249"},{"club":"7W","db":"249","da":"36"},{"club":"58","db":"36","da":""}]}],"8":[{"date":"Jun 7","score":"5","rel":"+1","putts":"3","shots":[{"club":"driver","db":"398","da":"124"},{"club":"48","db":"124","da":""}]},{"date":"May 26","score":"6","rel":"+2","putts":"2","shots":[{"club":"MD","db":"375","da":"144"},{"club":"PW","db":"144","da":"18"},{"club":"58","db":"18","da":"15"},{"club":"58","db":"15","da":""}]}],"9":[{"date":"Jun 7","score":"5","rel":"0","putts":"2","shots":[{"club":"driver","db":"478","da":"240"},{"club":"7i","db":"240","da":"120"},{"club":"52","db":"120","da":""}]},{"date":"May 26","score":"5","rel":"0","putts":"2","shots":[{"club":"Driver","db":"478","da":"190"},{"club":"7I","db":"190","da":"30"},{"club":"58","db":"30","da":""}]}],"10":[{"date":"Jun 7","score":"5","rel":"+1","putts":"3","shots":[{"club":"driver","db":"388","da":"110"},{"club":"52","db":"110","da":""}]}],"11":[{"date":"Jun 7","score":"3","rel":"0","putts":"2","shots":[{"club":"4i","db":"201","da":""}]}],"12":[{"date":"Jun 7","score":"6","rel":"+2","putts":"2","shots":[{"club":"4i","db":"360","da":"260"},{"club":"5H","db":"260","da":"45"},{"club":"56","db":"45","da":""}]}],"13":[{"date":"Jun 7","score":"4","rel":"-1","putts":"1","shots":[{"club":"driver","db":"492","da":"240"},{"club":"7 wood","db":"240","da":"35"},{"club":"58","db":"35","da":""}]}],"14":[{"date":"Jun 7","score":"5","rel":"+1","putts":"2","shots":[{"club":"7 wood","db":"387","da":"201"},{"club":"5H","db":"201","da":"18"},{"club":"56","db":"18","da":""}]}],"15":[{"date":"Jun 7","score":"4","rel":"0","putts":"2","shots":[{"club":"driver","db":"387","da":"172"},{"club":"8i","db":"172","da":""}]}],"16":[{"date":"Jun 7","score":"6","rel":"+2","putts":"2","shots":[{"club":"driver","db":"369","da":"174"},{"club":"7i","db":"174","da":""}]}],"17":[{"date":"Jun 7","score":"4","rel":"+1","putts":"2","shots":[{"club":"8i","db":"157","da":"40"},{"club":"56","db":"40","da":""}]}],"18":[{"date":"Jun 7","score":"5","rel":"+1","putts":"2","shots":[{"club":"driver","db":"429","da":"201"},{"club":"5H","db":"201","da":"14"},{"club":"56","db":"14","da":""}]}]};
+function prevShots(s){ const to = s.da==="" ? "G" : s.da; return `${s.club} ${s.db}&rarr;${to}`; }
+function renderPrev(list){
+  if (!list || !list.length) return `<div class="stratrow muted">No logged rounds on this hole yet.</div>`;
+  return list.map(r => {
+    const sh = r.shots.map(prevShots).join(" &middot; ");
+    const rel = r.rel ? ` (${r.rel})` : "";
+    const pt = r.putts ? ` &middot; ${r.putts} putt${r.putts==="1"?"":"s"}` : "";
+    return `<div class="stratrow"><b>${r.date}</b> &mdash; ${r.score}${rel}${pt}${sh?`<div class="prevsh">${sh}</div>`:""}</div>`;
+  }).join("");
+}
 function strategyFor(hh){
   const intel = HOLE_INTEL[hh.n] || {}, slope = GREEN_SLOPES[hh.n];
   const secs = [];
@@ -883,7 +895,7 @@ function strategyFor(hh){
   const p = pins[hh.n];
   if (p) sec("Today's pin", `<div class="stratrow">${pinAdvice(hh.n)}</div>`);
   else sec("Today's pin", `<div class="stratrow muted">Drop the pin on the GREEN tab for a putt read here.</div>`);
-  sec("Previous rounds", `<div class="stratrow muted">Your past rounds on this hole will appear here &mdash; score and shot-by-shot detail from your logged history.</div>`);
+  sec("Previous rounds", renderPrev(PREV[String(hh.n)]));
   return `<div class="strat">${secs.join("")}</div>`;
 }
 
