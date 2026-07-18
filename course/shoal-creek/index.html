@@ -378,6 +378,10 @@ const COURSE = {"name":"Shoal Creek Golf Course","city":"Kansas City, Missouri",
    =================================================================== */
 const NTFY = "https://ntfy.sh";
 const TOPIC = "rt-shoal-creek-95059bc06b";
+// Shared channel Pencil Wedge watches: on save we post the round-done marker
+// here WITH this page's URL, so the worker knows which course was played and
+// pulls the round from THIS page's channel. One worker, any number of courses.
+const DISPATCH = "rt-hub-dispatch-9f2c7a41b3";
 const LS_KEY = "rt_shoal_creek_v1";
 
 const ROUND = { date:"2026-07-17", course:"Shoal Creek Golf Course", par:71 };
@@ -755,7 +759,9 @@ async function saveRound(){
   let sent = false;
   try {
     await seedChannel();
-    await postMsg({ kind:"round_saved", t: Date.now(), score: data.round.score });
+    const marker = { kind:"round_saved", t: Date.now(), score: data.round.score, page: location.href, topic: TOPIC };
+    await postMsg(marker);
+    try { await fetch(`${NTFY}/${DISPATCH}`, { method:"POST", body: JSON.stringify(marker) }); } catch(e){}
     sent = true;
   } catch(e){}
   let copied = false;
