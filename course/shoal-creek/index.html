@@ -397,7 +397,7 @@ const HOLES = [
 ];
 
 /* Entry vocabularies — Eric's actual bag + the Golf Rounds 2026 sheet dropdowns */
-const CLUBS = ["D","MD","7w","3H","5H","6i","7i","8i","9i","PW","48","52","56","58"];
+const CLUBS = ["D","MD","7w","3H","4i","5H","6i","7i","8i","9i","PW","48","52","56","58"];
 const CLUB_EXPORT = { MD: "Mini Driver" };   // stored short, exported as the sheet knows it
 
 /* ---- caddy data (from otto_golf.md: 2026 Golf Distances with Wind Chart) ----
@@ -405,11 +405,11 @@ const CLUB_EXPORT = { MD: "Mini Driver" };   // stored short, exported as the sh
    [carry,total] at 5/10/20 mph; xl/xr = end-drift yards at 5/10/20 for a full
    left-to-right / right-to-left crosswind (positive = ball ends RIGHT). */
 const CADDY = {
-  D:  {c:[275,305], h:[[269,298],[262,289],[248,272]], t:[[281,312],[286,318],[294,328]],
-       i:[[271,300],[266,294],[256,282]], d:[[279,310],[283,315],[288,321]],
+  D:  {c:[275,295], h:[[269,288],[262,279],[248,262]], t:[[281,302],[286,308],[294,318]],
+       i:[[271,290],[266,284],[256,272]], d:[[279,300],[283,305],[288,311]],
        xl:[21,28,43], xr:[7,0,-14]},
-  MD: {c:[230,260], h:[[226,255],[220,248],[210,235]], t:[[234,265],[238,270],[246,280]],
-       i:[[227,256],[223,251],[216,243]], d:[[233,264],[236,267],[241,274]],
+  MD: {c:[240,265], h:[[236,260],[230,253],[220,240]], t:[[244,270],[248,275],[256,285]],
+       i:[[237,261],[233,256],[226,248]], d:[[243,269],[246,272],[251,279]],
        xl:[17,23,36], xr:[4.5,-2,-15]},
   "7w":{c:[225,245], h:[[221,240],[215,233],[205,221]], t:[[229,250],[233,255],[241,264]],
        i:[[222,241],[218,237],[211,228]], d:[[228,249],[231,252],[236,258]],
@@ -417,6 +417,9 @@ const CADDY = {
   "3H":{c:[220,235], h:[[216,230],[210,223],[200,211]], t:[[224,240],[228,244],[236,254]],
        i:[[217,231],[213,227],[206,219]], d:[[223,239],[226,242],[231,248]],
        xl:[16,22,35], xr:[4,-2,-14]},
+  "4i":{c:[215,225], h:[[211,220],[205,213],[195,201]], t:[[219,230],[223,234],[231,244]],
+       i:[[212,221],[208,217],[201,209]], d:[[218,229],[221,232],[226,238]],
+       xl:[15,20,32], xr:[3,-2,-13]},
   "5H":{c:[200,215], h:[[196,210],[192,206],[182,194]], t:[[204,220],[208,224],[214,232]],
        i:[[197,211],[194,208],[187,200]], d:[[203,219],[206,222],[210,227]],
        xl:[12,16,26], xr:[2,-3,-12]},
@@ -823,10 +826,9 @@ function caddyPick(dist, dir, mph, cap){
   }
   if (!best) return "No club fits under that cap.";
   const wc = Math.round(best.carry), wt = Math.round(best.total);
-  const calmC = CADDY[best.club].c;   // bag carry/total (calm), so the club's true number is always shown
-  const windy = dir !== "calm" && mph > 0 && (wc !== calmC[0] || wt !== calmC[1]);
+  const windy = dir !== "calm" && mph > 0;
   const head = windy
-    ? `${best.club} plays ${wc} (${wt}) in this wind — ${calmC[0]} (${calmC[1]}) calm.`
+    ? `${best.club} plays ${wc} (${wt}) in this wind.`
     : `${best.club} - ${wc} (${wt}).`;
   const lines = [head];
   const d = Math.round(Math.abs(best.drift));
