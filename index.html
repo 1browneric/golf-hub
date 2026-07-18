@@ -310,15 +310,10 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
         </div>
       </div>
 
-      <!-- PLAYS LIKE (elevation) -->
-      <div style="background:linear-gradient(160deg,var(--navy),var(--navy-deep));border:1px solid var(--card-line);border-radius:22px;padding:24px 22px;margin-top:14px;text-align:center">
-        <div class="lab" style="font-weight:700;font-size:10px;letter-spacing:.16em">PLAYS LIKE</div>
-        <div class="mono" style="font-weight:600;font-size:60px;line-height:.9;margin-top:8px">176</div>
-        <div style="font-size:13px;color:var(--steel);margin-top:8px">168 actual · +8 for elevation</div>
-      </div>
-      <div style="display:flex;gap:10px;margin-top:14px">
-        <div class="card" style="flex:1;padding:14px;text-align:center"><div class="mono" style="font-weight:600;font-size:18px">7i</div><div class="lab" style="font-weight:600;font-size:9px;letter-spacing:.1em;margin-top:3px">SUGGESTED CLUB</div></div>
-        <div class="card" style="flex:1;padding:14px;text-align:center"><div class="mono" style="font-weight:600;font-size:18px">+8y</div><div class="lab" style="font-weight:600;font-size:9px;letter-spacing:.1em;margin-top:3px">ELEVATION</div></div>
+      <!-- the live Swing Caddie (distance + wind -> club) lives in a round's Caddie tab -->
+      <div class="card" style="padding:22px;margin-top:14px;text-align:center">
+        <div class="lab" style="font-weight:700;font-size:10px;letter-spacing:.16em">SWING CADDIE</div>
+        <div style="font-size:13px;color:var(--steel);line-height:1.55;margin-top:10px">Club, wind, and plays-like yardage for any shot live in the round's Caddie tab. Start a round to use it.</div>
       </div>
     </section>
 
@@ -326,7 +321,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     <section class="screen" data-screen="plan">
       <div class="eyebrow">FOCUS AREAS</div>
       <div class="h-title" style="font-size:32px;margin-top:6px">Improvement Plan</div>
-      <div style="font-size:13px;color:var(--steel);margin-top:6px;line-height:1.5">Built from your strokes-gained leaks. Approach play is costing you the most vs a 5-handicap.</div>
+      <div style="font-size:13px;color:var(--steel);margin-top:6px;line-height:1.5">Your strokes-gained categories vs a 5-handicap, ranked by biggest loss.</div>
       <div id="plan-list"></div>
     </section>
 
@@ -382,11 +377,16 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     {name:'56°',spec:'',carry:'103',total:'108'},
     {name:'58°',spec:'',carry:'95',total:'98'}
   ];
-  var PLAN=[
-    {tag:'PRIORITY · APPROACH',sg:'-0.4',color:'var(--red)',title:'150–175 yd control',detail:'Your dispersion balloons from 160+. Groove a stock 7-iron window on the range; track proximity for 10 rounds.'},
-    {tag:'HOLD · PUTTING',sg:'+1.1',color:'var(--green-pos)',title:'Keep the 6–12 ft stroke',detail:'Your biggest strength vs the field. Maintain with the gate drill twice a week.'},
-    {tag:'WATCH · SCORING',sg:'+3 avg',color:'var(--steel)',title:'Bogey avoidance on par 5s',detail:'Leaving too many pars on reachable par 5s. Commit to a layup number that leaves your 96y wedge.'}
-  ];
+  // Factual category descriptors — the Improvement view is derived straight from
+  // the real strokes-gained (SGBARS), ranked worst-first. No invented drills/stats.
+  var PLAN_DESC={
+    'Ball Strike':'Full-swing ball-striking, tee to green.',
+    'Putting':'Strokes gained or lost on the greens.',
+    '101-175':'Approach shots from 101 to 175 yards.',
+    '100 & In':'Wedges and short approaches inside 100 yards.',
+    '176+':'Long approaches from 176 yards and out.',
+    'Driver':'Off the tee.'
+  };
 
   // Preloaded course library — each entry is a generated tracker page at
   // course/<slug>/ (built by osm-course-book make_tracker.py). Add a course by
@@ -438,11 +438,14 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       '<span class="mono" style="flex:1;text-align:right;font-size:13px;color:var(--steel)">'+c.total+'</span></div>';
   }).join('');
 
-  document.getElementById('plan-list').innerHTML=PLAN.map(function(f){
-    return '<div class="card" style="padding:18px;margin-top:14px">'+
-      '<div style="display:flex;align-items:center;justify-content:space-between"><span style="font-family:var(--font-caps);font-weight:800;font-size:10px;letter-spacing:.14em;color:var(--red)">'+f.tag+'</span><span class="mono" style="font-weight:600;font-size:13px;color:'+f.color+'">'+f.sg+'</span></div>'+
-      '<div class="h-title" style="font-size:18px;margin-top:8px">'+f.title+'</div>'+
-      '<div style="font-size:13px;color:var(--steel);line-height:1.45;margin-top:6px">'+f.detail+'</div></div>';
+  document.getElementById('plan-list').innerHTML=SGBARS.slice().sort(function(a,b){return a[1]-b[1];}).map(function(a,i){
+    var v=a[1],pos=v>=0,tag=(i===0?'BIGGEST LEAK':(pos?'STRENGTH':'FOCUS'));
+    return '<div class="card" style="padding:16px 18px;margin-top:12px">'+
+      '<div style="display:flex;align-items:center;justify-content:space-between">'+
+        '<span style="font-family:var(--font-caps);font-weight:800;font-size:10px;letter-spacing:.14em;color:var(--steel)">'+tag+'</span>'+
+        '<span class="mono" style="font-weight:600;font-size:14px;color:'+(pos?'var(--green-pos)':'#E06070')+'">'+(pos?'+':'')+v.toFixed(1)+'</span></div>'+
+      '<div class="h-title" style="font-size:18px;margin-top:6px">'+a[0]+'</div>'+
+      '<div style="font-size:13px;color:var(--steel);line-height:1.45;margin-top:4px">'+(PLAN_DESC[a[0]]||'')+'</div></div>';
   }).join('');
 
   document.getElementById('course-list').innerHTML=COURSES.map(function(c){
