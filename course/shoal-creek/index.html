@@ -822,7 +822,13 @@ function caddyPick(dist, dir, mph, cap){
     if (!best || score < best.score) best = { club: c, score, ...e };
   }
   if (!best) return "No club fits under that cap.";
-  const lines = [`${best.club} - ${Math.round(best.carry)} (${Math.round(best.total)}).`];
+  const wc = Math.round(best.carry), wt = Math.round(best.total);
+  const calmC = CADDY[best.club].c;   // bag carry/total (calm), so the club's true number is always shown
+  const windy = dir !== "calm" && mph > 0 && (wc !== calmC[0] || wt !== calmC[1]);
+  const head = windy
+    ? `${best.club} plays ${wc} (${wt}) in this wind — ${calmC[0]} (${calmC[1]}) calm.`
+    : `${best.club} - ${wc} (${wt}).`;
+  const lines = [head];
   const d = Math.round(Math.abs(best.drift));
   if (d >= 2){
     const side = best.drift > 0 ? "right" : "left";
@@ -1109,7 +1115,7 @@ function viewHole(){
     </div>
     <div class="caddytabs">
       <button class="caddytab ${caddyTab==="swing"?"on":""}" data-cad="swing">Swing Caddie</button>
-      <button class="caddytab ${caddyTab==="dist"?"on":""}" data-cad="dist">My distances</button>
+      <button class="caddytab ${caddyTab==="dist"?"on":""}" data-cad="dist">My Bag</button>
       <button class="caddytab ${caddyTab==="wind"?"on":""}" data-cad="wind">Wind charts</button>
     </div>
     <div class="caddybody">${caddyBody()}</div>
