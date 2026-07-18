@@ -273,6 +273,8 @@ input,textarea,select{font-family:inherit}
 .chart td.cl{text-align:left;font-weight:700;color:#0C2340}
 .chart td.mut{color:#8792A4}
 .chart .par{color:#B22234;font-size:11px}
+.chart td.cl .bagn{font-family:'Barlow',sans-serif;font-weight:700;color:#0C2340}
+.chart td.cl .bags{font-family:'Barlow',sans-serif;font-weight:500;font-size:10px;color:#8792A4;margin-left:6px;letter-spacing:0}
 .chartnote{font-family:var(--mono);font-size:10px;color:#5C6B82;line-height:1.6;padding:9px 2px 0;text-align:center}
 .windsub{display:flex;gap:6px;margin-bottom:10px}
 .windbtn{flex:1;padding:8px 4px;border-radius:8px;border:1.5px solid rgba(12,35,64,.2);
@@ -399,6 +401,17 @@ const HOLES = [
 /* Entry vocabularies — Eric's actual bag + the Golf Rounds 2026 sheet dropdowns */
 const CLUBS = ["D","MD","7w","3H","4i","5H","6i","7i","8i","9i","PW","48","52","56","58"];
 const CLUB_EXPORT = { MD: "Mini Driver" };   // stored short, exported as the sheet knows it
+// Display names + specs for the My Bag list — mirrors the Golf Hub "My Bag" exactly.
+// Codes above stay for the sheet; this is presentation only ("48" shows as "AW").
+const BAG_DISPLAY = {
+  D:{name:"Driver",spec:"GT3 11° (C2 10g)"}, MD:{name:"Mini Driver",spec:"GT280 13°"},
+  "7w":{name:"7 Wood",spec:"GT2 21° (A1)"}, "3H":{name:"3 Hybrid",spec:"18°"},
+  "4i":{name:"4 Iron",spec:""}, "5H":{name:"5 Hybrid",spec:"23°"},
+  "6i":{name:"6 Iron",spec:"27°"}, "7i":{name:"7 Iron",spec:"30°"},
+  "8i":{name:"8 Iron",spec:"34°"}, "9i":{name:"9 Iron",spec:"38°"},
+  PW:{name:"PW",spec:"43°"}, "48":{name:"AW",spec:"48°"},
+  "52":{name:"52°",spec:""}, "56":{name:"56°",spec:""}, "58":{name:"58°",spec:""}
+};
 
 /* ---- caddy data (from otto_golf.md: 2026 Golf Distances with Wind Chart) ----
    per club: c=[carry,total] calm; h/t/i/d = head, tail, 45-into, 45-down wind
@@ -1156,8 +1169,11 @@ function caddyBody(){
     <div class="caddyout" id="caddyout">${caddyIn.out || ""}</div>`;
 }
 function caddyDistChart(){
-  const rows = CLUBS.filter(c=>CADDY[c]).map(c =>
-    `<tr><td class="cl">${CLUB_EXPORT[c]||c}</td><td>${CADDY[c].c[0]}</td><td class="mut">${CADDY[c].c[1]}</td></tr>`).join("");
+  const rows = CLUBS.filter(c=>CADDY[c]).map(c => {
+    const b = BAG_DISPLAY[c] || {name:(CLUB_EXPORT[c]||c), spec:""};
+    const nm = `<span class="bagn">${b.name}</span>${b.spec?`<span class="bags">${b.spec}</span>`:""}`;
+    return `<tr><td class="cl">${nm}</td><td>${CADDY[c].c[0]}</td><td class="mut">${CADDY[c].c[1]}</td></tr>`;
+  }).join("");
   return `<table class="chart"><thead><tr><th>Club</th><th>Carry</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 const drift = n => n === 0 ? "&mdash;" : (n > 0 ? `${n}R` : `${-n}L`);
