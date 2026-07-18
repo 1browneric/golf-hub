@@ -1,0 +1,4 @@
+# Build intermediates from osm-course-book make_tracker.py.
+# Only the self-contained index.html ships per course.
+course/**/assets.js
+course/**/*.webp

@@ -32,7 +32,7 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
 body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream);overflow:hidden;}
-.app{max-width:430px;margin:0 auto;height:100dvh;background:var(--navy-deep);
+.app{max-width:430px;margin:0 auto;height:100vh;height:100svh;background:var(--navy-deep);
      display:flex;flex-direction:column;position:relative;overflow:hidden}
 /* top bar */
 .topbar{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;
@@ -253,89 +253,14 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       <div id="rounds-list"></div>
     </section>
 
-    <!-- ============ LIVE ROUND TRACKER ============ -->
-    <section class="screen" data-screen="tracker" style="padding-left:0;padding-right:0">
-      <div style="padding:0 20px">
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <div>
-            <div class="lab" style="font-weight:700;font-size:10px;letter-spacing:.16em">LIVE ROUND · SUNFLOWER HILLS</div>
-            <div class="h-title" style="font-size:26px;margin-top:4px">Hole <span id="hole-num">4</span></div>
-          </div>
-          <div style="text-align:right">
-            <div class="mono" style="font-weight:600;font-size:22px">+2</div>
-            <div class="lab" style="font-weight:600;font-size:9px;letter-spacing:.1em">THRU <span id="thru">3</span></div>
-          </div>
-        </div>
-        <div style="display:flex;gap:10px;margin-top:12px">
-          <div class="chip"><span class="k">PAR </span><span class="v">4</span></div>
-          <div class="chip"><span class="k">TIPS </span><span class="v">438y</span></div>
-          <div class="chip"><span class="k">HCP </span><span class="v">5</span></div>
-        </div>
-      </div>
+    <!-- ============ ROUND TRACKER (course library) ============ -->
+    <section class="screen" data-screen="tracker">
+      <div class="eyebrow">PLAY</div>
+      <div class="h-title" style="font-size:32px;margin-top:6px">Round Tracker</div>
+      <div style="font-size:13px;color:var(--steel);margin-top:6px;line-height:1.5">Select a course to start a round. Your scorecard, yardages, greens, and caddie load with it.</div>
 
-      <!-- COURSE BOOK -->
-      <div class="card" style="margin:16px 20px 0;overflow:hidden">
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid rgba(143,160,184,.18)">
-          <span class="lab" style="font-weight:700;font-size:10px;letter-spacing:.16em">COURSE BOOK · PAR THE COURSE</span>
-          <span style="font-family:var(--font-caps);font-weight:700;font-size:10px;letter-spacing:.08em;color:var(--red)">PIN SHEET</span>
-        </div>
-        <div style="display:flex">
-          <svg viewBox="0 0 160 260" style="width:56%;height:260px;display:block;background:#0a2035">
-            <path d="M40 250 C30 180 55 150 70 120 C82 96 78 70 92 40" fill="none" stroke="#16324e" stroke-width="46" stroke-linecap="round"/>
-            <path d="M40 250 C30 180 55 150 70 120 C82 96 78 70 92 40" fill="none" stroke="#1E8E4F" stroke-width="40" stroke-linecap="round" opacity="0.55"/>
-            <ellipse cx="52" cy="150" rx="12" ry="9" fill="#C9B98A"/>
-            <ellipse cx="104" cy="92" rx="10" ry="8" fill="#C9B98A"/>
-            <ellipse cx="98" cy="40" rx="26" ry="20" fill="#1E8E4F"/>
-            <ellipse cx="98" cy="40" rx="26" ry="20" fill="none" stroke="#3FBE77" stroke-width="1.5"/>
-            <circle cx="88" cy="46" r="8" fill="none" stroke="#F4EFE4" stroke-width="1.5" stroke-dasharray="3 3"/>
-            <circle cx="106" cy="35" r="2.6" fill="#B22234"/>
-            <line x1="106" y1="35" x2="106" y2="22" stroke="#B22234" stroke-width="1.5"/>
-            <path d="M106 22 l7 3 -7 3Z" fill="#B22234"/>
-            <circle cx="40" cy="248" r="3" fill="#F4EFE4"/>
-          </svg>
-          <div style="width:44%;padding:16px 16px 16px 14px">
-            <div style="font-family:var(--font-caps);font-weight:800;font-size:10px;letter-spacing:.12em;color:var(--red)">CADDIE</div>
-            <div class="h-title" style="font-size:16px;line-height:1.2;margin-top:6px">Play the fat side</div>
-            <div style="font-size:12px;color:var(--steel);line-height:1.45;margin-top:8px">Pin back-right, tucked. Aim center-left of green — leave uphill putt. Bunker guards short-right.</div>
-            <div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(143,160,184,.18)">
-              <div class="mono" style="font-weight:600;font-size:15px">168 <span style="font-size:11px;color:var(--steel)">to pin</span></div>
-              <div class="mono" style="font-weight:600;font-size:13px;color:var(--steel);margin-top:3px">152 front · 174 back</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- SCORE ENTRY -->
-      <div class="card" style="margin:14px 20px 0;padding:18px">
-        <div style="display:flex;gap:14px">
-          <div style="flex:1;text-align:center">
-            <div class="lab" style="font-weight:700;font-size:10px;letter-spacing:.14em;margin-bottom:10px">STROKES</div>
-            <div style="display:flex;align-items:center;justify-content:center;gap:14px">
-              <button class="step minus" data-step="strokes" data-dir="-1">−</button>
-              <span class="stepval" id="strokes">4</span>
-              <button class="step plus" data-step="strokes" data-dir="1">+</button>
-            </div>
-          </div>
-          <div style="width:1px;background:rgba(143,160,184,.18)"></div>
-          <div style="flex:1;text-align:center">
-            <div class="lab" style="font-weight:700;font-size:10px;letter-spacing:.14em;margin-bottom:10px">PUTTS</div>
-            <div style="display:flex;align-items:center;justify-content:center;gap:14px">
-              <button class="step minus" data-step="putts" data-dir="-1">−</button>
-              <span class="stepval" id="putts">2</span>
-              <button class="step plus" data-step="putts" data-dir="1">+</button>
-            </div>
-          </div>
-        </div>
-        <div style="display:flex;gap:8px;margin-top:18px">
-          <div class="toggle"><div class="k">FAIRWAY</div><div class="v" style="color:var(--green-pos)">Hit</div></div>
-          <div class="toggle"><div class="k">GIR</div><div class="v" style="color:var(--green-pos)">Yes</div></div>
-          <div class="toggle"><div class="k">PENALTY</div><div class="v" style="color:var(--steel)">0</div></div>
-        </div>
-        <div style="display:flex;gap:10px;margin-top:16px">
-          <button class="btn btn-out" style="flex:1;padding:14px" data-hole="-1">PREV</button>
-          <button class="btn btn-red" style="flex:2;font-size:13px;padding:14px" data-hole="1">NEXT HOLE</button>
-        </div>
-      </div>
+      <div class="sectlab" style="margin:24px 0 12px">COURSES</div>
+      <div id="course-list"></div>
     </section>
 
     <!-- ============ CLUB DATA ============ -->
@@ -461,6 +386,13 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     {tag:'WATCH · SCORING',sg:'+3 avg',color:'var(--steel)',title:'Bogey avoidance on par 5s',detail:'Leaving too many pars on reachable par 5s. Commit to a layup number that leaves your 96y wedge.'}
   ];
 
+  // Preloaded course library — each entry is a generated tracker page at
+  // course/<slug>/ (built by osm-course-book make_tracker.py). Add a course by
+  // generating its page and appending one row here.
+  var COURSES=[
+    {name:'Shoal Creek',loc:'Kansas City, MO',par:71,tees:'Black · Blue · White',slug:'shoal-creek'}
+  ];
+
   function el(html){var t=document.createElement('template');t.innerHTML=html.trim();return t.content.firstChild;}
 
   var CATS=['Driver','176+','101-175','100 & In','Putting','Ball Strike'];
@@ -511,6 +443,14 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       '<div style="font-size:13px;color:var(--steel);line-height:1.45;margin-top:6px">'+f.detail+'</div></div>';
   }).join('');
 
+  document.getElementById('course-list').innerHTML=COURSES.map(function(c){
+    return '<a class="mod" href="course/'+c.slug+'/" style="text-decoration:none;color:inherit">'+
+      '<div class="mleft"><div class="t">'+c.name+'</div>'+
+      '<div class="s">'+c.loc+' · Par '+c.par+' · '+c.tees+'</div></div>'+
+      '<div class="mright"><div class="lab" style="font-weight:700;font-size:10px;letter-spacing:.14em;color:var(--red)">START</div></div>'+
+    '</a>';
+  }).join('');
+
   // ---- live Kansas City weather (Open-Meteo, no API key needed) ----
   var WX_CODES={0:'Clear',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',45:'Fog',48:'Rime fog',
     51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',56:'Freezing drizzle',57:'Freezing drizzle',
@@ -547,7 +487,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
   setInterval(wxLoad,900000);   // refresh conditions every 15 min
 
   // ---- navigation ----
-  var state={screen:'home',hole:4,strokes:4,putts:2};
+  var state={screen:'home'};
   var scroll=document.getElementById('scroll');
   function show(scr){
     state.screen=scr;
@@ -557,22 +497,6 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
   }
   document.addEventListener('click',function(e){
     var go=e.target.closest('[data-go]'); if(go){show(go.dataset.go);return;}
-    var step=e.target.closest('[data-step]');
-    if(step){
-      var k=step.dataset.step,d=parseInt(step.dataset.dir,10);
-      state[k]=Math.max(k==='putts'?0:1,state[k]+d);
-      document.getElementById(k).textContent=state[k];
-      return;
-    }
-    var hb=e.target.closest('[data-hole]');
-    if(hb){
-      state.hole=Math.min(18,Math.max(1,state.hole+parseInt(hb.dataset.hole,10)));
-      state.strokes=4;state.putts=2;
-      document.getElementById('hole-num').textContent=state.hole;
-      document.getElementById('thru').textContent=state.hole-1;
-      document.getElementById('strokes').textContent=4;
-      document.getElementById('putts').textContent=2;
-    }
   });
 })();
 </script>
