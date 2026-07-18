@@ -392,7 +392,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
   // course/<slug>/ (built by osm-course-book make_tracker.py). Add a course by
   // generating its page and appending one row here.
   var COURSES=[
-    {name:'Shoal Creek',loc:'Kansas City, MO',par:71,tees:'Black · Blue · White',slug:'shoal-creek'}
+    {name:'Shoal Creek Golf Course',loc:'Kansas City, MO',par:71,slug:'shoal-creek'}
   ];
 
   function el(html){var t=document.createElement('template');t.innerHTML=html.trim();return t.content.firstChild;}
@@ -448,7 +448,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
   document.getElementById('course-list').innerHTML=COURSES.map(function(c){
     return '<a class="mod" href="course/'+c.slug+'/" style="text-decoration:none;color:inherit">'+
       '<div class="mleft"><div class="t">'+c.name+'</div>'+
-      '<div class="s">'+c.loc+' · Par '+c.par+' · '+c.tees+'</div></div>'+
+      '<div class="s">'+c.loc+' · Par '+c.par+'</div></div>'+
       '<div class="mright"><div class="lab" style="font-weight:700;font-size:10px;letter-spacing:.14em;color:var(--red)">START</div></div>'+
     '</a>';
   }).join('');
