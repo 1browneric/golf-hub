@@ -302,8 +302,7 @@ input,textarea,select{font-family:inherit}
   font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#5C6B82}
 .tapbtn.on{background:#0C2340;border-color:#0C2340;color:#F4EFE4;font-weight:700}
 .puttread{margin-top:10px;background:#F1EADA;border-left:3px solid var(--target);border-radius:8px;padding:10px 12px}
-.prlab{font-family:var(--mono);font-size:8.5px;letter-spacing:.2em;text-transform:uppercase;color:#5C6B82}
-.prrow{font-family:'Barlow',sans-serif;font-size:13px;color:#16243A;margin-top:5px;line-height:1.5}
+.prrow{font-family:'Barlow',sans-serif;font-size:13px;color:#16243A;line-height:1.5}
 .prrow b{color:#0C2340;font-weight:700}
 .prout{font-family:var(--mono);font-size:12.5px;color:#16243A;line-height:1.6;margin-top:7px;
   padding-top:7px;border-top:1px solid rgba(12,35,64,.14)}
@@ -1458,11 +1457,11 @@ function puttChart(){
 }
 function puttBody(){
   const a = puttGeom(hole);        // live for THIS hole — never a stale snapshot
-  const banner = a
-    ? `<div class="autonote">Auto from the green map &middot; <b>${Math.round(a.dist)} ft</b>,
-         <b>${a.cross.toFixed(1)}%</b> high side ${a.high}</div>`
-    : (zdata(hole) ? `<div class="autonote">Drop the pin and your ball on the
-         <b>Green</b> tab to fill this in</div>` : "");
+  // when the green map has already measured the putt the fields speak for
+  // themselves — only say something when there is nothing to show yet
+  const banner = (!a && zdata(hole))
+    ? `<div class="autonote">Drop the pin and your ball on the
+         <b>Green</b> tab to fill this in</div>` : "";
   return banner + `
     <div class="edrow">
       <div class="edfield"><div class="edlbl">Putt length (ft)</div>
@@ -1523,7 +1522,6 @@ function bookBody(){
     // measured putt, straight off the lidar grid
     const g = (p && b) ? puttGeom(hole) : null;
     const readout = g ? `<div class="puttread">
-        <div class="prtop"><span class="prlab">Measured off the lidar</span></div>
         <div class="prrow"><b>${Math.round(g.dist)} ft</b>
           &middot; <b>${g.cross.toFixed(1)}%</b> break, high side ${g.high}
           &middot; <b>${Math.abs(g.along) < 0.5 ? "flat"
