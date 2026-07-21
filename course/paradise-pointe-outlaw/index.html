@@ -1577,7 +1577,7 @@ function puttRead(side){
   const v = flat * fac;
   // when the green map measured the putt we know which way it breaks — say so
   const hi = side ? `the ${side} edge` : "the high edge";
-  const to = side ? `${side} of the cup` : "the high side of the cup";
+  const to = side ? `${side} of the cup` : "to the high side of the cup";
   const lines = [ v < INSIDE_EDGE
     ? `Play it ${fmtBreak(v)} inside ${hi} of the cup.`
     : `Aim ${fmtBreak(v)} ${to}.` ];
