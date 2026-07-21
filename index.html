@@ -692,6 +692,9 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     }
     return row[row.length-1];
   }
+  // Inside-edge rule from the chart PDF: values of 2.1" and under are italic in the
+  // source — the break is less than half the 4.25" cup, so aim inside the cup edge.
+  var INSIDE_EDGE=2.125;
   function puttRead(){
     if(puttIn.len==null) return "Give me a putt length first.";
     var slopeIdx=BREAK_SLOPES.indexOf(parseFloat(puttIn.slope));
@@ -699,28 +702,35 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     var flat=breakInterp(puttIn.stimp,slopeIdx,puttIn.len);
     var fac=puttIn.ud==="flat"?1:BREAK_UD[puttIn.stimp][puttIn.ud];
     var v=flat*fac;
-    var cups=v/4.25;
-    var lines=["Aim "+fmtBreak(v)+" to the high side of the cup."];
-    if(cups>=0.5) lines.push("That is about "+(cups<10?Math.round(cups*10)/10:Math.round(cups))+" cups.");
+    var lines=[ v<INSIDE_EDGE
+      ? "Play it "+fmtBreak(v)+" inside the high edge of the cup."
+      : "Aim "+fmtBreak(v)+" to the high side of the cup." ];
     if(puttIn.ud!=="flat"){
       var lbl=""; for(var i=0;i<UD_LABELS.length;i++) if(UD_LABELS[i][0]===puttIn.ud) lbl=UD_LABELS[i][1];
-      lines.push(lbl+": flat read "+fmtBreak(flat)+", adjusted x"+fac+".");
+      lines.push(lbl+": flat read "+fmtBreak(flat)+".");
     }
     if(puttIn.len>60) lines.push("Chart tops out at 60 ft - 60 ft read shown.");
     return lines.join("<br>");
   }
   function puttChart(){
-    var mk=function(lo,hi,title){
+    var slopeIdx=BREAK_SLOPES.indexOf(parseFloat(puttIn.slope));
+    if(slopeIdx<0) slopeIdx=3;
+    var grid=BREAK[puttIn.stimp];
+    var chunk=function(lo,hi){
       var head='<th>Slope</th>'+BREAK_FT.slice(lo,hi).map(function(f){return '<th>'+f+"'"+'</th>';}).join('');
-      var rows=BREAK[puttIn.stimp].map(function(row,si){
-        return '<tr><td class="cl">'+BREAK_SLOPES[si]+'%</td>'+row.slice(lo,hi).map(function(v){
-          return '<td>'+fmtBreak(v)+'</td>';}).join('')+'</tr>';
+      var rows=grid.map(function(row,si){
+        var cells='';
+        for(var i=lo;i<hi;i++){
+          var v=row[i];
+          cells+='<td'+(v<INSIDE_EDGE?' style="font-style:italic"':'')+'>'+fmtBreak(v)+'</td>';
+        }
+        var bg=si===slopeIdx?'background:rgba(27,78,142,.14)':(si%2?'background:rgba(12,35,64,.055)':'');
+        return '<tr'+(bg?' style="'+bg+'"':'')+'><td class="cl">'+BREAK_SLOPES[si]+'%</td>'+cells+'</tr>';
       }).join('');
-      return '<div class="edlbl" style="margin:14px 0 6px;text-align:center;font-family:var(--font-data);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5C6B82">'+title+'</div>'+
-        '<table class="chart"><thead><tr>'+head+'</tr></thead><tbody>'+rows+'</tbody></table>';
+      return '<table class="chart" style="font-size:13px;margin-top:10px"><thead><tr>'+head+'</tr></thead><tbody>'+rows+'</tbody></table>';
     };
-    return mk(0,8,'Short putts &middot; read to pin &middot; stimp '+puttIn.stimp)+
-           mk(8,16,'Long putts &middot; read to pin &middot; stimp '+puttIn.stimp);
+    return '<div class="edlbl" style="margin:16px 0 0;text-align:center;font-family:var(--font-data);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5C6B82">Break chart &middot; stimp '+puttIn.stimp+' &middot; read to pin</div>'+
+      chunk(0,4)+chunk(4,8)+chunk(8,12)+chunk(12,16);
   }
   function puttBody(){
     return '<div class="edrow">'+
@@ -927,9 +937,9 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     }
     var go=e.target.closest('[data-go]'); if(go){show(go.dataset.go);return;}
   });
-  // stimp select drives the break chart below it — re-render on change
+  // stimp + slope selects drive the break chart below them — re-render on change
   document.addEventListener('change',function(e){
-    if(e.target.id==='pt-stimp'){grabPuttInputs();renderCaddy();}
+    if(e.target.id==='pt-stimp'||e.target.id==='pt-slope'){grabPuttInputs();renderCaddy();}
   });
 })();
 </script>
