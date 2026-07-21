@@ -285,6 +285,13 @@ input,textarea,select{font-family:inherit}
 .windbtn{flex:1;padding:8px 4px;border-radius:8px;border:1.5px solid rgba(12,35,64,.2);
   font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#5C6B82}
 .windbtn.on{background:#0C2340;border-color:#0C2340;color:#fff;font-weight:700}
+/* putting break chart: zebra rows, selected slope tinted, inside-the-edge italics */
+.puttlbl{font-family:var(--mono);font-size:9px;letter-spacing:.18em;text-transform:uppercase;
+  color:#5C6B82;text-align:center;margin:16px 0 0}
+.puttchart{font-size:13px;margin-top:10px}
+.puttchart tr.zeb{background:rgba(12,35,64,.055)}
+.puttchart tr.selrow{background:rgba(27,78,142,.14)}
+.puttchart td.ins{font-style:italic}
 
 /* strategy sections */
 .stratsec{padding:10px 6px;border-bottom:1px solid rgba(12,35,64,.12)}
@@ -384,7 +391,7 @@ const TOPIC = "rt-paradise-pointe-posse-5c34e33b61";
 const DISPATCH = "rt-hub-dispatch-9f2c7a41b3";
 const LS_KEY = "rt_paradise_pointe_posse_v1";
 
-const ROUND = { date:"2026-07-18", course:"Paradise Pointe \u00b7 Posse", par:72 };
+const ROUND = { date:"2026-07-21", course:"Paradise Pointe \u00b7 Posse", par:72 };
 const EMAIL = "1brown.eric@gmail.com";
 const TEES = ["black","blue","white"];   // Blue = the anchor (all book distances)
 const HOLES = [
@@ -474,6 +481,67 @@ const CADDY = {
        i:[[94,97],[94,97],[92,95]],  d:[[96,99],[96,99],[97,100]],
        xl:[2,3,4.5], xr:[0,-1,-3]}
 };
+/* ---- green-break data (Eric's Green Break Chart PDF) ----
+   rows = side slope %, cols = putt length in feet; values = read to pin, INCHES.
+   Values under 2.125" are italic in the source: break is less than half the
+   4.25" cup, so the read is INSIDE the cup edge. */
+const BREAK_SLOPES = [0.5,1,1.5,2,2.5,3,3.5,4];
+const BREAK_FT = [2,3,4,5,6,7,8,9,10,11,12,15,18,21,30,60];
+const INSIDE_EDGE = 2.125;
+const BREAK = {
+  "8":[[0.1,0.4,0.7,1,1.2,1.5,1.7,2,2.5,2.5,3,3.5,4.5,5,8,16],
+       [0.3,0.8,1.3,2,2.4,3,3.5,4,4.5,5,5.5,7,9,10,15,31],
+       [0.4,1.2,2,3,3.6,4.5,5,6,7,8,8,11,13,16,23,48],
+       [0.5,1.6,2.7,3.7,4.8,6,7,8,9,10,11,14,18,21,30,60],
+       [0.7,2,3.3,4.7,6,7,9,10,11,13,14,18,22,26,36,78],
+       [0.8,2.4,4,5.6,7,9,10,12,14,15,17,22,23,21,48,96],
+       [0.9,2.8,4.7,7,8,10,12,14,16,18,20,25,31,36,54,108],
+       [1,3,5,7,10,12,14,16,18,20,22,29,36,42,60,126]],
+  "9":[[0.1,0.5,0.8,1.1,1.4,1.7,2,2.3,2.6,3,3,4,5,6,9,18],
+       [0.3,0.9,1.5,2.1,2.7,3.3,4,4.5,5.1,6,6,8,10,12,17,36],
+       [0.5,1.4,2.3,3.2,4.1,5,6,7,8,9,9,12,15,18,26,54],
+       [0.6,1.8,3,4.2,5.4,7,8,9,10,11,13,16,20,23,36,72],
+       [0.7,2.3,3.7,5.3,7,8,10,11,13,14,16,20,25,29,42,90],
+       [0.9,2.7,4.5,6,8,10,12,14,15,17,19,24,30,36,51,108],
+       [1,3.2,5.2,7,9,12,14,16,18,20,22,28,36,41,60,126],
+       [1.2,3.6,6,8,11,13,16,18,20,23,25,32,40,48,72,144]],
+  "10":[[0.2,0.5,0.8,1.2,1.5,1.8,2.2,2.5,2.8,3.2,3.5,4.5,5.5,7,10,20],
+       [0.3,1,1.7,2.3,3,3.7,4.3,5,5.7,6,7,9,11,13,19,39],
+       [0.5,1.5,2.5,3.5,4.5,5.5,7,8,9,10,11,14,17,20,29,59],
+       [0.7,2,3.3,4.7,6,7,9,10,11,13,14,18,22,26,38,78],
+       [0.8,2.5,4.2,5.8,8,9,11,13,14,16,18,23,28,33,48,98],
+       [1,3,5,7,9,11,13,15,17,19,21,27,33,39,57,117],
+       [1.2,3.5,5.8,8,11,13,15,18,20,22,25,32,39,46,67,137],
+       [1.3,4,7,9,12,15,17,20,23,25,28,36,44,52,76,156]],
+  "11":[[0.2,0.6,0.9,1.3,1.7,2,2.4,2.8,3.1,3.5,3.9,5,6,7,10,21],
+       [0.4,1.1,1.8,2.6,3.3,4,4.8,5.5,6,7,8,10,12,14,21,42],
+       [0.5,1.7,2.8,3.9,5,6,7,8,9,10,12,15,18,21,31,64],
+       [0.7,2.2,3.7,5.1,7,8,10,11,12,14,15,20,24,29,42,86],
+       [0.9,2.8,4.6,6,8,10,12,14,16,17,19,25,30,36,52,108],
+       [1.1,3.3,5.5,8,10,12,14,17,19,21,23,30,36,42,63,132],
+       [1.3,3.9,6,9,12,14,17,19,22,24,27,35,42,50,73,150],
+       [1.5,4.4,7,10,13,16,19,22,25,28,31,40,48,57,84,174]],
+  "12":[[0.2,0.6,1,1.4,1.8,2.2,2.6,3,3.4,3.8,4.2,5.4,7,8,11,23],
+       [0.4,1.2,2,2.8,3.6,4.4,5.2,6,7,8,8,11,13,16,23,48],
+       [0.6,1.8,3,4.2,5.4,7,8,9,10,11,13,16,20,23,34,70],
+       [0.8,2.4,4,5.6,7,9,10,12,14,15,17,22,26,31,46,94],
+       [1,3,5,7,9,11,13,15,17,19,21,27,33,39,57,117],
+       [1.2,3.6,6,8,11,13,16,18,20,23,25,32,40,48,68,140],
+       [1.4,4.2,7,10,13,15,18,21,24,27,29,38,46,56,80,164],
+       [1.6,4.8,8,11,14,18,21,24,27,30,34,43,53,62,91,187]]
+};
+/* Up/downhill multipliers, derived per stimp from Eric's WhyGolf stimp cards
+   (each U/D section vs its flat section on the 2% side-slope row): uphill putts
+   break less, downhill break more, and the spread grows on slower greens. */
+const BREAK_UD = {
+  "8": {u1:0.85,u2:0.74,u3:0.62,d1:1.21,d2:1.42,d3:1.61},
+  "9": {u1:0.87,u2:0.74,u3:0.65,d1:1.20,d2:1.37,d3:1.55},
+  "10":{u1:0.88,u2:0.78,u3:0.67,d1:1.17,d2:1.31,d3:1.47},
+  "11":{u1:0.90,u2:0.79,u3:0.70,d1:1.13,d2:1.28,d3:1.42},
+  "12":{u1:0.93,u2:0.84,u3:0.73,d1:1.14,d2:1.28,d3:1.42}
+};
+const UD_LABELS = [["flat","Flat putt"],["u1","1% uphill"],["u2","2% uphill"],["u3","3% uphill"],
+                   ["d1","1% downhill"],["d2","2% downhill"],["d3","3% downhill"]];
 const SHORT_GAME = [
   [10,"finger out - ball outside right hip, putting-style"],
   [15,"scale between the 10 and 30 yd feels"],[20,"scale between the 10 and 30 yd feels"],
@@ -516,8 +584,9 @@ let editing = null;      // null | {idx, draft:{...}}  idx===-1 -> new shot
 let mode = "connecting";
 let lastExport = null;
 let caddyIn = { dist:null, cap:null, mph:null, dir:"calm", out:"" };
-let caddyTab = "swing";     // swing | dist | wind
+let caddyTab = "swing";     // swing | dist | wind | putt
 let windTab = "into";       // into | down  (inside the Wind chart)
+let puttIn = { len:null, slope:"2", stimp:"10", ud:"flat", out:"" };
 
 const isPinKey = k => k.startsWith("pin.");
 const validPinVal = v => v === null ||
@@ -1153,9 +1222,10 @@ function viewHole(){
       <div class="wxrow"><div class="wxcell"><div class="wxv">${WXD.feels}</div><div class="wxk">Feels like</div></div><div class="wxcell"><div class="wxv">${WXD.wind}</div><div class="wxk">Wind</div></div></div>
     </div>
     <div class="caddytabs">
-      <button class="caddytab ${caddyTab==="swing"?"on":""}" data-cad="swing">Swing Caddie</button>
+      <button class="caddytab ${caddyTab==="swing"?"on":""}" data-cad="swing">Swing</button>
       <button class="caddytab ${caddyTab==="dist"?"on":""}" data-cad="dist">My Bag</button>
-      <button class="caddytab ${caddyTab==="wind"?"on":""}" data-cad="wind">Wind charts</button>
+      <button class="caddytab ${caddyTab==="wind"?"on":""}" data-cad="wind">Wind</button>
+      <button class="caddytab ${caddyTab==="putt"?"on":""}" data-cad="putt">Putting</button>
     </div>
     <div class="caddybody">${caddyBody()}</div>
   </section>
@@ -1174,6 +1244,7 @@ function holeNav(pos, h){
 function caddyBody(){
   if (caddyTab === "dist") return caddyDistChart();
   if (caddyTab === "wind") return caddyWindChart();
+  if (caddyTab === "putt") return puttBody();
   // swing
   return `
     <div class="edrow">
@@ -1226,6 +1297,97 @@ function caddyWindChart(){
     }).join("");
   }
   return `${bar}<table class="chart"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+/* ---------- putting: break read + the chart ---------- */
+function fmtBreak(v){
+  if (v < 10) return (Math.round(v*10)/10) + '"';
+  if (v < 36) return Math.round(v) + '"';
+  return Math.floor(v/12) + "'" + Math.round(v%12) + '"';
+}
+function breakInterp(stimp, slopeIdx, ft){
+  const row = BREAK[stimp][slopeIdx];
+  const f = Math.max(BREAK_FT[0], Math.min(ft, BREAK_FT[BREAK_FT.length-1]));
+  for (let i = 1; i < BREAK_FT.length; i++){
+    if (f <= BREAK_FT[i]){
+      const f0 = BREAK_FT[i-1], f1 = BREAK_FT[i];
+      return row[i-1] + (f-f0)/(f1-f0)*(row[i]-row[i-1]);
+    }
+  }
+  return row[row.length-1];
+}
+function slopeIndex(){
+  const i = BREAK_SLOPES.indexOf(parseFloat(puttIn.slope));
+  return i < 0 ? 3 : i;
+}
+function puttRead(){
+  if (puttIn.len == null) return "Give me a putt length first.";
+  const flat = breakInterp(puttIn.stimp, slopeIndex(), puttIn.len);
+  const fac = puttIn.ud === "flat" ? 1 : BREAK_UD[puttIn.stimp][puttIn.ud];
+  const v = flat * fac;
+  const lines = [ v < INSIDE_EDGE
+    ? `Play it ${fmtBreak(v)} inside the high edge of the cup.`
+    : `Aim ${fmtBreak(v)} to the high side of the cup.` ];
+  if (puttIn.ud !== "flat"){
+    const lbl = (UD_LABELS.find(u => u[0] === puttIn.ud) || ["",""])[1];
+    lines.push(`${lbl}: flat read ${fmtBreak(flat)}.`);
+  }
+  if (puttIn.len > 60) lines.push("Chart tops out at 60 ft - 60 ft read shown.");
+  return lines.join("<br>");
+}
+function puttChart(){
+  const sel = slopeIndex(), grid = BREAK[puttIn.stimp];
+  const chunk = (lo, hi) => {
+    const head = `<th>Slope</th>` + BREAK_FT.slice(lo,hi).map(f => `<th>${f}'</th>`).join("");
+    const rows = grid.map((row, si) => {
+      let cells = "";
+      for (let i = lo; i < hi; i++){
+        cells += `<td class="${row[i] < INSIDE_EDGE ? "ins" : ""}">${fmtBreak(row[i])}</td>`;
+      }
+      const cls = si === sel ? "selrow" : (si % 2 ? "zeb" : "");
+      return `<tr class="${cls}"><td class="cl">${BREAK_SLOPES[si]}%</td>${cells}</tr>`;
+    }).join("");
+    return `<table class="chart puttchart"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table>`;
+  };
+  return `<div class="puttlbl">Break chart &middot; stimp ${puttIn.stimp} &middot; read to pin</div>` +
+    chunk(0,4) + chunk(4,8) + chunk(8,12) + chunk(12,16);
+}
+function puttBody(){
+  return `
+    <div class="edrow">
+      <div class="edfield"><div class="edlbl">Putt length (ft)</div>
+        <input type="number" inputmode="numeric" id="pt-len" value="${puttIn.len ?? ""}"></div>
+      <div class="edfield"><div class="edlbl">Side slope</div>
+        <select id="pt-slope">${BREAK_SLOPES.map(s =>
+          `<option value="${s}"${puttIn.slope===String(s)?" selected":""}>${s}%</option>`).join("")}</select></div>
+    </div>
+    <div class="edrow">
+      <div class="edfield"><div class="edlbl">Stimp</div>
+        <select id="pt-stimp">${["8","9","10","11","12"].map(s =>
+          `<option value="${s}"${puttIn.stimp===s?" selected":""}>${s}</option>`).join("")}</select></div>
+      <div class="edfield"><div class="edlbl">Up or down</div>
+        <select id="pt-ud">${UD_LABELS.map(u =>
+          `<option value="${u[0]}"${puttIn.ud===u[0]?" selected":""}>${u[1]}</option>`).join("")}</select></div>
+    </div>
+    <button class="caddyask" data-act="putt">Read the break</button>
+    <div class="caddyout" id="puttout">${puttIn.out || ""}</div>
+    ${puttChart()}`;
+}
+function grabCaddyInputs(){
+  const d = $("#cd-dist");
+  if (!d) return;
+  caddyIn.dist = numOrNull(d.value);
+  caddyIn.cap = numOrNull($("#cd-cap").value);
+  caddyIn.mph = numOrNull($("#cd-mph").value);
+  caddyIn.dir = $("#cd-dir").value;
+}
+function grabPuttInputs(){
+  const l = $("#pt-len");
+  if (!l) return;
+  puttIn.len = numOrNull(l.value);
+  puttIn.slope = $("#pt-slope").value;
+  puttIn.stimp = $("#pt-stimp").value;
+  puttIn.ud = $("#pt-ud").value;
 }
 
 function bookBody(){
@@ -1371,13 +1533,15 @@ function bind(){
         if (ed) ed.scrollIntoView({block:"center"});
       }
       else if (act==="caddy"){
-        caddyIn.dist = numOrNull($("#cd-dist").value);
-        caddyIn.cap = numOrNull($("#cd-cap").value);
-        caddyIn.mph = numOrNull($("#cd-mph").value) || 0;
-        caddyIn.dir = $("#cd-dir").value;
+        grabCaddyInputs();
         caddyIn.out = caddyIn.dist == null ? "Give me a distance first."
-          : caddyPick(caddyIn.dist, caddyIn.dir, caddyIn.mph, caddyIn.cap);
+          : caddyPick(caddyIn.dist, caddyIn.dir, caddyIn.mph || 0, caddyIn.cap);
         $("#caddyout").innerHTML = caddyIn.out;
+      }
+      else if (act==="putt"){
+        grabPuttInputs();
+        puttIn.out = puttRead();
+        $("#puttout").innerHTML = puttIn.out;
       }
       else if (act==="edshot"){
         const i = +el.dataset.i;
@@ -1451,10 +1615,15 @@ function bind(){
     el.onclick = () => { bookView = el.dataset.view; render(); };
   });
   document.querySelectorAll("[data-cad]").forEach(el => {
-    el.onclick = () => { caddyTab = el.dataset.cad; render(); };
+    el.onclick = () => { grabCaddyInputs(); grabPuttInputs(); caddyTab = el.dataset.cad; render(); };
   });
   document.querySelectorAll("[data-wind]").forEach(el => {
     el.onclick = () => { windTab = el.dataset.wind; render(); };
+  });
+  /* stimp + slope drive the break chart below them — re-render on change */
+  ["#pt-stimp", "#pt-slope"].forEach(sel => {
+    const el = $(sel);
+    if (el) el.onchange = () => { grabPuttInputs(); render(); };
   });
   document.querySelectorAll("[data-putt]").forEach(el => {
     el.onchange = () => commitPutt(+el.dataset.putt, el.value.trim());
