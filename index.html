@@ -133,12 +133,6 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
 .sgval{font-family:var(--font-data);font-weight:600;font-size:16px;min-width:44px;text-align:right}
 .arw{width:20px;text-align:center;font-size:15px;font-weight:700}
 .pos{color:var(--green-pos)} .neg{color:#E06070}
-/* Masters caddie-bib header (Caddie screen): white bib panel, Augusta green */
-.bib{background:#fff;border-radius:12px 12px 16px 16px;margin-top:10px;padding:16px 16px 14px;text-align:center;
-     box-shadow:0 8px 22px rgba(3,8,20,.4)}
-.bib-num{display:inline-block;border:3px solid #006747;padding:0 16px}
-.bib-num span{font-family:var(--font-collegiate);font-size:38px;line-height:1.25;color:#006747;display:block}
-.bib-name{font-family:var(--font-collegiate);font-size:21px;letter-spacing:.3em;text-indent:.3em;color:#006747;margin-top:10px}
 /* caddie — the course trackers' Caddie card, ported to the Hub (cream card, Hub palette) */
 .caddy{background:var(--cream);color:#16243A;border-radius:16px;padding:14px 12px;margin-top:14px}
 .caddytabs{display:flex;gap:6px;margin-bottom:12px}
@@ -321,12 +315,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
 
     <!-- ============ CADDIE ============ -->
     <section class="screen" data-screen="caddie">
-      <!-- header styled like the back of a Masters white caddie bib:
-           green-bordered number box over the surname in green block caps -->
-      <div class="bib">
-        <div class="bib-num"><span>1</span></div>
-        <div class="bib-name">BROWN</div>
-      </div>
+      <div class="h-title" style="font-size:32px;margin-top:6px">Caddie</div>
 
       <!-- LIVE KANSAS CITY WEATHER (Open-Meteo, refreshes on load) -->
       <div class="card" style="padding:0;margin-top:20px;overflow:hidden">
