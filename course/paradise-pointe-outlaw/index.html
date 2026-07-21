@@ -247,6 +247,7 @@ input,textarea,select{font-family:inherit}
 /* hole nav (top + bottom) with hole numbers */
 .holenav{display:flex;align-items:center;gap:10px}
 .holenav.top{margin-bottom:12px}
+.holenav.mid{margin-top:16px}
 .holenav.bottom{margin-top:16px}
 .holenav .navbtn{flex:1;padding:13px 0;border-radius:11px;background:var(--navy3);color:var(--paper);
   font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
@@ -1251,6 +1252,7 @@ function viewHole(){
     </div>
     <div class="bookbody">${bookBody()}</div>
   </section>
+  ${holeNav("mid", h)}
   <section class="caddy">
     <div class="caddyhead">Caddie</div>
     <div class="wx">
