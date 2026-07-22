@@ -1,0 +1,1509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Round Tracker — Any Course</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400;1,700&family=Montserrat:wght@400;500;600;700;800&family=Barlow:wght@400;500;600;700;800&family=Spline+Sans+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Golf Hub identity: deep navy, warm white, tournament red — the same palette
+   and font system as the course trackers. No course data, so it works anywhere;
+   a Basic/Advanced selector decides how much of the round gets kept. */
+:root{
+  --navy:#0C2340; --navy2:#0C2340; --navy3:#0C2340;
+  --paper:#F4EFE4; --paper2:#F1EADA;
+  --red:#B22234; --red2:#8F1B2A;
+  --blue:#0C2340; --gold:#B22234; --gold-deep:#8F1B2A;
+  --sage:#8FA0B8; --line:rgba(255,255,255,.13);
+  --target:#8FA0B8;
+  --serif:'Libre Baskerville',Georgia,serif;
+  --mono:'Montserrat',system-ui,sans-serif;
+  --cream:#F4EFE4; --cream-dim:#8FA0B8;
+  --pine:#0C2340; --fair:#0C2340; --fair2:#0C2340; --clay:#8F1B2A;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:#081830;color:var(--paper);font-family:'Barlow',sans-serif;-webkit-font-smoothing:antialiased}
+.app{max-width:520px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;
+  background:linear-gradient(160deg,var(--navy) 0%, #081830 62%)}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+input,textarea,select{font-family:inherit}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+
+/* data elements keep the mono face; labels use Montserrat via --mono */
+.gross,.putttot b,.minstep b,.puttfield input,.chart td,.chart th,
+.grid td,.grid th,.shotrow,.caddyout,.savestat,.scorelbl .pm,
+.sgrow .vl,.mh-date{font-family:'Spline Sans Mono',ui-monospace,monospace}
+
+/* Golf Hub masthead — broadcast caps, Baskerville-italic title. The course
+   name is an input here: this page is whatever course you are standing on. */
+.masthead{text-align:center;padding:22px 20px 16px;border-bottom:1px solid var(--line)}
+.mh-row{display:flex;align-items:center;gap:14px}
+.mh-ln{flex:1;height:1px;background:rgba(143,160,184,.35)}
+.mh-title{font-family:'Libre Baskerville',Georgia,serif;font-style:italic;font-weight:700;font-size:24px;letter-spacing:.02em;color:#F4EFE4;white-space:nowrap}
+.mh-tick{width:22px;height:3px;background:#B22234;margin:8px auto 12px}
+.mh-course{appearance:none;-webkit-appearance:none;background:transparent;border:none;padding:0;width:100%;text-align:center;
+  font-family:'Montserrat',sans-serif;font-weight:700;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#F4EFE4}
+.mh-course::placeholder{color:#8FA0B8;opacity:.85}
+.mh-course:focus{outline:1.5px solid #B22234;border-radius:4px}
+.mh-date{appearance:none;-webkit-appearance:none;background:transparent;border:none;padding:0;margin-top:6px;text-align:center;
+  font-weight:600;font-size:12px;color:#8FA0B8;width:auto}
+.mh-date:focus{outline:1.5px solid #B22234;border-radius:4px}
+
+.tabs{display:flex;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5;
+  background:rgba(9,26,52,.94);backdrop-filter:blur(6px)}
+.tab{flex:1;padding:13px 0 11px;font-family:var(--mono);font-size:11px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--sage);border-bottom:2px solid transparent}
+.tab.on{color:var(--cream);border-bottom-color:var(--red)}
+
+.main{flex:1;padding:16px 14px 90px}
+
+/* ---- how the round is being kept ---- */
+.modesel{display:flex;gap:6px;padding:12px 16px;border-bottom:1px solid rgba(12,35,64,.12)}
+.modebtn{flex:1;padding:9px 4px;border-radius:9px;border:1.5px solid rgba(12,35,64,.22);
+  background:transparent;color:#5C6B82;cursor:pointer;
+  font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase}
+.modebtn.on{background:#0C2340;border-color:#0C2340;color:#F4EFE4;font-weight:700}
+
+/* ---- hole stat card ---- */
+.holecard{background:var(--cream);color:#16243A;border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.holehead{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;border-bottom:1px dashed rgba(12,35,64,.25)}
+.holenum{font-family:var(--serif);font-size:34px;line-height:1;color:#0C2340}
+.parpick{display:flex;gap:6px;align-items:center}
+.parpick .plbl{font-family:var(--mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:#5C6B82;margin-right:2px}
+.parchip{width:42px;height:42px;border-radius:11px;border:1.5px solid rgba(12,35,64,.3);
+  font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:16px;font-weight:700;color:#5C6B82}
+.parchip.on{background:#0C2340;border-color:#0C2340;color:#F4EFE4}
+.scorerow{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid rgba(12,35,64,.12)}
+.scorelbl{font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:#5C6B82}
+.scorelbl .pm{display:block;font-size:13px;font-weight:700;color:#0C2340;letter-spacing:.04em;margin-top:3px}
+.step{display:flex;align-items:center;gap:8px}
+.stepbtn{width:44px;height:44px;border-radius:12px;background:#0C2340;color:var(--cream);
+  font-size:22px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.stepbtn:active{transform:scale(.95)}
+.gross{width:52px;text-align:center;font-weight:700;font-size:28px;color:#16243A}
+.gross.blank{color:#AAB2BE}.gross.birdie{color:#1E8E4F}.gross.over{color:#B22234}
+
+.statgrid{display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid rgba(12,35,64,.12);flex-wrap:wrap}
+.stchip{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+  padding:9px 14px;border-radius:999px;border:1.5px solid rgba(12,35,64,.3);color:#5C6B82}
+.stchip.yes{background:#0C2340;border-color:#0C2340;color:#F4EFE4;font-weight:700}
+.stchip.no{border-color:rgba(178,34,52,.55);color:#B22234;font-weight:700}
+.minstep{display:flex;align-items:center;gap:7px;margin-left:auto}
+.minstep .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#5C6B82}
+.stmini{width:36px;height:36px;border-radius:9px;background:#E7E0CE;color:#0C2340;font-size:17px;
+  font-weight:700;display:flex;align-items:center;justify-content:center}
+.stmini:active{transform:scale(.94)}
+.minstep b{font-size:16px;color:#16243A;min-width:20px;text-align:center}
+
+.puttrow{display:flex;align-items:center;gap:8px;padding:11px 16px;border-bottom:1px solid rgba(12,35,64,.12)}
+.puttfield{flex:1;display:flex;flex-direction:column;gap:4px}
+.puttfield label{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:#5C6B82;text-align:center}
+.puttfield input{width:100%;padding:10px 4px;border:1.5px solid rgba(12,35,64,.25);border-radius:10px;
+  background:#fff;font-size:16px;font-weight:700;color:#16243A;text-align:center}
+.puttfield input:focus{outline:2px solid var(--gold-deep)}
+.putttot{flex:none;display:flex;flex-direction:column;align-items:center;gap:4px}
+.putttot .lbl{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:#5C6B82}
+.putttot b{font-size:22px;color:#0C2340}
+
+/* shots */
+.shots{padding:6px 12px 10px}
+.shotrow{display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid rgba(12,35,64,.1);font-size:12.5px;color:#16243A}
+.shotrow .n{font-family:var(--serif);font-size:13px;color:#8792A4;width:16px}
+.shotrow .d{flex:1;line-height:1.5}
+.shotrow .d b{color:#0C2340}
+.shotrow .d .acc-bad{color:#B22234;font-weight:700}
+.shotbtn{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  padding:7px 10px;border-radius:8px;background:#E7E0CE;color:#0C2340}
+.shotbtn.del{color:#B22234;background:none;border:1px solid rgba(178,34,52,.35)}
+.addshot{display:block;width:calc(100% - 8px);margin:8px 4px 2px;padding:11px;border:1.5px dashed rgba(12,35,64,.35);
+  border-radius:10px;font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#0C2340;font-weight:700}
+
+/* shot editor */
+.editor{background:#E7E0CE;border-radius:12px;margin:8px 4px;padding:12px 10px}
+.edrow{display:flex;gap:8px}
+.edrow + .edrow{margin-top:10px}
+.edfield{flex:1;min-width:0}
+.edfield .edlbl{font-family:var(--mono);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5C6B82;
+  margin:0 0 5px;white-space:nowrap}
+.edfield input,.edfield select{width:100%;height:46px;padding:0 10px;border:1.5px solid rgba(12,35,64,.25);border-radius:10px;
+  background:#fff;font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:15px;font-weight:700;color:#16243A;
+  -webkit-appearance:none;appearance:none}
+.edfield input{text-align:center}
+.edfield select:invalid,.edfield select option[value=""]{color:#AAB2BE}
+.edfield select{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%234B5B44'/></svg>");
+  background-repeat:no-repeat;background-position:right 12px center;padding-right:28px}
+.edhint{font-family:var(--mono);font-size:10px;color:#8792A4;margin-top:7px;text-align:center;letter-spacing:.04em}
+.edactions{display:flex;gap:8px;margin-top:12px}
+.edsave{flex:1;padding:12px;border-radius:10px;background:#0C2340;color:#F4EFE4;
+  font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;font-weight:700}
+.edcancel{flex:none;padding:12px 16px;border-radius:10px;border:1px solid rgba(12,35,64,.3);color:#5C6B82;
+  font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+
+/* caddy card */
+.caddy{margin-top:14px;background:var(--cream);color:#16243A;border-radius:16px;
+  padding:14px 12px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.caddyhead{font-family:var(--mono);font-size:10px;letter-spacing:.3em;text-transform:uppercase;
+  color:#5C6B82;margin-bottom:10px;text-align:center}
+.caddy .edrow + .edrow{margin-top:8px}
+.caddyask{display:block;width:100%;margin-top:10px;padding:13px;border-radius:10px;background:#0C2340;
+  color:var(--cream);font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;font-weight:700}
+.caddyout{font-size:13px;color:#16243A;line-height:1.7;padding:10px 4px 0;text-align:center}
+.caddyout:empty{display:none}
+
+.noterow{padding:10px 14px 14px}
+.noterow input{width:100%;padding:11px 12px;border:1.5px solid rgba(12,35,64,.2);border-radius:10px;
+  background:#fff;font-size:14px;color:#16243A}
+.noterow input::placeholder{color:#AAB2BE}
+
+/* ---- overview ---- */
+.totcard{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);
+  border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:16px}
+.tot{background:var(--fair2);padding:13px 8px;text-align:center}
+.tot .v{font-family:var(--serif);font-size:22px;color:var(--cream)}
+.tot .v em{font-style:normal;color:var(--cream);font-size:15px}
+.tot .k{font-family:var(--mono);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--sage);margin-top:4px}
+.secthead{font-family:var(--mono);font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--sage);margin:20px 0 10px}
+.gridwrap{overflow-x:auto;background:var(--cream);border-radius:14px;padding:6px 4px}
+.grid{border-collapse:collapse;font-size:12px;color:#16243A;min-width:100%}
+.grid th{font-size:9px;letter-spacing:.14em;color:#5C6B82;padding:6px 5px;text-transform:uppercase;
+  border-bottom:1.5px solid #0C2340;text-align:center;font-weight:600}
+.grid td{padding:6px 5px;text-align:center;border-bottom:1px solid rgba(12,35,64,.14)}
+.grid td.hn{font-weight:700;color:#0C2340}
+.grid tr.sumrow td{border-top:2px solid #0C2340;font-weight:700;color:#0C2340}
+.sc{font-weight:700}
+.sc.bird{color:#1E8E4F}.sc.bog{color:#B22234}
+.ok{color:#0C2340;font-weight:700}
+.miss{color:#B22234}
+
+/* strokes gained card (Overview) */
+.sgcard{margin-top:16px;background:var(--cream);color:#16243A;border-radius:16px;
+  padding:14px 14px 10px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.sghead{font-family:var(--mono);font-size:10px;letter-spacing:.3em;text-transform:uppercase;
+  color:#5C6B82;margin-bottom:12px;text-align:center}
+.sgrow{display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px solid rgba(12,35,64,.1)}
+.sgrow:last-child{border-bottom:none}
+.sgrow .nm{flex:1;font-family:'Barlow',sans-serif;font-weight:600;font-size:13.5px;color:#0C2340}
+.sgrow .vl{font-weight:700;font-size:15px;min-width:52px;text-align:right}
+.sgrow.sgtot{border-top:2px solid #0C2340;margin-top:4px;padding-top:10px}
+.sgrow.sgtot .nm{font-weight:800}
+/* putting is NOT part of the ball-striking sum — detach it below the rule */
+.sgrow.sgafter{margin-top:8px;border-top:1px solid rgba(12,35,64,.1);padding-top:10px}
+.sgnote{font-family:var(--mono);font-size:10px;color:#5C6B82;text-align:center;padding:9px 2px 0;line-height:1.6}
+
+.rnotes{margin-top:16px}
+.rnotes textarea{width:100%;min-height:64px;padding:11px 12px;border:1px solid var(--line);border-radius:12px;
+  background:var(--fair2);color:var(--cream);font-size:14px;resize:vertical}
+.rnotes textarea::placeholder{color:var(--sage)}
+
+.savebtn{margin-top:18px;width:100%;padding:15px;border-radius:12px;background:var(--red);color:#F4EFE4;
+  font-family:var(--mono);font-size:12px;letter-spacing:.22em;text-transform:uppercase;font-weight:700}
+.savebtn:active{transform:scale(.99)}
+.saveout{margin-top:12px}
+.saveout .msg{font-family:var(--mono);font-size:11px;color:var(--sage);text-align:center;line-height:1.7;margin-bottom:8px}
+.saveout .msg b{color:var(--cream)}
+.saveout textarea{width:100%;min-height:120px;padding:10px;border:1px solid var(--line);border-radius:12px;
+  background:#08182F;color:var(--cream-dim);font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:10px;resize:vertical}
+.mailbtn{display:block;text-align:center;margin:0 0 10px;padding:12px;border:1px solid var(--line);
+  border-radius:12px;color:var(--cream);font-family:var(--mono);font-size:11px;letter-spacing:.2em;
+  text-transform:uppercase;text-decoration:none;background:var(--fair2)}
+.reset{margin-top:22px;width:100%;padding:12px;border:1px solid rgba(208,106,69,.5);
+  border-radius:12px;color:var(--clay);font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase}
+.savestat{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);pointer-events:none;
+  font-size:10px;letter-spacing:.24em;text-transform:uppercase;
+  color:var(--sage);background:rgba(9,26,52,.9);padding:6px 14px;border-radius:999px;border:1px solid var(--line);z-index:20}
+.savestat.live{color:#3FBE77;border-color:rgba(63,190,119,.5)}
+
+/* section labels inside the hole card */
+.seclbl{font-family:var(--mono);font-size:9px;letter-spacing:.26em;text-transform:uppercase;
+  color:#8792A4;padding:12px 16px 2px}
+
+/* hole nav (top + bottom) with hole numbers */
+.holenav{display:flex;align-items:center;gap:10px}
+.holenav.top{margin-bottom:12px}
+.holenav.bottom{margin-top:16px}
+.holenav .navbtn{flex:1;padding:13px 0;border-radius:11px;background:var(--navy3);color:var(--paper);
+  font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+  border:1px solid var(--line);text-align:center}
+.holenav .navbtn.dis{opacity:.4}
+.navnow{flex:none;font-family:var(--serif);font-weight:700;font-size:17px;color:#B22234;min-width:60px;text-align:center}
+
+/* auto tag on FIR/GIR chips */
+.autotag{font-size:8px;letter-spacing:.14em;margin-left:5px;opacity:.7;vertical-align:middle}
+
+/* confirm-score row */
+.confirmrow{padding:10px 14px 4px}
+.confirmscore{width:100%;padding:12px;border-radius:11px;background:#0C2340;color:#F4EFE4;
+  font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:700}
+.confirmscore.warn{background:#fff;color:#B22234;border:1.5px solid rgba(178,34,52,.5)}
+.confirmscore b{font-size:13px}
+.confirmok{text-align:center;font-family:var(--mono);font-size:10.5px;color:#5C6B82;padding:4px}
+
+/* caddy sub-tabs */
+.caddytabs{display:flex;gap:6px;margin-bottom:12px}
+.caddytab{flex:1;padding:9px 4px;border-radius:9px;border:1.5px solid rgba(12,35,64,.2);
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:#5C6B82}
+.caddytab.on{background:#0C2340;border-color:#0C2340;color:#F4EFE4;font-weight:700}
+.chart{width:100%;border-collapse:collapse;font-size:12.5px;color:#16243A}
+.chart th{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#5C6B82;font-weight:600;
+  padding:6px 4px;border-bottom:1.5px solid #0C2340;text-align:center}
+.chart th:first-child{text-align:left}
+.chart td{padding:7px 4px;text-align:center;border-bottom:1px solid rgba(12,35,64,.1)}
+.chart td.cl{text-align:left;font-weight:700;color:#0C2340}
+.chart td.mut{color:#8792A4}
+.chart .par{color:#B22234;font-size:11px}
+.chart td.cl .bagn{font-family:'Barlow',sans-serif;font-weight:700;color:#0C2340}
+.chart td.cl .bags{font-family:'Barlow',sans-serif;font-weight:500;font-size:10px;color:#8792A4;margin-left:6px;letter-spacing:0}
+.chartnote{font-family:var(--mono);font-size:10px;color:#5C6B82;line-height:1.6;padding:9px 2px 0;text-align:center}
+.windsub{display:flex;gap:6px;margin-bottom:10px}
+.windbtn{flex:1;padding:8px 4px;border-radius:8px;border:1.5px solid rgba(12,35,64,.2);
+  font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#5C6B82}
+.windbtn.on{background:#0C2340;border-color:#0C2340;color:#fff;font-weight:700}
+/* putting break chart: zebra rows, selected slope tinted, inside-the-edge italics */
+.puttlbl{font-family:var(--mono);font-size:9px;letter-spacing:.18em;text-transform:uppercase;
+  color:#5C6B82;text-align:center;margin:16px 0 0}
+.puttchart{font-size:13px;margin-top:10px}
+.puttchart tr.zeb{background:rgba(12,35,64,.055)}
+.puttchart tr.selrow{background:rgba(27,78,142,.14)}
+.puttchart td.ins{font-style:italic}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="masthead">
+    <div class="mh-row"><div class="mh-ln"></div><h1 class="mh-title">Round Tracker</h1><div class="mh-ln"></div></div>
+    <div class="mh-tick"></div>
+    <input class="mh-course" id="in-course" type="text" placeholder="Course name" autocomplete="off" aria-label="Course name">
+    <input class="mh-date" id="in-date" type="date" aria-label="Round date">
+  </header>
+  <nav class="tabs" role="tablist">
+    <button class="tab on" data-tab="hole" role="tab">Hole</button>
+    <button class="tab" data-tab="overview" role="tab">Overview</button>
+  </nav>
+  <main class="main" id="main"></main>
+  <div class="savestat" id="savestat" role="status">Loading</div>
+</div>
+
+<script type="module">
+/* Course-free shot-by-shot tracker — the same cell engine as the course
+   trackers, with no course book, so it works on any course. The round rides
+   this page's own ntfy channel; on save it drops a marker on the shared hub
+   dispatch channel that Pencil Wedge watches, and opens mail with the full
+   breakdown as a second copy. Nothing here posts to a sheet directly. */
+const NTFY = "https://ntfy.sh";
+const TOPIC = "rt-any-course-bab3b8c62b";
+// Shared channel Pencil Wedge watches: on save we post the round-done marker
+// here WITH this page's URL, so the worker knows which page to pull the round
+// from. One worker, any number of courses.
+const DISPATCH = "rt-hub-dispatch-9f2c7a41b3";
+const LS_KEY = "rt_any_course_v1";
+const EMAIL = "1brown.eric@gmail.com";
+
+const HOLES = Array.from({length:18}, (_,i)=>({n:i+1}));
+
+/* Entry vocabularies — mirrors the Golf Hub My Bag */
+const CLUBS = ["D","MD","7w","3H","4i","5H","6i","7i","8i","9i","PW","48","52","56","58"];
+const CLUB_EXPORT = { MD: "Mini Driver" };   // stored short, exported as the sheet knows it
+// Display names + specs for the My Bag list — mirrors the Golf Hub "My Bag" exactly.
+const BAG_DISPLAY = {
+  D:{name:"Driver",spec:"GT3 11° (C2 10g)"}, MD:{name:"Mini Driver",spec:"GT280 13°"},
+  "7w":{name:"7 Wood",spec:"GT2 21° (A1)"}, "3H":{name:"3 Hybrid",spec:"18°"},
+  "4i":{name:"4 Iron",spec:""}, "5H":{name:"5 Hybrid",spec:"23°"},
+  "6i":{name:"6 Iron",spec:"27°"}, "7i":{name:"7 Iron",spec:"30°"},
+  "8i":{name:"8 Iron",spec:"34°"}, "9i":{name:"9 Iron",spec:"38°"},
+  PW:{name:"PW",spec:"43°"}, "48":{name:"AW",spec:"48°"},
+  "52":{name:"52°",spec:""}, "56":{name:"56°",spec:""}, "58":{name:"58°",spec:""}
+};
+
+/* ---- caddy data (from otto_golf.md: 2026 Golf Distances with Wind Chart) ----
+   per club: c=[carry,total] calm; h/t/i/d = head, tail, 45-into, 45-down wind
+   [carry,total] at 5/10/20 mph; xl/xr = end-drift yards at 5/10/20 for a full
+   left-to-right / right-to-left crosswind (positive = ball ends RIGHT). */
+const CADDY = {
+  D:  {c:[275,295], h:[[269,288],[262,279],[248,262]], t:[[281,302],[286,308],[294,318]],
+       i:[[271,290],[266,284],[256,272]], d:[[279,300],[283,305],[288,311]],
+       xl:[21,28,43], xr:[7,0,-14]},
+  MD: {c:[240,265], h:[[236,260],[230,253],[220,240]], t:[[244,270],[248,275],[256,285]],
+       i:[[237,261],[233,256],[226,248]], d:[[243,269],[246,272],[251,279]],
+       xl:[17,23,36], xr:[4.5,-2,-15]},
+  "7w":{c:[225,245], h:[[221,240],[215,233],[205,221]], t:[[229,250],[233,255],[241,264]],
+       i:[[222,241],[218,237],[211,228]], d:[[228,249],[231,252],[236,258]],
+       xl:[17,23,35], xr:[4,-2,-15]},
+  "3H":{c:[220,235], h:[[216,230],[210,223],[200,211]], t:[[224,240],[228,244],[236,254]],
+       i:[[217,231],[213,227],[206,219]], d:[[223,239],[226,242],[231,248]],
+       xl:[16,22,35], xr:[4,-2,-14]},
+  "4i":{c:[215,225], h:[[211,220],[205,213],[195,201]], t:[[219,230],[223,234],[231,244]],
+       i:[[212,221],[208,217],[201,209]], d:[[218,229],[221,232],[226,238]],
+       xl:[15,20,32], xr:[3,-2,-13]},
+  "5H":{c:[200,215], h:[[196,210],[192,206],[182,194]], t:[[204,220],[208,224],[214,232]],
+       i:[[197,211],[194,208],[187,200]], d:[[203,219],[206,222],[210,227]],
+       xl:[12,16,26], xr:[2,-3,-12]},
+  "6i":{c:[193,207], h:[[189,202],[185,198],[179,190]], t:[[197,212],[199,214],[205,221]],
+       i:[[190,203],[187,200],[183,195]], d:[[196,211],[197,212],[201,216]],
+       xl:[10,15,24], xr:[2,-3,-12]},
+  "7i":{c:[184,195], h:[[180,190],[178,188],[170,179]], t:[[188,200],[190,202],[194,207]],
+       i:[[181,192],[180,190],[174,183]], d:[[187,198],[188,200],[191,203]],
+       xl:[9,13,21], xr:[1,-3,-11]},
+  "8i":{c:[168,179], h:[[165,175],[162,172],[156,165]], t:[[171,183],[173,185],[177,190]],
+       i:[[166,177],[164,174],[160,170]], d:[[170,181],[172,184],[174,186]],
+       xl:[7,11,17], xr:[1,-3,-10]},
+  "9i":{c:[152,163], h:[[150,161],[148,158],[142,151]], t:[[154,165],[156,168],[160,172]],
+       i:[[151,162],[149,159],[145,155]], d:[[153,164],[155,167],[158,170]],
+       xl:[6,9,14], xr:[0,-3,-9]},
+  PW: {c:[138,144], h:[[136,142],[134,139],[130,135]], t:[[140,146],[142,149],[144,151]],
+       i:[[137,143],[135,141],[132,137]], d:[[139,145],[141,147],[142,149]],
+       xl:[4,7,12], xr:[0,-3,-8]},
+  "48":{c:[127,131], h:[[125,129],[123,126],[121,124]], t:[[129,133],[131,136],[133,138]],
+       i:[[126,130],[124,128],[123,126]], d:[[128,132],[130,134],[131,136]],
+       xl:[4,6,10], xr:[0,-2,-6]},
+  "52":{c:[114,119], h:[[112,117],[112,117],[108,112]], t:[[116,121],[116,121],[118,124]],
+       i:[[113,118],[113,118],[110,114]], d:[[115,120],[115,120],[117,122]],
+       xl:[3,4.5,8], xr:[0,-1.5,-4.5]},
+  "56":{c:[103,108], h:[[102,107],[100,105],[98,102]], t:[[104,109],[105,110],[106,111]],
+       i:[[102,107],[101,106],[99,103]], d:[[104,109],[104,109],[105,110]],
+       xl:[2,3,5], xr:[0,-1,-3]},
+  "58":{c:[95,98],  h:[[94,97],[93,96],[91,93]],  t:[[96,99],[97,100],[98,101]],
+       i:[[94,97],[94,97],[92,95]],  d:[[96,99],[96,99],[97,100]],
+       xl:[2,3,4.5], xr:[0,-1,-3]}
+};
+const LIES  = ["Tee","Fairway","Rough","Deep Rough","Sand","Recovery","Other"];
+const TYPES = ["Drive","Long App (176+)","Mid App (101-175)","Short App (100&In)","Layup","Punch Out"];
+const ACCS  = ["Good","Right","Left","Short","Long","Water","Sand","OB","Unplayable"];
+const BAD_ACC = new Set(["Water","OB","Unplayable"]);
+
+/* Generated from skills/round-tracker/pull_round.py — do not hand-edit. */
+var EXPECTED = {"10": [null, 2.18, 2.34, 2.43, 3.45], "20": [null, 2.4, 2.59, 2.53, 3.51], "30": [null, 2.52, 2.7, 2.66, 3.57], "40": [null, 2.6, 2.78, 2.82, 3.71], "50": [null, 2.66, 2.87, 2.92, 3.79], "60": [null, 2.7, 2.91, 3.15, 3.83], "70": [null, 2.72, 2.93, 3.21, 3.84], "80": [null, 2.75, 2.96, 3.24, 3.84], "90": [null, 2.77, 2.99, 3.24, 3.82], "100": [2.92, 2.8, 3.02, 3.23, 3.8], "120": [2.99, 2.85, 3.08, 3.21, 3.78], "140": [2.97, 2.91, 3.15, 3.22, 3.8], "160": [2.99, 2.98, 3.23, 3.28, 3.81], "180": [3.05, 3.08, 3.31, 3.4, 3.82], "200": [3.12, 3.19, 3.42, 3.55, 3.87], "220": [3.17, 3.32, 3.53, 3.7, 3.92], "240": [3.25, 3.45, 3.64, 3.84, 3.97], "260": [3.45, 3.58, 3.74, 3.93, 4.03], "280": [3.65, 3.69, 3.83, 4.0, 4.1], "300": [3.71, 3.78, 3.9, 4.04, 4.2], "320": [3.79, 3.84, 3.95, 4.12, 4.31], "340": [3.86, 3.88, 4.02, 4.26, 4.44], "360": [3.92, 3.95, 4.11, 4.41, 4.56], "380": [3.96, 4.03, 4.21, 4.55, 4.66], "400": [3.99, 4.11, 4.3, 4.69, 4.75], "420": [4.02, 4.19, 4.4, 4.83, 4.84], "440": [4.08, 4.27, 4.49, 4.97, 4.94], "460": [4.17, 4.34, 4.58, 5.11, 5.03], "480": [4.28, 4.42, 4.68, 5.25, 5.13], "500": [4.41, 4.5, 4.77, 5.4, 5.22], "520": [4.54, 4.58, 4.87, 5.54, 5.32], "540": [4.65, 4.66, 4.96, 5.68, 5.41], "560": [4.74, 4.74, 5.06, 5.82, 5.51], "580": [4.79, 4.82, 5.15, 5.96, 5.6], "600": [4.82, 4.89, 5.25, 6.1, 5.7]};
+var LIE_COL = {"Tee": 0, "Fairway": 1, "Rough": 2, "Deep Rough": 2, "Other": 2, "Sand": 3, "Recovery": 4};
+var PUTTING = [[0, 2, 1.01, 1.02, 1.03], [3, 3, 1.04, 1.08, 1.12], [4, 4, 1.13, 1.22, 1.3], [5, 5, 1.23, 1.37, 1.5], [6, 6, 1.34, 1.48, 1.62], [7, 8, 1.5, 1.62, 1.72], [9, 10, 1.61, 1.72, 1.82], [11, 12, 1.72, 1.82, 1.9], [13, 15, 1.8, 1.88, 1.96], [16, 19, 1.87, 1.95, 2.02], [20, 24, 1.92, 2.0, 2.1], [25, 29, 1.96, 2.06, 2.18], [30, 34, 1.99, 2.12, 2.26], [35, 39, 2.02, 2.18, 2.35], [40, 44, 2.05, 2.24, 2.44], [45, 49, 2.07, 2.29, 2.52], [50, 54, 2.09, 2.33, 2.58], [55, 59, 2.11, 2.37, 2.64], [60, 69, 2.14, 2.42, 2.72], [70, 79, 2.17, 2.47, 2.8], [80, 99, 2.2, 2.52, 2.88], [100, 9999, 2.25, 2.6, 2.98]];
+var BASE_IDX = {"scratch": 0, "5hcp": 1, "9hcp": 2};
+var SCALE = {"scratch": 0.0, "5hcp": 0.28, "9hcp": 0.5};
+
+/* Strokes gained — a faithful JS port of hole_sg() in
+   skills/round-tracker/pull_round.py (Broadie 2011 Table 9 scratch baseline,
+   derived 5/9 HCP amateur scaling). Tables above are machine-generated from
+   that file; the functions below mirror it line for line so a round scored on
+   a phone produces the same numbers the VM would. Verified differentially —
+   see scripts/verify_sg_port.py. */
+var SG_KEYS = ["driver","p176","p101","p100","putting","ball_strike"];
+
+/* Python's round() is correctly-rounded decimal with ties-to-even. The naive
+   JS idiom Math.round(x*1000)/1000 disagrees on ~0.5% of holes because the
+   *1000 scaling introduces its own error. Read the double's exact decimal
+   expansion instead, so the phone and pull_round.py agree to the last digit. */
+function sgRound(x, places){
+  if (!isFinite(x)) return x;
+  var neg = x < 0, v = Math.abs(x);
+  var s = v.toFixed(18);
+  var cut = s.indexOf(".") + 1 + places;
+  var kept = s.slice(0, cut), rest = s.slice(cut);
+  var keptNum = Number(kept), step = Math.pow(10, -places);
+  var first = rest.charCodeAt(0) - 48;
+  var tail = /[1-9]/.test(rest.slice(1));
+  var out;
+  if (first > 5 || (first === 5 && tail)) out = keptNum + step;
+  else if (first === 5 && !tail){                      // exact tie -> half to even
+    var lastDigit = kept.charCodeAt(kept.length - 1) - 48;
+    out = (lastDigit % 2 === 0) ? keptNum : keptNum + step;
+  } else out = keptNum;
+  out = Number(out.toFixed(places));
+  return neg ? -out : out;
+}
+
+function sgInterp(dist, col){
+  var pts = Object.keys(EXPECTED).map(Number).sort(function(a,b){return a-b;});
+  dist = Math.max(pts[0], Math.min(dist, pts[pts.length-1]));
+  var lo = pts[0], hi = pts[pts.length-1], i;
+  for (i=0;i<pts.length;i++){ if (pts[i] <= dist) lo = pts[i]; }
+  for (i=pts.length-1;i>=0;i--){ if (pts[i] >= dist) hi = pts[i]; }
+  function val(d){
+    var v = EXPECTED[String(d)][col];
+    return (v === null || v === undefined) ? EXPECTED[String(d)][1] : v;  // no Tee value -> Fairway
+  }
+  if (lo === hi) return val(lo);
+  var f = (dist - lo) / (hi - lo);
+  return val(lo) + f * (val(hi) - val(lo));
+}
+
+function sgEStrokes(dist, lie, baseline){
+  var col = (lie in LIE_COL) ? LIE_COL[lie] : 2;
+  var scratch = sgInterp(dist, col);
+  if (baseline === "scratch") return scratch;
+  var pen = 0.0045 * dist + 0.05;
+  var disc = dist <= 50 ? 0.4 : dist <= 100 ? 0.7 : 1.0;
+  pen *= SCALE[baseline] * disc;
+  if (lie === "Sand") pen *= 1.10;
+  return scratch + pen;
+}
+
+function sgEPutts(feet, baseline){
+  for (var i=0;i<PUTTING.length;i++){
+    var r = PUTTING[i];
+    if (feet >= r[0] && feet <= r[1]) return r[2 + BASE_IDX[baseline]];
+  }
+  return PUTTING[PUTTING.length-1][2 + BASE_IDX[baseline]];
+}
+
+function sgCategory(shot, idx){
+  var club = String(shot.club || "").trim().toLowerCase();
+  if (idx === 0 && shot.type === "Drive" &&
+      (club === "d" || club === "driver" || club === "md" || club === "mini driver")) return "driver";
+  var d = shot.dist_before || 0;
+  if (d >= 176) return "p176";
+  if (d >= 101) return "p101";
+  return "p100";
+}
+
+function sgNextLie(shots, i){
+  return (i + 1 < shots.length) ? (shots[i+1].lie || "Rough") : "Rough";
+}
+
+/* SG per category for one hole, for one baseline (default 9hcp). */
+function holeSG(hole, baseline){
+  baseline = baseline || "9hcp";
+  var out = {driver:0, p176:0, p101:0, p100:0, putting:0, ball_strike:0};
+  var shots = hole.shots || [];
+  var p1 = (hole.p1_ft === undefined) ? null : hole.p1_ft;
+  var putts = hole.putts_tm || 0;
+
+  for (var i=0;i<shots.length;i++){
+    var s = shots[i];
+    var cat = sgCategory(s, i);
+    var db = (s.dist_before === undefined) ? null : s.dist_before;
+    var da = (s.dist_after === undefined) ? null : s.dist_after;
+    if (db === null) continue;
+    var start = sgEStrokes(db, s.lie || "Rough", baseline);
+    var penal = (s.acc === "OB" || s.acc === "Water" || s.acc === "Unplayable");
+    var nxt = (i + 1 < shots.length) ? shots[i+1] : null;
+    if (penal && da === null){ out[cat] += -1.0; continue; }   // ball gone, replayed
+    var fin;
+    if (da !== null){
+      fin = sgEStrokes(da, sgNextLie(shots, i), baseline);
+    } else if (nxt !== null && nxt.dist_before !== null && nxt.dist_before !== undefined){
+      fin = sgEStrokes(nxt.dist_before, nxt.lie || "Rough", baseline);
+    } else {
+      fin = (p1 !== null) ? sgEPutts(p1, baseline) : 1.0;
+    }
+    out[cat] += start - (1 + fin);
+    if (penal) out[cat] += -1.0;
+  }
+  if (p1 !== null && putts) out.putting = sgEPutts(p1, baseline) - putts;
+  out.ball_strike = out.driver + out.p176 + out.p101 + out.p100;
+  for (var k in out) out[k] = sgRound(out[k], 3);
+  return out;
+}
+
+/* Round totals: sum every hole, same six categories. */
+function roundSG(holes, baseline){
+  var tot = {driver:0, p176:0, p101:0, p100:0, putting:0, ball_strike:0};
+  (holes || []).forEach(function(h){
+    var s = holeSG(h, baseline);
+    SG_KEYS.forEach(function(k){ tot[k] += s[k]; });
+  });
+  SG_KEYS.forEach(function(k){ tot[k] = sgRound(tot[k], 2); });
+  return tot;
+}
+
+
+const BREAK_SLOPES = [0.5,1,1.5,2,2.5,3,3.5,4];
+const BREAK_FT = [2,3,4,5,6,7,8,9,10,11,12,15,18,21,30,60];
+const INSIDE_EDGE = 2.125;
+const BREAK = {
+  "8":[[0.1,0.4,0.7,1,1.2,1.5,1.7,2,2.5,2.5,3,3.5,4.5,5,8,16],
+       [0.3,0.8,1.3,2,2.4,3,3.5,4,4.5,5,5.5,7,9,10,15,31],
+       [0.4,1.2,2,3,3.6,4.5,5,6,7,8,8,11,13,16,23,48],
+       [0.5,1.6,2.7,3.7,4.8,6,7,8,9,10,11,14,18,21,30,60],
+       [0.7,2,3.3,4.7,6,7,9,10,11,13,14,18,22,26,36,78],
+       [0.8,2.4,4,5.6,7,9,10,12,14,15,17,22,23,21,48,96],
+       [0.9,2.8,4.7,7,8,10,12,14,16,18,20,25,31,36,54,108],
+       [1,3,5,7,10,12,14,16,18,20,22,29,36,42,60,126]],
+  "9":[[0.1,0.5,0.8,1.1,1.4,1.7,2,2.3,2.6,3,3,4,5,6,9,18],
+       [0.3,0.9,1.5,2.1,2.7,3.3,4,4.5,5.1,6,6,8,10,12,17,36],
+       [0.5,1.4,2.3,3.2,4.1,5,6,7,8,9,9,12,15,18,26,54],
+       [0.6,1.8,3,4.2,5.4,7,8,9,10,11,13,16,20,23,36,72],
+       [0.7,2.3,3.7,5.3,7,8,10,11,13,14,16,20,25,29,42,90],
+       [0.9,2.7,4.5,6,8,10,12,14,15,17,19,24,30,36,51,108],
+       [1,3.2,5.2,7,9,12,14,16,18,20,22,28,36,41,60,126],
+       [1.2,3.6,6,8,11,13,16,18,20,23,25,32,40,48,72,144]],
+  "10":[[0.2,0.5,0.8,1.2,1.5,1.8,2.2,2.5,2.8,3.2,3.5,4.5,5.5,7,10,20],
+       [0.3,1,1.7,2.3,3,3.7,4.3,5,5.7,6,7,9,11,13,19,39],
+       [0.5,1.5,2.5,3.5,4.5,5.5,7,8,9,10,11,14,17,20,29,59],
+       [0.7,2,3.3,4.7,6,7,9,10,11,13,14,18,22,26,38,78],
+       [0.8,2.5,4.2,5.8,8,9,11,13,14,16,18,23,28,33,48,98],
+       [1,3,5,7,9,11,13,15,17,19,21,27,33,39,57,117],
+       [1.2,3.5,5.8,8,11,13,15,18,20,22,25,32,39,46,67,137],
+       [1.3,4,7,9,12,15,17,20,23,25,28,36,44,52,76,156]],
+  "11":[[0.2,0.6,0.9,1.3,1.7,2,2.4,2.8,3.1,3.5,3.9,5,6,7,10,21],
+       [0.4,1.1,1.8,2.6,3.3,4,4.8,5.5,6,7,8,10,12,14,21,42],
+       [0.5,1.7,2.8,3.9,5,6,7,8,9,10,12,15,18,21,31,64],
+       [0.7,2.2,3.7,5.1,7,8,10,11,12,14,15,20,24,29,42,86],
+       [0.9,2.8,4.6,6,8,10,12,14,16,17,19,25,30,36,52,108],
+       [1.1,3.3,5.5,8,10,12,14,17,19,21,23,30,36,42,63,132],
+       [1.3,3.9,6,9,12,14,17,19,22,24,27,35,42,50,73,150],
+       [1.5,4.4,7,10,13,16,19,22,25,28,31,40,48,57,84,174]],
+  "12":[[0.2,0.6,1,1.4,1.8,2.2,2.6,3,3.4,3.8,4.2,5.4,7,8,11,23],
+       [0.4,1.2,2,2.8,3.6,4.4,5.2,6,7,8,8,11,13,16,23,48],
+       [0.6,1.8,3,4.2,5.4,7,8,9,10,11,13,16,20,23,34,70],
+       [0.8,2.4,4,5.6,7,9,10,12,14,15,17,22,26,31,46,94],
+       [1,3,5,7,9,11,13,15,17,19,21,27,33,39,57,117],
+       [1.2,3.6,6,8,11,13,16,18,20,23,25,32,40,48,68,140],
+       [1.4,4.2,7,10,13,15,18,21,24,27,29,38,46,56,80,164],
+       [1.6,4.8,8,11,14,18,21,24,27,30,34,43,53,62,91,187]]
+};
+/* Up/downhill multipliers, derived per stimp from the WhyGolf stimp cards
+   (each U/D section vs its flat section on the 2% side-slope row): uphill putts
+   break less, downhill break more, and the spread grows on slower greens. */
+const BREAK_UD = {
+  "8": {u1:0.85,u2:0.74,u3:0.62,d1:1.21,d2:1.42,d3:1.61},
+  "9": {u1:0.87,u2:0.74,u3:0.65,d1:1.20,d2:1.37,d3:1.55},
+  "10":{u1:0.88,u2:0.78,u3:0.67,d1:1.17,d2:1.31,d3:1.47},
+  "11":{u1:0.90,u2:0.79,u3:0.70,d1:1.13,d2:1.28,d3:1.42},
+  "12":{u1:0.93,u2:0.84,u3:0.73,d1:1.14,d2:1.28,d3:1.42}
+};
+const UD_LABELS = [["flat","Flat putt"],["u1","1% uphill"],["u2","2% uphill"],["u3","3% uphill"],
+                   ["d1","1% downhill"],["d2","2% downhill"],["d3","3% downhill"]];
+let puttIn = { len:null, slope:"2", stimp:"10", ud:"flat", out:"" };
+
+/* ---------- state ----------
+   cells: "f.<hole>.<key>" score,p1,p2,p3,putts,pen,fir,gir,note
+          "sh.<hole>" shots array   "par.<hole>" 3|4|5
+          "course" string   "rdate" YYYY-MM-DD   "rnote" string
+          "tmode" basic|advanced */
+let state = { cells: {}, resetAt: 0 };
+let fields = {};
+let shots = {};
+let parOv = {};
+let course = "";
+let rdate = "";
+let rnote = "";
+let trackMode = "basic";   // "basic" | "advanced" — how this round is being kept
+let tab = "hole";
+let hole = 1;
+let editing = null;
+let mode = "connecting";
+let lastExport = null;
+let caddyIn = { dist:null, cap:null, mph:null, dir:"calm", out:"" };
+let caddyTab = "swing";
+let windTab = "into";
+
+const validShotArr = v => Array.isArray(v) && v.every(s => s && typeof s === "object");
+const validCell = (k, c) => {
+  if (!c || typeof c.t !== "number") return false;
+  if (k.startsWith("sh.")) return validShotArr(c.v);
+  return c.v === null || typeof c.v === "number" || typeof c.v === "string";
+};
+
+function derive(){
+  fields = {}; shots = {}; parOv = {}; course = ""; rdate = ""; rnote = ""; trackMode = "basic";
+  for (const [k, c] of Object.entries(state.cells)){
+    if (c.t <= state.resetAt) continue;
+    if (k.startsWith("sh.")){ shots[k.slice(3)] = c.v; continue; }
+    if (k.startsWith("par.")){ if ([3,4,5].includes(c.v)) parOv[k.slice(4)] = c.v; continue; }
+    if (k === "course"){ course = typeof c.v === "string" ? c.v : ""; continue; }
+    if (k === "rdate"){ rdate = typeof c.v === "string" ? c.v : ""; continue; }
+    if (k === "rnote"){ rnote = typeof c.v === "string" ? c.v : ""; continue; }
+    if (k === "tmode"){ if (c.v === "basic" || c.v === "advanced") trackMode = c.v; continue; }
+    if (k.startsWith("f.")){
+      const [, hn, key] = k.split(".");
+      if (!fields[hn]) fields[hn] = {};
+      fields[hn][key] = c.v;
+    }
+  }
+}
+function merge(incoming){
+  if (!incoming || typeof incoming !== "object" || !incoming.cells) return false;
+  let changed = false;
+  if ((incoming.resetAt||0) > state.resetAt){ state.resetAt = incoming.resetAt; changed = true; }
+  for (const [k, c] of Object.entries(incoming.cells || {})){
+    if (!validCell(k, c)) continue;
+    if (!state.cells[k] || c.t > state.cells[k].t){ state.cells[k] = c; changed = true; }
+  }
+  if (changed) derive();
+  return changed;
+}
+function lsLoad(){ try{ const s = JSON.parse(localStorage.getItem(LS_KEY)); if (s && s.cells) state = s; }catch(e){} derive(); }
+function lsSave(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){} }
+
+/* ---------- writes ----------
+   ntfy.sh truncates/attaches bodies over ~4 KB, so NEVER post the whole
+   state: publish only the cells dirtied since the last successful send,
+   and re-seed the channel in small chunks. */
+let pubTimer = null;
+const dirty = new Set();
+async function postMsg(payload){
+  await fetch(`${NTFY}/${TOPIC}`, { method:"POST", body: JSON.stringify(payload) });
+}
+function publish(){
+  clearTimeout(pubTimer);
+  pubTimer = setTimeout(async () => {
+    const keys = [...dirty];
+    const payload = { cells:{}, resetAt: state.resetAt };
+    for (const k of keys) if (state.cells[k]) payload.cells[k] = state.cells[k];
+    try {
+      await postMsg(payload);
+      keys.forEach(k => dirty.delete(k));
+      if (mode !== "live") { mode = "live"; render(); }
+    } catch(e){ mode = "offline"; render(); }
+  }, 350);
+}
+async function seedChannel(){
+  /* replay everything we hold, 12 cells per message to stay under the cap */
+  const keys = Object.keys(state.cells);
+  for (let i = 0; i < keys.length; i += 12){
+    const payload = { cells:{}, resetAt: state.resetAt };
+    for (const k of keys.slice(i, i+12)) payload.cells[k] = state.cells[k];
+    try { await postMsg(payload); } catch(e){ return; }
+  }
+}
+function setCell(key, val){
+  state.cells[key] = { v: val, t: Date.now() };
+  dirty.add(key);
+  derive(); lsSave(); publish();
+}
+const setField = (hn, key, val) => { setCell(`f.${hn}.${key}`, val); render(); };
+const setShots = (hn, arr) => { setCell(`sh.${hn}`, arr); render(); };
+function clearRound(){
+  if (!confirm("Wipe this round from every device?")) return;
+  state = { cells: {}, resetAt: Date.now() };
+  dirty.clear();
+  hole = 1; editing = null; derive(); lsSave();
+  postMsg({ cells:{}, resetAt: state.resetAt }).catch(()=>{});
+  render(); syncMeta();
+}
+
+/* ---------- helpers ---------- */
+const F = hn => fields[hn] || {};
+const SH = hn => shots[hn] || [];
+const parFor = hn => parOv[hn] || 4;
+const roundPar = () => HOLES.reduce((a,h)=>a+parFor(h.n),0);
+const fwPossible = () => HOLES.filter(h=>parFor(h.n)!==3).length;
+const todayISO = () => { const d=new Date(); const p=n=>String(n).padStart(2,"0");
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; };
+const suggestType = (isFirst, db) => isFirst ? "Drive"
+  : db == null ? null : db >= 176 ? "Long App (176+)" : db >= 101 ? "Mid App (101-175)" : "Short App (100&In)";
+function suggestClub(db, isFirst, par){
+  if (db == null) return isFirst && par !== 3 ? "D" : null;
+  if (isFirst && par !== 3) return "D";
+  let best = null, bestScore = 1e9;
+  for (const c of CLUBS){
+    const spec = CADDY[c];
+    if (!spec) continue;
+    const carry = spec.c[0];
+    const score = carry < db ? (db - carry) * 1.25 : carry - db;
+    if (score < bestScore){ bestScore = score; best = c; }
+  }
+  return best;
+}
+function puttCount(hn){
+  const f = F(hn);
+  if (f.putts != null) return f.putts;
+  const n = [f.p1, f.p2, f.p3].filter(v => v != null).length;
+  return n || null;
+}
+function autoFir(h){
+  if (parFor(h.n) === 3) return null;
+  const sh = SH(h.n);
+  if (sh.length >= 2) return sh[1].lie === "Fairway" ? "Y" : "N";
+  if (sh[0] && BAD_ACC.has(sh[0].acc)) return "N";
+  return null;
+}
+function autoGir(h){
+  const sh = SH(h.n);
+  const idx = sh.findIndex(s => s.da == null);
+  if (idx < 0) return null;
+  return (idx + 1) <= (parFor(h.n) - 2) ? "Y" : "N";
+}
+const effFir = h => { const v = F(h.n).fir; return v ? v : autoFir(h); };
+const effGir = h => { const v = F(h.n).gir; return v ? v : autoGir(h); };
+function shotSum(hn){
+  const p = puttCount(hn) || 0, pen = F(hn).pen || 0;
+  const s = SH(hn).length;
+  return s ? s + p + pen : null;
+}
+function plusMinus(score, par){
+  if (score == null) return "";
+  const d = score - par;
+  return d === 0 ? "E" : d > 0 ? `+${d}` : `${d}`;
+}
+function totals(){
+  let score=0, par=0, thru=0, f9=0, b9=0, fwH=0, fwP=0, girH=0, girP=0, putts=0, pen=0,
+      udC=0, udX=0;
+  for (const h of HOLES){
+    const f = F(h.n);
+    if (f.score == null) continue;
+    thru++; score += f.score; par += parFor(h.n);
+    if (h.n <= 9) f9 += f.score; else b9 += f.score;
+    const fir = effFir(h), gir = effGir(h);
+    if (parFor(h.n) !== 3 && (fir === "Y" || fir === "N")){ fwP++; if (fir === "Y") fwH++; }
+    if (gir === "Y" || gir === "N"){ girP++; if (gir === "Y") girH++; }
+    putts += puttCount(h.n) || 0;
+    pen += f.pen || 0;
+    if (gir === "N"){
+      const sh = SH(h.n);
+      const last = sh[sh.length - 1];
+      if (last && last.db != null && last.db <= 50){
+        udX++;
+        if ((puttCount(h.n) || 0) <= 1 && f.score <= parFor(h.n)) udC++;
+      }
+    }
+  }
+  return {score, par, thru, f9, b9, fwH, fwP, girH, girP, putts, pen, udC, udX};
+}
+
+/* ---------- round JSON export (raw — SG recomputed at ingestion) ---------- */
+function buildRoundJSON(){
+  const t = totals();
+  const holesOut = HOLES.map(h => {
+    const f = F(h.n);
+    const sh = SH(h.n).map(s => ({
+      club: CLUB_EXPORT[s.club] || s.club,
+      lie: s.lie,
+      dist_before: s.db ?? null,
+      dist_after: s.da ?? null,
+      type: s.type,
+      acc: s.acc
+    }));
+    return {
+      hole: h.n, par: parFor(h.n),
+      shots: sh,
+      p1_ft: f.p1 ?? null, p2_ft: f.p2 ?? null, p3_ft: f.p3 ?? null,
+      putts_tm: puttCount(h.n) ?? 0,
+      score: f.score ?? null,
+      plus_minus: plusMinus(f.score, parFor(h.n)),
+      fir: parFor(h.n) === 3 ? null : effFir(h),
+      gir: effGir(h),
+      penalty: f.pen || 0,
+      notes: f.note || ""
+    };
+  });
+  const fwPoss = fwPossible();
+  return {
+    round: {
+      date: rdate || todayISO(), course: course || "Unnamed course", par: roundPar(),
+      score: t.score, front_9: t.f9, back_9: t.b9,
+      fairways_hit: t.fwH, fairways_possible: fwPoss,
+      fairways_pct: `${Math.round(t.fwH/(fwPoss||1)*100)}%`,
+      gir: t.girH, gir_pct: `${(t.girH/18*100).toFixed(1)}%`,
+      putts_tm: t.putts,
+      mode: trackMode,
+      notes: rnote || ""
+    },
+    holes: holesOut
+  };
+}
+function breakdownText(data){
+  const L = [];
+  const r = data.round;
+  L.push(`ROUND TRACKER - ${r.course} - ${r.date}`);
+  L.push(`Score ${r.score} (${r.front_9}/${r.back_9}) - FW ${r.fairways_hit}/${r.fairways_possible} - GIR ${r.gir} - Putts ${r.putts_tm}`);
+  L.push("");
+  for (const h of data.holes){
+    const sh = h.shots.map(s =>
+      `${s.club} ${s.lie} ${s.dist_before}>${s.dist_after ?? "grn"} ${s.acc}`).join("; ");
+    const putts = [h.p1_ft, h.p2_ft, h.p3_ft].filter(v => v != null).join(",");
+    const flags = [h.fir === "Y" ? "FIR" : h.fir === "N" ? "no-FIR" : "",
+                   h.gir === "Y" ? "GIR" : h.gir === "N" ? "no-GIR" : "",
+                   h.penalty ? `PEN ${h.penalty}` : ""].filter(Boolean).join(" ");
+    L.push(`H${h.hole} P${h.par}: ${sh || "-"} | putts ${putts || "-"} (${h.putts_tm}) | ${h.score ?? "-"} ${h.plus_minus} ${flags}${h.notes ? " | " + h.notes : ""}`);
+  }
+  if (r.notes){ L.push(""); L.push("Notes: " + r.notes); }
+  return L.join("\n");
+}
+async function saveRound(){
+  /* the round data itself is already on the channel cell-by-cell; re-seed to
+     be safe, drop a "saved" marker for Home Base, and email a full breakdown
+     so a copy exists even if everything else has an issue. */
+  const data = buildRoundJSON();
+  lastExport = JSON.stringify(data, null, 1);
+  let sent = false;
+  try {
+    await seedChannel();
+    const marker = { kind:"round_saved", t: Date.now(), score: data.round.score, page: location.href, topic: TOPIC };
+    await postMsg(marker);
+    try { await fetch(`${NTFY}/${DISPATCH}`, { method:"POST", body: JSON.stringify(marker) }); } catch(e){}
+    sent = true;
+  } catch(e){}
+  let copied = false;
+  try { await navigator.clipboard.writeText(lastExport); copied = true; } catch(e){}
+  const el = document.querySelector("#saveout");
+  if (el) el.innerHTML = saveOutHTML(sent, copied, data);
+  /* auto-open the mail app with the full breakdown pre-filled so a copy
+     always reaches the inbox — just tap Send */
+  const mailto = mailtoFor(data);
+  if (mailto){ try { window.location.href = mailto; } catch(e){} }
+}
+function mailtoFor(data){
+  if (!data) return "";
+  return `mailto:${EMAIL}?subject=${encodeURIComponent(
+    `Round Tracker - ${data.round.course} ${data.round.date}`)}&body=${encodeURIComponent(breakdownText(data))}`;
+}
+function saveOutHTML(sent, copied, data){
+  const bits = [];
+  bits.push(sent ? "Round is on the channel — tell Home Base <b>pull my round</b> (it emails you the full copy)."
+                 : "Channel unreachable — use the JSON below.");
+  bits.push("Your mail app should open with the full shot-by-shot breakdown — just hit Send.");
+  bits.push(copied ? "Full JSON also copied to clipboard." : "Copy the JSON below.");
+  const mailto = data ? mailtoFor(data) : "";
+  return `<div class="msg">${bits.join("<br>")}</div>
+    ${mailto ? `<a class="mailbtn" href="${mailto}">Email me a copy</a>` : ""}
+    <textarea readonly onclick="this.select()">${lastExport ? lastExport.replace(/&/g,"&amp;").replace(/</g,"&lt;") : ""}</textarea>`;
+}
+
+/* ---------- caddy engine (otto_golf wind chart) ---------- */
+const WIND_DIRS = [
+  {id:"calm", label:"Calm"},
+  {id:"into", label:"Into (headwind)"},
+  {id:"down", label:"Down (tailwind)"},
+  {id:"lr",   label:"Cross, L to R"},
+  {id:"rl",   label:"Cross, R to L"},
+  {id:"il",   label:"Into, off the left"},
+  {id:"ir",   label:"Into, off the right"},
+  {id:"dl",   label:"Down, off the left"},
+  {id:"dr",   label:"Down, off the right"}
+];
+function windInterp(vals, calm, mph){
+  const pts = [[0, calm], [5, vals[0]], [10, vals[1]], [20, vals[2]]];
+  const m = Math.max(0, Math.min(mph, 20));
+  for (let i = 1; i < pts.length; i++){
+    if (m <= pts[i][0]){
+      const [m0, v0] = pts[i-1], [m1, v1] = pts[i];
+      const f = (m - m0) / (m1 - m0 || 1);
+      return [v0[0] + f*(v1[0]-v0[0]), v0[1] + f*(v1[1]-v0[1])];
+    }
+  }
+  return pts[3][1];
+}
+function driftInterp(vals, mph){
+  const pts = [[0,0],[5,vals[0]],[10,vals[1]],[20,vals[2]]];
+  const m = Math.max(0, Math.min(mph, 20));
+  for (let i = 1; i < pts.length; i++){
+    if (m <= pts[i][0]){
+      const [m0,v0] = pts[i-1], [m1,v1] = pts[i];
+      return v0 + (m-m0)/(m1-m0||1)*(v1-v0);
+    }
+  }
+  return vals[2];
+}
+function caddyEval(club, dir, mph){
+  const s = CADDY[club];
+  let ct, drift = 0, shape = "";
+  if (dir === "into") ct = windInterp(s.h, s.c, mph);
+  else if (dir === "down") ct = windInterp(s.t, s.c, mph);
+  else if (dir === "il" || dir === "ir") ct = windInterp(s.i, s.c, mph);
+  else if (dir === "dl" || dir === "dr") ct = windInterp(s.d, s.c, mph);
+  else ct = [s.c[0], s.c[1]];
+  if (dir === "lr") drift = driftInterp(s.xl, mph);
+  else if (dir === "rl") drift = driftInterp(s.xr, mph);
+  else if (dir === "il" || dir === "dl"){ drift = 0.7 * driftInterp(s.xl, mph); shape = "adds to a fade"; }
+  else if (dir === "ir" || dir === "dr"){ drift = 0.7 * driftInterp(s.xr, mph); shape = "flies straighter than a stock fade"; }
+  return { carry: ct[0], total: ct[1], drift, shape };
+}
+function caddyPick(dist, dir, mph, cap){
+  let best = null;
+  for (const c of CLUBS){
+    if (!CADDY[c]) continue;
+    const e = caddyEval(c, dir, mph);
+    if (cap != null && e.total > cap) continue;
+    const score = e.carry < dist ? (dist - e.carry) * 1.25 : e.carry - dist;
+    if (!best || score < best.score) best = { club: c, score, ...e };
+  }
+  if (!best) return "No club fits under that cap.";
+  const wc = Math.round(best.carry), wt = Math.round(best.total);
+  const windy = dir !== "calm" && mph > 0;
+  const head = windy
+    ? `${best.club} plays ${wc} (${wt}) in this wind.`
+    : `${best.club} - ${wc} (${wt}).`;
+  const lines = [head];
+  const d = Math.round(Math.abs(best.drift));
+  if (d >= 2){
+    const side = best.drift > 0 ? "right" : "left";
+    const aim = best.drift > 0 ? "left" : "right";
+    lines.push(`Wind pushes it ~${d} yds ${side} - aim ${d} yds ${aim} of target.`);
+  } else if (dir !== "calm" && mph > 0){
+    lines.push("Play it straight at your target.");
+  }
+  if (best.shape) lines.push(`Shape: ${best.shape}.`);
+  return lines.join("<br>");
+}
+
+function fmtBreak(v){
+  if (v < 10) return (Math.round(v*10)/10) + '"';
+  if (v < 36) return Math.round(v) + '"';
+  return Math.floor(v/12) + "'" + Math.round(v%12) + '"';
+}
+function breakInterp(stimp, slopeIdx, ft){
+  const row = BREAK[stimp][slopeIdx];
+  const f = Math.max(BREAK_FT[0], Math.min(ft, BREAK_FT[BREAK_FT.length-1]));
+  for (let i = 1; i < BREAK_FT.length; i++){
+    if (f <= BREAK_FT[i]){
+      const f0 = BREAK_FT[i-1], f1 = BREAK_FT[i];
+      return row[i-1] + (f-f0)/(f1-f0)*(row[i]-row[i-1]);
+    }
+  }
+  return row[row.length-1];
+}
+function slopeIndex(){
+  const i = BREAK_SLOPES.indexOf(parseFloat(puttIn.slope));
+  return i < 0 ? 3 : i;
+}
+function puttRead(side){
+  if (puttIn.len == null) return "Give me a putt length first.";
+  const flat = breakInterp(puttIn.stimp, slopeIndex(), puttIn.len);
+  const fac = puttIn.ud === "flat" ? 1 : BREAK_UD[puttIn.stimp][puttIn.ud];
+  const v = flat * fac;
+  const hi = side ? `the ${side} edge` : "the high edge";
+  const to = side ? `${side} of the cup` : "to the high side of the cup";
+  const lines = [ v < INSIDE_EDGE
+    ? `Play it ${fmtBreak(v)} inside ${hi} of the cup.`
+    : `Aim ${fmtBreak(v)} ${to}.` ];
+  if (puttIn.ud !== "flat"){
+    const lbl = (UD_LABELS.find(u => u[0] === puttIn.ud) || ["",""])[1];
+    lines.push(`${lbl}: flat read ${fmtBreak(flat)}.`);
+  }
+  if (puttIn.len > 60) lines.push("Chart tops out at 60 ft - 60 ft read shown.");
+  return lines.join("<br>");
+}
+function puttChart(){
+  const sel = slopeIndex(), grid = BREAK[puttIn.stimp];
+  const chunk = (lo, hi) => {
+    const head = `<th>Slope</th>` + BREAK_FT.slice(lo,hi).map(f => `<th>${f}'</th>`).join("");
+    const rows = grid.map((row, si) => {
+      let cells = "";
+      for (let i = lo; i < hi; i++){
+        cells += `<td class="${row[i] < INSIDE_EDGE ? "ins" : ""}">${fmtBreak(row[i])}</td>`;
+      }
+      const cls = si === sel ? "selrow" : (si % 2 ? "zeb" : "");
+      return `<tr class="${cls}"><td class="cl">${BREAK_SLOPES[si]}%</td>${cells}</tr>`;
+    }).join("");
+    return `<table class="chart puttchart"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table>`;
+  };
+  return `<div class="puttlbl">Break chart &middot; stimp ${puttIn.stimp} &middot; read to pin</div>` +
+    chunk(0,4) + chunk(4,8) + chunk(8,12) + chunk(12,16);
+}
+function grabPuttInputs(){
+  const l = $("#pt-len");
+  if (!l) return;
+  puttIn.len = numOrNull(l.value);
+  puttIn.slope = $("#pt-slope").value;
+  puttIn.stimp = $("#pt-stimp").value;
+  puttIn.ud = $("#pt-ud").value;
+}
+function puttBody(){
+  return `
+    <div class="edrow">
+      <div class="edfield"><div class="edlbl">Putt length (ft)</div>
+        <input type="number" inputmode="numeric" id="pt-len" value="${puttIn.len ?? ""}"></div>
+      <div class="edfield"><div class="edlbl">Side slope</div>
+        <select id="pt-slope">${BREAK_SLOPES.map(s =>
+          `<option value="${s}"${puttIn.slope===String(s)?" selected":""}>${s}%</option>`).join("")}</select></div>
+    </div>
+    <div class="edrow">
+      <div class="edfield"><div class="edlbl">Stimp</div>
+        <select id="pt-stimp">${["8","9","10","11","12"].map(s =>
+          `<option value="${s}"${puttIn.stimp===s?" selected":""}>${s}</option>`).join("")}</select></div>
+      <div class="edfield"><div class="edlbl">Up or down</div>
+        <select id="pt-ud">${UD_LABELS.map(u =>
+          `<option value="${u[0]}"${puttIn.ud===u[0]?" selected":""}>${u[1]}</option>`).join("")}</select></div>
+    </div>
+    <button class="caddyask" data-act="putt">Read the break</button>
+    <div class="caddyout" id="puttout">${puttIn.out || ""}</div>
+    ${puttChart()}`;
+}
+
+/* ---------- rendering ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");
+function scoreClass(g, par){
+  if (g==null) return "blank";
+  return g<par ? "birdie" : g>par ? "over" : "";
+}
+
+function render(){
+  document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on", b.dataset.tab===tab));
+  const main = $("#main");
+  main.innerHTML = tab==="hole" ? viewHole() : viewOverview();
+  bind();
+  const st = $("#savestat");
+  st.textContent = mode==="live" ? "Live sync" : mode==="offline" ? "Offline" : "Connecting";
+  st.classList.toggle("live", mode==="live");
+}
+function syncMeta(){
+  const c = $("#in-course"), d = $("#in-date");
+  if (c && c.value !== course) c.value = course;
+  if (d) d.value = rdate || todayISO();
+}
+
+function shotLine(s){
+  const dist = s.da != null ? `${s.db}&rarr;${s.da}y` : `${s.db}y&rarr;green`;
+  const accCls = BAD_ACC.has(s.acc) ? "acc-bad" : "";
+  return `<b>${esc(s.club)}</b> &middot; ${esc(s.lie)} &middot; ${dist} &middot; <span class="${accCls}">${esc(s.acc)}</span>`;
+}
+
+function shotEditor(){
+  const d = editing.draft;
+  const isFirst = editing.idx === -1 ? SH(hole).length === 0 : editing.idx === 0;
+  const autoType = suggestType(isFirst, d.db);
+  const sel = (id, opts, cur, blankLabel) => `<select id="${id}">
+    <option value=""${cur==null?" selected":""}>${blankLabel}</option>
+    ${opts.map(o => `<option value="${esc(o)}"${o===cur?" selected":""}>${esc(o)}</option>`).join("")}
+  </select>`;
+  return `<div class="editor">
+    <div class="edrow">
+      <div class="edfield"><div class="edlbl">Club</div>${sel("ed-club", CLUBS, d.club, "Select")}</div>
+      <div class="edfield"><div class="edlbl">Lie</div>${sel("ed-lie", LIES, d.lie, "Select")}</div>
+    </div>
+    <div class="edrow">
+      <div class="edfield"><div class="edlbl">Start (yd)</div>
+        <input type="number" inputmode="numeric" id="ed-db" value="${d.db ?? ""}"></div>
+      <div class="edfield"><div class="edlbl">Finish (yd)</div>
+        <input type="number" inputmode="numeric" id="ed-da" value="${d.da ?? ""}"></div>
+    </div>
+    <div class="edrow">
+      <div class="edfield"><div class="edlbl">Type</div>${sel("ed-type", TYPES, d.type,
+        autoType ? `Auto: ${autoType}` : "Auto")}</div>
+      <div class="edfield"><div class="edlbl">Result</div>${sel("ed-acc", ACCS, d.acc, "Select")}</div>
+    </div>
+    <div class="edhint">leave Finish blank when the ball is on the green &middot; club + type guessed from yardage</div>
+    <div class="edactions">
+      <button class="edsave" data-act="edsave">${editing.idx === -1 ? "Add shot" : "Save shot"}</button>
+      <button class="edcancel" data-act="edcancel">Cancel</button>
+    </div>
+  </div>`;
+}
+
+function viewHole(){
+  const h = HOLES[hole-1];
+  const f = F(h.n);
+  const sh = SH(h.n);
+  const par = parFor(h.n);
+  const par3 = par === 3;
+  const adv = trackMode === "advanced";
+  const pc = puttCount(h.n);
+  const sum = shotSum(h.n);
+
+  const chip = (key, lbl) => {
+    const manual = f[key];
+    const v = manual ? manual : (key === "fir" ? autoFir(h) : autoGir(h));
+    const cls = v === "Y" ? " yes" : v === "N" ? " no" : "";
+    const mark = v === "Y" ? " &#10003;" : v === "N" ? " &#10007;" : "";
+    const tag = (v && !manual) ? `<span class="autotag">auto</span>` : "";
+    return `<button class="stchip${cls}" data-act="tri" data-key="${key}">${lbl}${mark}${tag}</button>`;
+  };
+  const shotRows = sh.map((s,i) => `
+    <div class="shotrow">
+      <div class="n">${i+1}</div>
+      <div class="d">${shotLine(s)}</div>
+      <button class="shotbtn" data-act="edshot" data-i="${i}">Edit</button>
+      <button class="shotbtn del" data-act="delshot" data-i="${i}">&#10007;</button>
+    </div>`).join("");
+
+  const confirm = (sum != null)
+    ? (f.score == null
+        ? `<button class="confirmscore" data-act="setsum">Set score = <b>${sum}</b> (shots + putts + pen)</button>`
+        : (sum !== f.score
+            ? `<button class="confirmscore warn" data-act="setsum">Score says ${f.score}, shots add to <b>${sum}</b> — set ${sum}?</button>`
+            : `<div class="confirmok">Score ${f.score} confirmed &middot; matches your shots</div>`))
+    : "";
+
+  const parChips = [3,4,5].map(p =>
+    `<button class="parchip ${par===p?"on":""}" data-par="${p}">${p}</button>`).join("");
+  return `
+  ${holeNav("top", h)}
+  <section class="holecard">
+    <div class="holehead">
+      <div class="holenum">No. ${h.n}</div>
+      <div class="parpick"><span class="plbl">Par</span>${parChips}</div>
+    </div>
+    <div class="modesel" id="modesel">
+      <button class="modebtn ${adv?"":"on"}" data-mode="basic">Basic</button>
+      <button class="modebtn ${adv?"on":""}" data-mode="advanced">Advanced</button>
+    </div>
+
+    <div class="scorerow">
+      <div class="scorelbl">Score<span class="pm">${plusMinus(f.score, par) || "&mdash;"}</span></div>
+      <div class="step">
+        <button class="stepbtn" data-act="dec" aria-label="decrease score">&minus;</button>
+        <div class="gross ${scoreClass(f.score, par)}">${f.score ?? "&mdash;"}</div>
+        <button class="stepbtn" data-act="inc" aria-label="increase score">+</button>
+      </div>
+    </div>
+
+    <div class="statgrid">
+      ${par3 ? "" : chip("fir","FIR")}
+      ${chip("gir","GIR")}
+      ${adv ? `<div class="minstep"><span class="lbl">Pen</span>
+        <button class="stmini" data-act="pendec">&minus;</button><b>${f.pen ?? 0}</b>
+        <button class="stmini" data-act="peninc">+</button>
+      </div>` : `<div class="minstep"><span class="lbl">Putts</span>
+        <button class="stmini" data-act="puttdec">&minus;</button><b>${pc ?? "&mdash;"}</b>
+        <button class="stmini" data-act="puttinc">+</button>
+      </div>`}
+    </div>
+
+    ${adv ? `<div class="seclbl">Shots</div>
+    <div class="shots">
+      ${shotRows}
+      ${editing ? shotEditor() : `<button class="addshot" data-act="addshot">+ Add shot</button>`}
+    </div>
+
+    <div class="seclbl">Putting</div>
+    <div class="puttrow">
+      ${[1,2,3].map(i => `<div class="puttfield"><label>P${i} ft</label>
+        <input type="number" inputmode="numeric" data-putt="${i}" value="${f["p"+i] ?? ""}"></div>`).join("")}
+      <div class="putttot"><span class="lbl">Putts</span><b>${pc ?? "&mdash;"}</b></div>
+      <div class="minstep">
+        <button class="stmini" data-act="puttdec">&minus;</button>
+        <button class="stmini" data-act="puttinc">+</button>
+      </div>
+    </div>` : ""}
+
+    ${adv && confirm ? `<div class="confirmrow">${confirm}</div>` : ""}
+
+    <div class="noterow">
+      <input type="text" id="holenote" placeholder="Hole note (optional)" value="${esc(f.note || "")}">
+    </div>
+  </section>
+  <section class="caddy">
+    <div class="caddyhead">Caddie</div>
+    <div class="caddytabs">
+      <button class="caddytab ${caddyTab==="swing"?"on":""}" data-cad="swing">Swing</button>
+      <button class="caddytab ${caddyTab==="dist"?"on":""}" data-cad="dist">My Bag</button>
+      <button class="caddytab ${caddyTab==="wind"?"on":""}" data-cad="wind">Wind</button>
+      <button class="caddytab ${caddyTab==="putt"?"on":""}" data-cad="putt">Putting</button>
+    </div>
+    <div class="caddybody">${caddyBody()}</div>
+  </section>
+  ${holeNav("bottom", h)}`;
+}
+
+function holeNav(pos, h){
+  const prev = hole > 1 ? `<button class="navbtn" data-act="prev">&larr; No. ${hole-1}</button>`
+                        : `<span class="navbtn dis">Front</span>`;
+  const next = hole < 18 ? `<button class="navbtn" data-act="next">No. ${hole+1} &rarr;</button>`
+                         : `<span class="navbtn dis">Home</span>`;
+  return `<div class="holenav ${pos}">${prev}<div class="navnow">No. ${h.n}</div>${next}</div>`;
+}
+
+/* ---------- caddy sub-tabs ---------- */
+function caddyBody(){
+  if (caddyTab === "dist") return caddyDistChart();
+  if (caddyTab === "wind") return caddyWindChart();
+  if (caddyTab === "putt") return puttBody();
+  return `
+    <div class="edrow">
+      <div class="edfield"><div class="edlbl">Distance (yd)</div>
+        <input type="number" inputmode="numeric" id="cd-dist" value="${caddyIn.dist ?? ""}"></div>
+      <div class="edfield"><div class="edlbl">No longer than</div>
+        <input type="number" inputmode="numeric" id="cd-cap" value="${caddyIn.cap ?? ""}"></div>
+    </div>
+    <div class="edrow">
+      <div class="edfield"><div class="edlbl">Wind (mph)</div>
+        <input type="number" inputmode="numeric" id="cd-mph" value="${caddyIn.mph ?? ""}"></div>
+      <div class="edfield"><div class="edlbl">Wind direction</div>
+        <select id="cd-dir">${WIND_DIRS.map(w =>
+          `<option value="${w.id}"${caddyIn.dir===w.id?" selected":""}>${w.label}</option>`).join("")}</select></div>
+    </div>
+    <button class="caddyask" data-act="caddy">Swing Caddie</button>
+    <div class="caddyout" id="caddyout">${caddyIn.out || ""}</div>`;
+}
+function caddyDistChart(){
+  const rows = CLUBS.filter(c=>CADDY[c]).map(c => {
+    const b = BAG_DISPLAY[c] || {name:(CLUB_EXPORT[c]||c), spec:""};
+    const nm = `<span class="bagn">${b.name}</span>${b.spec?`<span class="bags">${b.spec}</span>`:""}`;
+    return `<tr><td class="cl">${nm}</td><td>${CADDY[c].c[0]}</td><td class="mut">${CADDY[c].c[1]}</td></tr>`;
+  }).join("");
+  return `<table class="chart"><thead><tr><th>Club</th><th>Carry</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+const drift = n => n === 0 ? "&mdash;" : (n > 0 ? `${n}R` : `${-n}L`);
+function caddyWindChart(){
+  const subs = [["into","Into"],["down","Down"],["lr","L&rarr;R"],["rl","R&rarr;L"]];
+  const bar = `<div class="windsub">${subs.map(([id,lbl]) =>
+    `<button class="windbtn ${windTab===id?"on":""}" data-wind="${id}">${lbl}</button>`).join("")}</div>`;
+  let head, rows;
+  if (windTab === "lr" || windTab === "rl"){
+    const key = windTab === "lr" ? "xl" : "xr";
+    head = `<th>Club</th><th>5</th><th>10</th><th>20</th>`;
+    rows = CLUBS.filter(c=>CADDY[c]).map(c => {
+      const s = CADDY[c], x = s[key], y = s.c[0];
+      const cell = i => `${y} <span class="par">(${drift(Math.round(x[i]))})</span>`;
+      return `<tr><td class="cl">${CLUB_EXPORT[c]||c}</td>
+        <td>${cell(0)}</td><td>${cell(1)}</td><td>${cell(2)}</td></tr>`;
+    }).join("");
+  } else {
+    const key = windTab === "down" ? "t" : "h";
+    head = `<th>Club</th><th>Calm</th><th>5</th><th>10</th><th>20</th>`;
+    rows = CLUBS.filter(c=>CADDY[c]).map(c => {
+      const s = CADDY[c], w = s[key];
+      return `<tr><td class="cl">${CLUB_EXPORT[c]||c}</td><td class="mut">${s.c[0]}</td>
+        <td>${w[0][0]}</td><td>${w[1][0]}</td><td>${w[2][0]}</td></tr>`;
+    }).join("");
+  }
+  return `${bar}<table class="chart"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+/* ---------- strokes gained, live in the Overview ----------
+   Same engine Pencil Wedge uses on the VM (sg_engine.js, a verified port of
+   pull_round.py), run on the phone so the round reads its own numbers before
+   it is ever saved. Baseline 5 HCP to match the Golf Hub and the sheet.
+   Only holes with logged shots count, so a part-played round reads honestly
+   instead of scoring unplayed holes as losses.
+   Layout: the four ball-striking categories add DOWN to Ball Striking
+   (ball_strike = driver + p176 + p101 + p100); putting sits below it,
+   outside that sum. */
+const SG_LABEL = {driver:"Driver", p176:"176+", p101:"101-175", p100:"100 & In",
+                  putting:"Putting", ball_strike:"Ball Striking"};
+function sgCard(){
+  const holes = buildRoundJSON().holes.filter(h => (h.shots || []).length);
+  if (!holes.length){
+    return `<div class="sgcard"><div class="sghead">Strokes Gained &middot; vs 5 HCP</div>
+      <div class="sgnote">Log a shot and your strokes gained appears here, hole by hole.</div></div>`;
+  }
+  const tot = roundSG(holes, "5hcp");
+  const row = (k, cls) => {
+    const v = tot[k], pos = v >= 0;
+    return `<div class="sgrow${cls || ""}"><div class="nm">${SG_LABEL[k]}</div>
+      <div class="vl" style="color:${pos ? "#1E8E4F" : "#B22234"}">${pos ? "+" : ""}${v.toFixed(2)}</div></div>`;
+  };
+  return `<div class="sgcard">
+    <div class="sghead">Strokes Gained &middot; vs 5 HCP</div>
+    ${["driver","p176","p101","p100"].map(k => row(k)).join("")}
+    ${row("ball_strike", " sgtot")}
+    ${row("putting", " sgafter")}
+    <div class="sgnote">${holes.length} hole${holes.length === 1 ? "" : "s"} with shots logged</div>
+  </div>`;
+}
+
+function viewOverview(){
+  const t = totals();
+  const adv = trackMode === "advanced";
+  const toPar = t.thru ? plusMinus(t.score, t.par) : "&mdash;";
+  const tiles = `
+  <div class="totcard">
+    <div class="tot"><div class="v">${t.thru?t.score:"&mdash;"} <em>${toPar}</em></div><div class="k">Score &middot; thru ${t.thru}</div></div>
+    <div class="tot"><div class="v">${t.f9||"&mdash;"} / ${t.b9||"&mdash;"}</div><div class="k">Out / In</div></div>
+    <div class="tot"><div class="v">${t.putts||"&mdash;"}</div><div class="k">Putts</div></div>
+    <div class="tot"><div class="v">${t.fwP?`${t.fwH}/${t.fwP}`:"&mdash;"}</div><div class="k">Fairways</div></div>
+    <div class="tot"><div class="v">${t.girP?`${t.girH}/${t.girP}`:"&mdash;"}</div><div class="k">Greens</div></div>
+    <div class="tot"><div class="v">${t.udX?`${t.udC}/${t.udX}`:"&mdash;"}</div><div class="k">Up &amp; down</div></div>
+  </div>`;
+  const rows = HOLES.map(h => {
+    const f = F(h.n);
+    const par = parFor(h.n);
+    const cls = f.score==null ? "" : f.score<par ? " bird" : f.score>par ? " bog" : "";
+    const yn = v => v==="Y" ? `<span class="ok">&#10003;</span>` : v==="N" ? `<span class="miss">&#10007;</span>` : "&middot;";
+    return `<tr><td class="hn">${h.n}</td><td>${par}</td>
+      <td class="sc${cls}">${f.score ?? "&middot;"}</td>
+      <td>${par===3 ? "&mdash;" : yn(effFir(h))}</td><td>${yn(effGir(h))}</td>
+      <td>${puttCount(h.n) ?? "&middot;"}</td>${adv ? `<td>${f.pen || "&middot;"}</td>` : ""}</tr>`;
+  }).join("");
+  const sum = `<tr class="sumrow"><td colspan="2">TOT</td><td>${t.thru?t.score:"&middot;"}</td>
+    <td>${t.fwP?`${t.fwH}/${t.fwP}`:"&middot;"}</td><td>${t.girP?`${t.girH}/${t.girP}`:"&middot;"}</td>
+    <td>${t.putts||"&middot;"}</td>${adv ? `<td>${t.pen||"&middot;"}</td>` : ""}</tr>`;
+  return `${tiles}
+  ${adv ? sgCard() : ""}
+  <div class="secthead">Hole by hole</div>
+  <div class="gridwrap"><table class="grid">
+    <thead><tr><th>Hole</th><th>Par</th><th>Score</th><th>FIR</th><th>GIR</th><th>Putts</th>${adv ? "<th>Pen</th>" : ""}</tr></thead>
+    <tbody>${rows}${sum}</tbody>
+  </table></div>
+  <div class="rnotes"><textarea id="rnote" placeholder="Round notes (conditions, story of the day)">${esc(rnote)}</textarea></div>
+  <button class="savebtn" data-act="saveround">Save round &middot; send to Home Base</button>
+  <div class="saveout" id="saveout">${lastExport ? saveOutHTML(true, false, null) : ""}</div>
+  <button class="reset" data-act="reset">Clear round</button>`;
+}
+
+/* ---------- events ---------- */
+function commitPutt(i, raw){
+  const v = raw === "" ? null : Math.max(0, Math.min(120, Math.round(+raw)));
+  setCell(`f.${hole}.p${i}`, Number.isFinite(v) ? v : null);
+  // putts count follows the entered distances unless manually stepped later
+  const f = F(hole);
+  const n = [f.p1, f.p2, f.p3].filter(x => x != null).length;
+  setCell(`f.${hole}.putts`, n || null);
+  render();
+}
+
+function bind(){
+  const h = HOLES[hole-1];
+  document.querySelectorAll("[data-act]").forEach(el => {
+    el.onclick = () => {
+      const act = el.dataset.act;
+      const f = F(hole);
+      if (act==="prev"){ hole=Math.max(1,hole-1); editing=null; render(); }
+      else if (act==="next"){ hole=Math.min(18,hole+1); editing=null; render(); }
+      else if (act==="inc"||act==="dec"){
+        const cur = f.score;
+        if (cur==null) setField(hole,"score",parFor(hole));
+        else setField(hole,"score",Math.max(1,Math.min(15,cur+(act==="inc"?1:-1))));
+      }
+      else if (act==="setsum"){ const s = shotSum(hole); if (s!=null) setField(hole,"score",s); }
+      else if (act==="tri"){
+        const key = el.dataset.key, cur = f[key];
+        setField(hole,key, cur==null ? "Y" : cur==="Y" ? "N" : null);
+      }
+      else if (act==="peninc"||act==="pendec"){
+        setField(hole,"pen", Math.max(0,Math.min(6,(f.pen||0)+(act==="peninc"?1:-1))) || null);
+      }
+      else if (act==="puttinc"||act==="puttdec"){
+        const cur = puttCount(hole) || 0;
+        setField(hole,"putts", Math.max(0,Math.min(8,cur+(act==="puttinc"?1:-1))) || null);
+      }
+      else if (act==="addshot"){
+        const sh = SH(hole);
+        const prev = sh[sh.length-1];
+        const db = sh.length ? (prev && prev.da != null ? prev.da : null) : null;
+        editing = { idx:-1, draft:{ club: suggestClub(db, sh.length===0, parFor(hole)),
+          lie: sh.length? null : "Tee", db, da:null, type:null, acc:null } };
+        render();
+        const ed = document.querySelector(".editor");
+        if (ed) ed.scrollIntoView({block:"center"});
+      }
+      else if (act==="caddy"){
+        caddyIn.dist = numOrNull($("#cd-dist").value);
+        caddyIn.cap = numOrNull($("#cd-cap").value);
+        caddyIn.mph = numOrNull($("#cd-mph").value) || 0;
+        caddyIn.dir = $("#cd-dir").value;
+        caddyIn.out = caddyIn.dist == null ? "Give me a distance first."
+          : caddyPick(caddyIn.dist, caddyIn.dir, caddyIn.mph, caddyIn.cap);
+        $("#caddyout").innerHTML = caddyIn.out;
+      }
+      else if (act==="putt"){
+        grabPuttInputs();
+        puttIn.out = puttRead(null);
+        $("#puttout").innerHTML = puttIn.out;
+      }
+      else if (act==="edshot"){
+        const i = +el.dataset.i;
+        editing = { idx:i, draft:{...SH(hole)[i]} };
+        render();
+      }
+      else if (act==="delshot"){
+        const i = +el.dataset.i;
+        const arr = SH(hole).slice(); arr.splice(i,1);
+        setShots(hole, arr);
+      }
+      else if (act==="edsave"){
+        const d = editing.draft;
+        d.club = $("#ed-club").value || null;
+        d.lie = $("#ed-lie").value || null;
+        d.acc = $("#ed-acc").value || null;
+        d.db = numOrNull($("#ed-db").value);
+        d.da = numOrNull($("#ed-da").value);
+        const isFirst = editing.idx === -1 ? SH(hole).length === 0 : editing.idx === 0;
+        d.type = $("#ed-type").value || suggestType(isFirst, d.db);
+        if (!d.club || !d.lie || !d.acc || d.db == null){
+          alert("Need club, lie, result and a start distance."); return;
+        }
+        const arr = SH(hole).slice();
+        const wasNew = editing.idx === -1;
+        if (wasNew) arr.push({...d}); else arr[editing.idx] = {...d};
+        if (wasNew && d.da != null){
+          const nb = d.da;
+          editing = { idx:-1, draft:{ club: suggestClub(nb, false, parFor(hole)),
+            lie:null, db:nb, da:null, type:null, acc:null } };
+        } else {
+          editing = null;
+        }
+        setShots(hole, arr);
+        const ed = document.querySelector(".editor");
+        if (ed) ed.scrollIntoView({block:"center"});
+      }
+      else if (act==="edcancel"){ editing = null; render(); }
+      else if (act==="saveround"){ saveRound(); }
+      else if (act==="reset"){ clearRound(); }
+    };
+  });
+  const edSync = { "ed-club":"club", "ed-lie":"lie", "ed-type":"type", "ed-acc":"acc" };
+  for (const [id, key] of Object.entries(edSync)){
+    const el = document.getElementById(id);
+    if (el) el.onchange = () => { editing.draft[key] = el.value || null; };
+  }
+  for (const [id, key] of [["ed-db","db"],["ed-da","da"]]){
+    const el = document.getElementById(id);
+    if (el) el.onchange = () => {
+      editing.draft[key] = numOrNull(el.value);
+      if (key === "db"){
+        const isFirst = editing.idx === -1 ? SH(hole).length === 0 : editing.idx === 0;
+        const t = suggestType(isFirst, editing.draft.db);
+        const opt = document.querySelector("#ed-type option[value='']");
+        if (opt) opt.textContent = t ? `Auto: ${t}` : "Auto";
+      }
+    };
+  }
+  document.querySelectorAll("[data-par]").forEach(el => {
+    el.onclick = () => { setCell(`par.${hole}`, +el.dataset.par); render(); };
+  });
+  document.querySelectorAll("[data-cad]").forEach(el => {
+    el.onclick = () => { caddyTab = el.dataset.cad; render(); };
+  });
+  document.querySelectorAll("[data-wind]").forEach(el => {
+    el.onclick = () => { windTab = el.dataset.wind; render(); };
+  });
+  document.querySelectorAll("[data-putt]").forEach(el => {
+    el.onchange = () => commitPutt(+el.dataset.putt, el.value.trim());
+  });
+  document.querySelectorAll("#modesel .modebtn").forEach(el => {
+    el.onclick = () => {
+      if (el.dataset.mode === trackMode) return;
+      /* Basic is a strict subset of Advanced, so switching never destroys data —
+         shots already logged stay stored and reappear on switching back. */
+      setCell("tmode", el.dataset.mode);
+      editing = null;
+      render(); syncMeta();
+    };
+  });
+  const note = $("#holenote");
+  if (note) note.onchange = () => setField(hole, "note", note.value.trim() || null);
+  const rn = $("#rnote");
+  if (rn) rn.onchange = () => { setCell("rnote", rn.value.trim()); };
+}
+const numOrNull = s => { const v = String(s).trim(); if (v==="") return null; const n = Math.round(+v); return Number.isFinite(n) ? Math.max(0, Math.min(700, n)) : null; };
+
+document.querySelectorAll(".tab").forEach(b => {
+  b.addEventListener("click", () => { tab=b.dataset.tab; editing=null; render(); });
+});
+$("#in-course").addEventListener("change", e => { setCell("course", e.target.value.trim()); });
+$("#in-date").addEventListener("change", e => { setCell("rdate", e.target.value); });
+
+/* ---------- boot ---------- */
+lsLoad();
+const firstOpen = HOLES.find(h => F(h.n).score == null);
+hole = firstOpen ? firstOpen.n : 18;
+render(); syncMeta();
+
+(async () => {
+  try {
+    const r = await fetch(`${NTFY}/${TOPIC}/json?poll=1&since=all`);
+    const text = await r.text();
+    let changed = false;
+    for (const line of text.split("\n")){
+      if (!line.trim()) continue;
+      try {
+        const env = JSON.parse(line);
+        if (env.event === "message") changed = merge(JSON.parse(env.message)) || changed;
+      } catch(e){}
+    }
+    mode = "live";
+    if (changed) lsSave();
+    render(); syncMeta();
+  } catch(e){ mode = "offline"; render(); syncMeta(); }
+
+  try {
+    const es = new EventSource(`${NTFY}/${TOPIC}/sse`);
+    es.onmessage = ev => {
+      try {
+        const env = JSON.parse(ev.data);
+        if (env.event !== "message") return;
+        if (merge(JSON.parse(env.message))){ lsSave(); render(); syncMeta(); }
+      } catch(e){}
+    };
+    es.onopen = () => { if (mode !== "live"){ mode = "live"; render(); } };
+    es.onerror = () => { if (mode === "live"){ mode = "connecting"; render(); } };
+  } catch(e){}
+
+  if (Object.keys(state.cells).length) seedChannel();
+})();
+</script>
+</body>
+</html>

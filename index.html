@@ -800,12 +800,15 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
 
   // Preloaded course library — each entry is a generated tracker page at
   // course/<slug>/ (built by osm-course-book make_tracker.py). Add a course by
-  // generating its page and appending one row here.
+  // generating its page and appending one row here. Real courses stay in
+  // alphabetical order; Any Course is the course-free tracker and sits last,
+  // so it carries a `sub` instead of a location and par.
   var COURSES=[
-    {name:'Shoal Creek Golf Course',loc:'Kansas City, MO',par:71,slug:'shoal-creek'},
-    {name:'Paradise Pointe · Posse',loc:'Smithville, MO',par:72,slug:'paradise-pointe-posse'},
+    {name:'Charleston National Golf Club',loc:'Mount Pleasant, SC',par:72,slug:'charleston-national'},
     {name:'Paradise Pointe · Outlaw',loc:'Smithville, MO',par:72,slug:'paradise-pointe-outlaw'},
-    {name:'Charleston National Golf Club',loc:'Mount Pleasant, SC',par:72,slug:'charleston-national'}
+    {name:'Paradise Pointe · Posse',loc:'Smithville, MO',par:72,slug:'paradise-pointe-posse'},
+    {name:'Shoal Creek Golf Course',loc:'Kansas City, MO',par:71,slug:'shoal-creek'},
+    {name:'Any Course',sub:'Anywhere · set the par as you play',slug:'any-course'}
   ];
 
   function el(html){var t=document.createElement('template');t.innerHTML=html.trim();return t.content.firstChild;}
@@ -862,9 +865,11 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
   }).join('');
 
   document.getElementById('course-list').innerHTML=COURSES.map(function(c){
+    // Any Course has no fixed location or par — it carries its own subtitle.
+    var sub=c.sub||(c.loc+' · Par '+c.par);
     return '<a class="mod" href="course/'+c.slug+'/" style="text-decoration:none;color:inherit">'+
       '<div class="mleft"><div class="t">'+c.name+'</div>'+
-      '<div class="s">'+c.loc+' · Par '+c.par+'</div></div>'+
+      '<div class="s">'+sub+'</div></div>'+
       '<div class="mright"><div class="lab" style="font-weight:700;font-size:10px;letter-spacing:.14em;color:var(--red)">START</div></div>'+
     '</a>';
   }).join('');
