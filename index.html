@@ -800,15 +800,16 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
 
   // Preloaded course library — each entry is a generated tracker page at
   // course/<slug>/ (built by osm-course-book make_tracker.py). Add a course by
-  // generating its page and appending one row here. Real courses stay in
-  // alphabetical order; Any Course is the course-free tracker and sits last,
-  // so it carries a `sub` instead of a location and par.
+  // generating its page and appending one row here. Order is Eric's, not
+  // alphabetical — Any Course first (it works anywhere), then the courses he
+  // plays most, nearest first. Any Course carries a `sub` instead of a
+  // location and par.
   var COURSES=[
-    {name:'Charleston National Golf Club',loc:'Mount Pleasant, SC',par:72,slug:'charleston-national'},
-    {name:'Paradise Pointe · Outlaw',loc:'Smithville, MO',par:72,slug:'paradise-pointe-outlaw'},
-    {name:'Paradise Pointe · Posse',loc:'Smithville, MO',par:72,slug:'paradise-pointe-posse'},
+    {name:'Any Course',sub:'Anywhere · set the par as you play',slug:'any-course'},
     {name:'Shoal Creek Golf Course',loc:'Kansas City, MO',par:71,slug:'shoal-creek'},
-    {name:'Any Course',sub:'Anywhere · set the par as you play',slug:'any-course'}
+    {name:'Paradise Pointe · Posse',loc:'Smithville, MO',par:72,slug:'paradise-pointe-posse'},
+    {name:'Paradise Pointe · Outlaw',loc:'Smithville, MO',par:72,slug:'paradise-pointe-outlaw'},
+    {name:'Charleston National Golf Club',loc:'Mount Pleasant, SC',par:72,slug:'charleston-national'}
   ];
 
   function el(html){var t=document.createElement('template');t.innerHTML=html.trim();return t.content.firstChild;}
