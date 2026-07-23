@@ -519,7 +519,10 @@ function holeSG(hole, baseline){
     } else if (nxt !== null && nxt.dist_before !== null && nxt.dist_before !== undefined){
       fin = sgEStrokes(nxt.dist_before, nxt.lie || "Rough", baseline);
     } else {
-      fin = (p1 !== null) ? sgEPutts(p1, baseline) : 1.0;
+      /* finish putt valued on the SCRATCH table for every baseline: the shot
+         carries the shot-model gap, putting carries the putting-table gap.
+         Per-baseline finish inverted p100 across baselines (2026-07-23). */
+      fin = (p1 !== null) ? sgEPutts(p1, "scratch") : 1.0;
     }
     out[cat] += start - (1 + fin);
     if (penal) out[cat] += -1.0;
