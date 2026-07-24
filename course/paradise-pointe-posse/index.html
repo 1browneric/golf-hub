@@ -110,7 +110,7 @@ input,textarea,select{font-family:inherit}
 .edrow{display:flex;gap:8px}
 .edrow + .edrow{margin-top:10px}
 .edfield{flex:1;min-width:0}
-.edfield .edlbl{font-family:var(--mono);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5C6B82;
+.edfield .edlbl,.edtaggrp .edlbl{font-family:var(--mono);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#5C6B82;
   margin:0 0 5px;white-space:nowrap}
 .edfield input,.edfield select{width:100%;height:46px;padding:0 10px;border:1.5px solid rgba(12,35,64,.25);border-radius:10px;
   background:#fff;font-family:var(--mono);font-size:15px;font-weight:700;color:#16243A;
@@ -119,6 +119,13 @@ input,textarea,select{font-family:inherit}
 .edfield select:invalid,.edfield select option[value=""]{color:#AAB2BE}
 .edfield select{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%234B5B44'/></svg>");
   background-repeat:no-repeat;background-position:right 12px center;padding-right:28px}
+.edtags{margin-top:12px}
+.edtaggrp + .edtaggrp{margin-top:10px}
+.edtagrow{display:flex;flex-wrap:wrap;gap:6px}
+.edtag{font-family:var(--sans);font-size:12px;line-height:1;padding:10px 12px;border-radius:999px;
+  border:1.5px solid rgba(12,35,64,.25);background:#F4EFE4;color:#0C2340;cursor:pointer;
+  flex:1 1 auto;text-align:center;white-space:nowrap}
+.edtag.on{background:#0C2340;border-color:#0C2340;color:#F4EFE4;font-weight:600}
 .edhint{font-family:var(--mono);font-size:10px;color:#8792A4;margin-top:7px;text-align:center;letter-spacing:.04em}
 .edactions{display:flex;gap:8px;margin-top:12px}
 .edsave{flex:1;padding:12px;border-radius:10px;background:#0C2340;color:#F4EFE4;
@@ -510,14 +517,22 @@ function holeSG(hole, baseline){
     var da = (s.dist_after === undefined) ? null : s.dist_after;
     if (db === null) continue;
     var start = sgEStrokes(db, s.lie || "Rough", baseline);
-    var penal = (s.acc === "OB" || s.acc === "Water" || s.acc === "Unplayable");
+    var penal = accIsBad(s.acc);
     var nxt = (i + 1 < shots.length) ? shots[i+1] : null;
-    if (penal && da === null){ out[cat] += -1.0; continue; }   // ball gone, replayed
     var fin;
-    if (da !== null){
-      fin = sgEStrokes(da, sgNextLie(shots, i), baseline);
-    } else if (nxt !== null && nxt.dist_before !== null && nxt.dist_before !== undefined){
+    if (nxt !== null && nxt.dist_before !== null && nxt.dist_before !== undefined){
+      /* Where this shot finished IS where the next one starts. Chaining off the
+         next shot's start rather than this shot's dist_after makes the hole
+         telescope, so the categories sum to E(start) - score exactly. */
       fin = sgEStrokes(nxt.dist_before, nxt.lie || "Rough", baseline);
+    } else if (da !== null){
+      fin = sgEStrokes(da, sgNextLie(shots, i), baseline);
+    } else if (penal){
+      /* Ball gone with nothing logged after it: the replay is from the same
+         spot, so finish equals start and the two strokes charged below make
+         this exactly -2.00. A flat -1.00 here (the old behaviour) dropped the
+         wasted shot and broke the identity — 2026-07-24. */
+      fin = start;
     } else {
       /* finish putt valued on the SCRATCH table for every baseline: the shot
          carries the shot-model gap, putting carries the putting-table gap.
@@ -722,8 +737,45 @@ const SHORT_GAME = [
 ];
 const LIES  = ["Tee","Fairway","Rough","Deep Rough","Sand","Recovery","Other"];
 const TYPES = ["Drive","Long App (176+)","Mid App (101-175)","Short App (100&In)","Layup","Punch Out"];
-const ACCS  = ["Good","Right","Left","Short","Long","Water","Sand","OB","Unplayable"];
+/* Result is a MULTI-SELECT (2026-07-24): a shot carries any number of these
+   tags, stored comma-separated ("Fat, Left, Sand"). Grouped only for layout —
+   the stored value is a flat list. Rounds logged before this change hold a
+   single value and 05/26 uses the slash form "OB/Unplayable"; accTags() reads
+   all three. Mirrors ACC_TAGS in skills/round-tracker/pull_round.py. */
+const ACC_GROUPS = [
+  ["Strike", ["Good","Fat","Thin","Heel","Toe","Pull","Push","Hook","Slice"]],
+  ["Miss",   ["Left","Right","Short","Long"]],
+  ["Finish", ["Fairway","Rough","Deep Rough","Green","Sand","Water","OB","Unplayable"]]
+];
+/* A Finish tag names the lie the next shot is played from, so saving a shot
+   prefills it and Eric never types the same fact twice. Green/Water/OB/
+   Unplayable are deliberately absent: the green means putting, and a penalty
+   drop can be anywhere. */
+const ACC_LIE = {Fairway:"Fairway", Rough:"Rough", "Deep Rough":"Deep Rough",
+                 Sand:"Sand"};
+function accLie(v){
+  const t = accTags(v).find(x => x in ACC_LIE);
+  return t ? ACC_LIE[t] : null;
+}
+const ACCS  = ACC_GROUPS.reduce((a,g) => a.concat(g[1]), []);
 const BAD_ACC = new Set(["Water","OB","Unplayable"]);
+
+/* Parse a stored Result into its tag list; unknown words are dropped so a
+   hand-edited value can never break a round. */
+function accTags(v){
+  if (!v) return [];
+  const out = [];
+  String(v).split(/[,/]/).forEach(p => {
+    const want = p.trim().toLowerCase();
+    ACCS.forEach(t => { if (t.toLowerCase() === want && !out.includes(t)) out.push(t); });
+  });
+  return out;
+}
+function accIsBad(v){ return accTags(v).some(t => BAD_ACC.has(t)); }
+/* Keep the stored order canonical so two identical shots compare equal. */
+function accJoin(tags){
+  return ACCS.filter(t => tags.includes(t)).join(", ") || null;
+}
 
 /* ---- per-hole tour-caddy intel (read off the Par The Course books) ----
    tee = the Par The Course recommended play + any warning; avoid = where the strokes are;
@@ -898,7 +950,7 @@ function autoFir(h){
   if (h.par === 3) return null;
   const sh = SH(h.n);
   if (sh.length >= 2) return sh[1].lie === "Fairway" ? "Y" : "N";
-  if (sh[0] && BAD_ACC.has(sh[0].acc)) return "N";
+  if (sh[0] && accIsBad(sh[0].acc)) return "N";
   return null;
 }
 function autoGir(h){
@@ -1270,7 +1322,7 @@ function render(){
 
 function shotLine(s){
   const dist = s.da != null ? `${s.db}&rarr;${s.da}y` : `${s.db}y&rarr;green`;
-  const accCls = BAD_ACC.has(s.acc) ? "acc-bad" : "";
+  const accCls = accIsBad(s.acc) ? "acc-bad" : "";
   return `<b>${esc(s.club)}</b> &middot; ${esc(s.lie)} &middot; ${dist} &middot; <span class="${accCls}">${esc(s.acc)}</span>`;
 }
 
@@ -1284,6 +1336,10 @@ function shotEditor(){
   </select>`;
   return `<div class="editor">
     <div class="edrow">
+      <div class="edfield"><div class="edlbl">Type</div>${sel("ed-type", TYPES, d.type,
+        autoType ? `Auto: ${autoType}` : "Auto")}</div>
+    </div>
+    <div class="edrow">
       <div class="edfield"><div class="edlbl">Club</div>${sel("ed-club", CLUBS, d.club, "Select")}</div>
       <div class="edfield"><div class="edlbl">Lie</div>${sel("ed-lie", LIES, d.lie, "Select")}</div>
     </div>
@@ -1293,12 +1349,13 @@ function shotEditor(){
       <div class="edfield"><div class="edlbl">Finish (yd)</div>
         <input type="number" inputmode="numeric" id="ed-da" value="${d.da ?? ""}"></div>
     </div>
-    <div class="edrow">
-      <div class="edfield"><div class="edlbl">Type</div>${sel("ed-type", TYPES, d.type,
-        autoType ? `Auto: ${autoType}` : "Auto")}</div>
-      <div class="edfield"><div class="edlbl">Result</div>${sel("ed-acc", ACCS, d.acc, "Select")}</div>
+    <div class="edtags">
+      ${ACC_GROUPS.map(([label, tags]) => `<div class="edtaggrp">
+        <div class="edlbl">${label}</div>
+        <div class="edtagrow">${tags.map(t => `<button type="button" class="edtag${
+          accTags(d.acc).includes(t) ? " on" : ""}" data-tag="${esc(t)}">${esc(t)}</button>`).join("")}</div>
+      </div>`).join("")}
     </div>
-    <div class="edhint">leave Finish blank when the ball is on the green &middot; club + type guessed from yardage</div>
     <div class="edactions">
       <button class="edsave" data-act="edsave">${editing.idx === -1 ? "Add shot" : "Save shot"}</button>
       <button class="edcancel" data-act="edcancel">Cancel</button>
@@ -1878,7 +1935,8 @@ function bind(){
         const d = editing.draft;
         d.club = $("#ed-club").value || null;
         d.lie = $("#ed-lie").value || null;
-        d.acc = $("#ed-acc").value || null;
+        d.acc = accJoin(Array.from(
+          document.querySelectorAll(".edtag.on"), b => b.dataset.tag));
         d.db = numOrNull($("#ed-db").value);
         d.da = numOrNull($("#ed-da").value);
         const isFirst = editing.idx === -1 ? SH(hole).length === 0 : editing.idx === 0;
@@ -1894,7 +1952,7 @@ function bind(){
         if (wasNew && d.da != null){
           const nb = d.da;
           editing = { idx:-1, draft:{ club: suggestClub(nb, false, h.par),
-            lie:null, db:nb, da:null, type:null, acc:null } };
+            lie: accLie(d.acc), db:nb, da:null, type:null, acc:null } };
         } else {
           editing = null;
         }
@@ -1911,7 +1969,14 @@ function bind(){
     };
   });
   /* keep the open editor's values through any re-render (sync events etc.) */
-  const edSync = { "ed-club":"club", "ed-lie":"lie", "ed-type":"type", "ed-acc":"acc" };
+  document.querySelectorAll(".edtag").forEach(b => {
+    b.onclick = () => {
+      b.classList.toggle("on");
+      editing.draft.acc = accJoin(Array.from(
+        document.querySelectorAll(".edtag.on"), x => x.dataset.tag));
+    };
+  });
+  const edSync = { "ed-club":"club", "ed-lie":"lie", "ed-type":"type" };
   for (const [id, key] of Object.entries(edSync)){
     const el = document.getElementById(id);
     if (el) el.onchange = () => { editing.draft[key] = el.value || null; };
