@@ -819,7 +819,16 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
   // Strokes gained = the Golf Rounds sheet's Season Trends "recent form" — the last
   // half of 18-HOLE rounds only, vs a 5 HCP. 9-hole rounds are excluded (per the
   // sheet). Phase 2 reads these straight from Season Trends so the app always matches.
-  var SGBARS=[['Driver',0.2],['176+',-0.1],['101-175',-1.5],['100 & In',-1.2],['Putting',-1.9],['Ball Strike',-2.5]];
+  /* Season strokes gained, DERIVED from ROUNDS rather than hard-coded. It was
+     a second literal array that nobody kept in step, so it still showed April's
+     numbers after ROUNDS had been refreshed (Eric caught it 2026-07-24). */
+  var SGBARS=(function(){
+    var C=['Driver','176+','101-175','100 & In','Putting','Ball Strike'];
+    return C.map(function(n,i){
+      var t=ROUNDS.reduce(function(a,r){return a+r.sg[i];},0)/ROUNDS.length;
+      return [n, Math.round(t*10)/10];
+    });
+  })();
   function card(r){
     var holes=r.par>=71?18:9, firDen=holes===18?'14':'7', girDen=holes===18?'18':'9';
     var toPar=(r.vp>0?'+':'')+r.vp;
