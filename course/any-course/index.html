@@ -137,7 +137,8 @@ input,textarea,select{font-family:inherit}
   background-repeat:no-repeat;background-position:right 12px center;padding-right:28px}
 .edtags{margin-top:12px}
 .edtaggrp + .edtaggrp{margin-top:10px}
-.edtagrow{display:flex;flex-wrap:wrap;gap:6px}
+.edtagrow{display:flex;flex-wrap:nowrap;gap:6px}
+.edtagrow + .edtagrow{margin-top:6px}
 .edtag{font-family:var(--sans);font-size:12px;line-height:1;padding:10px 12px;border-radius:999px;
   border:1.5px solid rgba(12,35,64,.25);background:#F4EFE4;color:#0C2340;cursor:pointer;
   flex:1 1 auto;text-align:center;white-space:nowrap}
@@ -382,10 +383,15 @@ const TYPES = ["Drive","Long App (176+)","Mid App (101-175)","Short App (100&In)
    the stored value is a flat list. Rounds logged before this change hold a
    single value and 05/26 uses the slash form "OB/Unplayable"; accTags() reads
    all three. Mirrors ACC_TAGS in skills/round-tracker/pull_round.py. */
+/* Each group is a list of ROWS. Rows are explicit rather than left to flex
+   wrapping, which fills line one greedily and put Pull beside Toe instead of
+   beside Push. Line one of Strike is contact, line two is shape. */
 const ACC_GROUPS = [
-  ["Strike", ["Good","Fat","Thin","Heel","Toe","Pull","Push","Hook","Slice"]],
-  ["Miss",   ["Left","Right","Short","Long"]],
-  ["Finish", ["Fairway","Rough","Deep Rough","Green","Sand","Water","OB","Unplayable"]]
+  ["Strike", [["Good","Fat","Thin","Heel","Toe"],
+              ["Pull","Push","Hook","Slice"]]],
+  ["Miss",   [["Left","Right","Short","Long"]]],
+  ["Finish", [["Fairway","Rough","Deep Rough","Green"],
+              ["Sand","Water","OB","Unplayable"]]]
 ];
 /* A Finish tag names the lie the next shot is played from, so saving a shot
    prefills it and Eric never types the same fact twice. Green/Water/OB/
@@ -397,7 +403,7 @@ function accLie(v){
   const t = accTags(v).find(x => x in ACC_LIE);
   return t ? ACC_LIE[t] : null;
 }
-const ACCS  = ACC_GROUPS.reduce((a,g) => a.concat(g[1]), []);
+const ACCS  = ACC_GROUPS.reduce((a,g) => a.concat(...g[1]), []);
 const BAD_ACC = new Set(["Water","OB","Unplayable"]);
 
 /* Parse a stored Result into its tag list; unknown words are dropped so a
@@ -1119,10 +1125,10 @@ function shotEditor(){
         <input type="number" inputmode="numeric" id="ed-da" value="${d.da ?? ""}"></div>
     </div>
     <div class="edtags">
-      ${ACC_GROUPS.map(([label, tags]) => `<div class="edtaggrp">
+      ${ACC_GROUPS.map(([label, rows]) => `<div class="edtaggrp">
         <div class="edlbl">${label}</div>
-        <div class="edtagrow">${tags.map(t => `<button type="button" class="edtag${
-          accTags(d.acc).includes(t) ? " on" : ""}" data-tag="${esc(t)}">${esc(t)}</button>`).join("")}</div>
+        ${rows.map(tags => `<div class="edtagrow">${tags.map(t => `<button type="button" class="edtag${
+          accTags(d.acc).includes(t) ? " on" : ""}" data-tag="${esc(t)}">${esc(t)}</button>`).join("")}</div>`).join("")}
       </div>`).join("")}
     </div>
     <div class="edactions">
