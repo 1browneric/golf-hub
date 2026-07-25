@@ -405,7 +405,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
   // Factual category descriptors — the Improvement view is derived straight from
   // the real strokes-gained (SGBARS), ranked worst-first. No invented drills/stats.
   var PLAN_DESC={
-    'Ball Strike':'Full-swing ball-striking, tee to green.',
+    'Ball Striking':'Full-swing ball-striking, tee to green. The sum of the four shot categories above.',
     'Putting':'Strokes gained or lost on the greens.',
     '101-175':'Approach shots from 101 to 175 yards.',
     '100 & In':'Wedges and short approaches inside 100 yards.',
@@ -802,7 +802,18 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
 
   function el(html){var t=document.createElement('template');t.innerHTML=html.trim();return t.content.firstChild;}
 
-  var CATS=['Driver','176+','101-175','100 & In','Putting','Ball Strike'];
+  /* DISPLAY ORDER IS FIXED AND MATCHES THE PENCIL WEDGE RECAP: the four shot
+     categories, then Ball Striking as their SUBTOTAL, then Putting last.
+     `i` indexes the sheet's column order, where Putting comes before Ball
+     Strike -- do not reorder the data, only the display. */
+  var CATS=[
+    {label:'Driver',    i:0},
+    {label:'176+',      i:1},
+    {label:'101-175',   i:2},
+    {label:'100 & In',  i:3},
+    {label:'Ball Striking', i:5, subtotal:true},
+    {label:'Putting',   i:4}
+  ];
   // Strokes gained = the Golf Rounds sheet's Season Trends "recent form" — the last
   // half of 18-HOLE rounds only, vs a 5 HCP. 9-hole rounds are excluded (per the
   // sheet). Phase 2 reads these straight from Season Trends so the app always matches.
@@ -864,7 +875,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     var holes=r.par>=71?18:9, firDen=holes===18?'14':'7', girDen=holes===18?'18':'9';
     var toPar=(r.vp>0?'+':'')+r.vp;
     var stat=function(k,v){return '<div style="flex:1;text-align:center"><div class="mono" style="font-weight:600;font-size:14px">'+v+'</div><div class="lab" style="font-weight:600;font-size:8px;letter-spacing:.08em;margin-top:2px">'+k+'</div></div>';};
-    var cell=function(nm,v){var p=v>=0;return '<div style="background:var(--navy-deep);border-radius:9px;padding:8px 6px;text-align:center"><div class="mono" style="font-weight:600;font-size:13px;color:'+(p?'var(--green-pos)':'#E06070')+'">'+(p?'+':'')+v.toFixed(2)+'</div><div class="lab" style="font-weight:600;font-size:7.5px;letter-spacing:.04em;margin-top:2px">'+nm+'</div></div>';};
+    var cell=function(nm,v,sub){var p=v>=0;return '<div style="background:var(--navy-deep);border-radius:9px;padding:8px 6px;text-align:center"><div class="mono" style="font-weight:600;font-size:13px;color:'+(p?'var(--green-pos)':'#E06070')+'">'+(p?'+':'')+v.toFixed(2)+'</div><div class="lab" style="font-weight:'+(sub?'800':'600')+';font-size:7.5px;letter-spacing:.04em;margin-top:2px">'+nm+'</div></div>';};
     return '<div class="card" style="padding:16px 16px 14px;margin-bottom:10px;cursor:pointer">'+
       '<div style="display:flex;align-items:flex-start;justify-content:space-between">'+
         '<div><div class="h-title" style="font-size:18px">'+r.course+'</div>'+
@@ -874,21 +885,21 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       '<div style="display:flex;gap:6px;margin-top:14px;padding:10px 0;border-top:1px solid rgba(143,160,184,.16);border-bottom:1px solid rgba(143,160,184,.16)">'+
         stat('FIR',r.fw+'/'+firDen)+stat('GIR',r.gir+'/'+girDen)+stat('PUTTS',r.putts)+'</div>'+
       '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:12px">'+
-        CATS.map(function(nm,i){return cell(nm,r.sg[i]);}).join('')+'</div>'+
+        CATS.map(function(c){return cell(c.label,r.sg[c.i],c.subtotal);}).join('')+'</div>'+
     '</div>';
   }
 
   function renderRounds(RS){
     if(!RS||!RS.length) return;
-    var C=['Driver','176+','101-175','100 & In','Putting','Ball Strike'];
+    var C=CATS;
     /* Weighted by holes, then expressed per 18. Strokes gained accumulates per
        shot, so a nine holds half the evidence of a full round and must carry
        half the weight. */
     var len=function(r){return r.holes||(r.par>=60?18:9);};
     var H=RS.reduce(function(a,r){return a+len(r);},0)||1;
-    var SGBARS=C.map(function(n,i){
-      var t=RS.reduce(function(a,r){return a+(r.sg[i]||0);},0)/H*18;
-      return [n, Math.round(t*100)/100];
+    var SGBARS=C.map(function(c){
+      var t=RS.reduce(function(a,r){return a+(r.sg[c.i]||0);},0)/H*18;
+      return [c.label, Math.round(t*100)/100, c.subtotal];
     });
 
     document.getElementById('rounds-list').innerHTML=RS.map(card).join('');
@@ -896,8 +907,11 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
 
     document.getElementById('sgbars-hub').innerHTML=document.getElementById('sgbars-rounds').innerHTML=SGBARS.map(function(a){
       var v=a[1],pos=v>=0,half=Math.min(46,Math.abs(v)/4*46).toFixed(1);
-      return '<div style="margin-bottom:14px">'+
-        '<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-weight:600;font-size:13px">'+a[0]+'</span>'+
+      /* Ball Striking is the subtotal of the four rows above it, so it gets a
+         rule and bold weight -- same shape as the recap email's SG card. */
+      return (a[2]?'<div style="height:2px;background:rgba(143,160,184,.28);margin:2px 0 12px"></div>':'')+
+        '<div style="margin-bottom:14px">'+
+        '<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-weight:'+(a[2]?'800':'600')+';font-size:13px">'+a[0]+'</span>'+
         '<span class="mono" style="font-weight:600;font-size:13px;color:'+(pos?'var(--green-pos)':'var(--red)')+'">'+(pos?'+':'')+v.toFixed(2)+'</span></div>'+
         '<div class="sgbar"><div class="mid"></div><div style="position:absolute;top:0;bottom:0;'+(pos?'left:50%':'right:50%')+';width:'+half+'%;background:'+(pos?'var(--green-pos)':'var(--red)')+';border-radius:4px"></div></div>'+
       '</div>';
