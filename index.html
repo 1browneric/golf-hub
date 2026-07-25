@@ -344,6 +344,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       <div class="eyebrow">FOCUS AREAS</div>
       <div class="h-title" style="font-size:32px;margin-top:6px">Improvement Plan</div>
       <div id="plan-list"></div>
+      <div class="sectlab" style="margin:30px 0 12px">SHOT PATTERNS</div>
       <div id="pattern-list"></div>
     </section>
 
@@ -1013,9 +1014,9 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       byFinish:byFinish
     };
   }
-  function patternCard(title,sub,rows,total){
+  function bars(rows,total){
     if(!rows||!rows.length) return '';
-    var bars=rows.slice(0,5).map(function(r){
+    return rows.slice(0,5).map(function(r){
       var w=total?Math.max(4,Math.round(r[1]/total*100)):0;
       return '<div style="margin-top:8px">'+
         '<div style="display:flex;justify-content:space-between;font-size:13px">'+
@@ -1025,42 +1026,44 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
           '<div style="height:6px;border-radius:3px;width:'+w+'%;background:var(--red)"></div></div>'+
       '</div>';
     }).join('');
-    return '<div class="card" style="padding:16px 18px;margin-top:12px">'+
-      '<div class="h-title" style="font-size:17px">'+title+'</div>'+
-      '<div style="font-size:12px;color:var(--steel);margin-top:2px">'+sub+'</div>'+
-      bars+'</div>';
+  }
+  function groupLabel(t){
+    return '<div style="font-family:var(--font-caps);font-weight:800;font-size:10px;'+
+      'letter-spacing:.14em;color:var(--steel);margin-top:14px">'+t+'</div>';
   }
   function renderPatterns(H){
     var el=document.getElementById('pattern-list');
     if(!el) return;
     var P=computePatterns(H);
-    if(!P){ el.innerHTML='<div class="card" style="padding:16px 18px;margin-top:12px">'+
-      '<div style="font-size:13px;color:var(--steel)">No shot detail logged yet.</div></div>'; return; }
-    var teeDirN=P.teeDir.reduce(function(a,r){return a+r[1];},0);
-    var teeStrN=P.teeStrike.reduce(function(a,r){return a+r[1];},0);
-    var appDirN=P.appDir.reduce(function(a,r){return a+r[1];},0);
-    var strAllN=P.strikeAll.reduce(function(a,r){return a+r[1];},0);
-    var cost='';
-    var order=['Fairway','Rough','Trouble'];
-    var have=order.filter(function(k){return P.byFinish[k];});
-    if(have.length>1){
-      cost='<div class="card" style="padding:16px 18px;margin-top:12px">'+
-        '<div class="h-title" style="font-size:17px">What the tee shot costs</div>'+
-        '<div style="font-size:12px;color:var(--steel);margin-top:2px">Average score to par on the hole, by where the drive finished</div>'+
-        have.map(function(k){
-          var d=P.byFinish[k], avg=d.sum/d.n;
-          return '<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px">'+
-            '<span style="font-weight:600">'+k+'</span>'+
-            '<span class="mono" style="color:'+(avg<=0?'var(--green-pos)':'var(--red)')+'">'+
-              (avg>=0?'+':'')+avg.toFixed(2)+'  <span style="color:var(--steel)">('+d.n+' holes)</span></span></div>';
-        }).join('')+'</div>';
-    }
-    el.innerHTML =
-      patternCard('Off the tee - where it goes','Direction tags on '+P.teeN+' tee shots',P.teeDir,teeDirN)+
-      patternCard('Off the tee - strike','Strike tags on tee shots',P.teeStrike,teeStrN)+
-      patternCard('Approach misses','Direction tags on '+P.appN+' approach shots',P.appDir,appDirN)+
-      patternCard('Strike faults, every club','Across all '+P.shots+' shots logged',P.strikeAll,strAllN)+
-      cost;
+    if(!P){ el.innerHTML=''; return; }
+    var sum=function(a){return a.reduce(function(x,r){return x+r[1];},0);};
+    /* Off the tee: where it went, how it was struck, and what it cost - one
+       card, because they are the same question asked three ways. */
+    var costRows='';
+    ['Fairway','Rough','Trouble'].forEach(function(k){
+      var d=P.byFinish[k]; if(!d) return;
+      var avg=d.sum/d.n;
+      costRows+='<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px">'+
+        '<span style="font-weight:600">'+k+'</span>'+
+        '<span class="mono" style="color:'+(avg<=0?'var(--green-pos)':'var(--red)')+'">'+
+          (avg>=0?'+':'')+avg.toFixed(2)+' <span style="color:var(--steel)">('+d.n+' holes)</span></span></div>';
+    });
+    var tee='<div class="card" style="padding:16px 18px;margin-top:12px">'+
+      '<div class="h-title" style="font-size:17px">Off the Tee</div>'+
+      groupLabel('WHERE IT GOES')+bars(P.teeDir,sum(P.teeDir))+
+      (P.teeStrike.length?groupLabel('STRIKE')+bars(P.teeStrike,sum(P.teeStrike)):'')+
+      (costRows?groupLabel('SCORE TO PAR BY WHERE IT FINISHED')+costRows:'')+
+    '</div>';
+    var app=P.appDir.length?'<div class="card" style="padding:16px 18px;margin-top:12px">'+
+      '<div class="h-title" style="font-size:17px">Approach</div>'+
+      groupLabel('WHERE IT MISSES')+bars(P.appDir,sum(P.appDir))+
+      (P.appStrike.length?groupLabel('STRIKE')+bars(P.appStrike,sum(P.appStrike)):'')+
+    '</div>':'';
+    var all=P.strikeAll.length?'<div class="card" style="padding:16px 18px;margin-top:12px">'+
+      '<div class="h-title" style="font-size:17px">Strike Faults, Every Club</div>'+
+      bars(P.strikeAll,sum(P.strikeAll))+
+    '</div>':'';
+    el.innerHTML=tee+app+all;
   }
 
   function renderRounds(RS){
