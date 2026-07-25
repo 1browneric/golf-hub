@@ -619,6 +619,14 @@ const TOPIC = "rt-shoal-creek-95059bc06b";
 // Shared channel Pencil Wedge watches: on save we post the round-done marker
 // here WITH this page's URL, so the worker knows which course was played and
 // pulls the round from THIS page's channel. One worker, any number of courses.
+/* Outdoor Golf 2026 intake. The page posts the finished round here on Save and
+   the sheet's doPost stages it and runs the existing applySG fan-out. This is
+   the writer; nothing on the VM writes to the sheet any more. */
+const SHEET_HOOK = "https://script.google.com/macros/s/AKfycbzdjnlvHfSpAbEE0LkUG-lJ7kE3BB5ENzikMY5EYSkr3Oa_cjF1kkx3SfzEjwkicFgX/exec";
+const SHEET_TOKEN = "hb-golf-2026";
+/* Eric hears about a save ONLY when it fails to reach the sheet. A silent
+   pipeline means it worked. */
+const SAVE_ALERT = "hb-golf-save-fail-4d9a2c17";
 const DISPATCH = "rt-hub-dispatch-9f2c7a41b3";
 const LS_KEY = "rt_shoal_creek_v1";
 
@@ -1089,10 +1097,33 @@ async function saveRound(){
     try { await fetch(`${NTFY}/${DISPATCH}`, { method:"POST", body: JSON.stringify(marker) }); } catch(e){}
     sent = true;
   } catch(e){}
+  /* Post the finished round straight to the sheet. The page is holding the
+     real round object right now; nothing downstream has to reconstruct it. */
+  let landed = null, sheetErr = null;
+  try {
+    const resp = await fetch(SHEET_HOOK, { method:"POST", headers:{"Content-Type":"text/plain"},
+      body: JSON.stringify({ token: SHEET_TOKEN, round: data.round, holes: data.holes }) });
+    const j = await resp.json();
+    if (!j.ok) throw new Error(j.error || "sheet said not-ok");
+    landed = j;
+  } catch(e){
+    sheetErr = String(e).slice(0,160);
+    /* No server to fall back on: drop a marker on a topic Eric subscribes to.
+       The round is still on the channel and in the clipboard, so nothing is
+       lost -- he just needs to know it did not reach the sheet. */
+    try {
+      await fetch(`${NTFY}/${SAVE_ALERT}`, { method:"POST",
+        headers:{ "Title": "Golf save did not reach the sheet", "Priority": "high" },
+        body: `${ROUND.course} ${data.round.date}: ${sheetErr}` });
+    } catch(_){}
+  }
   let copied = false;
   try { await navigator.clipboard.writeText(lastExport); copied = true; } catch(e){}
   const el = document.querySelector("#saveout");
-  if (el) el.innerHTML = saveOutHTML(sent, copied, data);
+  if (el) el.innerHTML =
+      (landed ? `<div style="margin-bottom:8px;font-weight:600">Saved to the sheet - row ${landed.row}, ${landed.date}</div>`
+              : sheetErr ? `<div style="margin-bottom:8px;font-weight:600">NOT saved to the sheet: ${sheetErr}</div>` : "")
+      + saveOutHTML(sent, copied, data);
   /* auto-open the mail app with the full breakdown pre-filled so a copy
      always reaches Eric's inbox — he just taps Send */
   const mailto = mailtoFor(data);
