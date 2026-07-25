@@ -344,7 +344,6 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       <div class="eyebrow">FOCUS AREAS</div>
       <div class="h-title" style="font-size:32px;margin-top:6px">Improvement Plan</div>
       <div id="plan-list"></div>
-      <div class="sectlab" style="margin:28px 0 12px">MISS &amp; STRIKE PATTERNS</div>
       <div id="pattern-list"></div>
     </section>
 
@@ -985,7 +984,19 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       byFinish[k]=byFinish[k]||{n:0,sum:0};
       byFinish[k].n++; byFinish[k].sum+=h.vsPar;
     });
+    /* Per category, so each Improvement card can answer "am I left or right
+       with THIS club" rather than only across the whole bag. The type strings
+       are the tracker's own shot Types. */
+    var TYPE_OF={'Driver':'Drive','176+':'Long App (176+)',
+                 '101-175':'Mid App (101-175)','100 & In':'Short App (100&In)'};
+    var byCat={};
+    Object.keys(TYPE_OF).forEach(function(name){
+      var sel=all.filter(function(sh){return sh.type===TYPE_OF[name];});
+      byCat[name]={n:sel.length, dir:tally(sel,DIRECTION), strike:tally(sel,STRIKE),
+                   finish:tally(sel,FINISH)};
+    });
     return {
+      byCat:byCat,
       shots:all.length, teeN:tee.length, appN:app.length,
       teeDir:tally(tee,DIRECTION), teeStrike:tally(tee,STRIKE), teeFinish:tally(tee,FINISH),
       appDir:tally(app,DIRECTION), appStrike:tally(app,STRIKE),
@@ -1088,7 +1099,21 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     var puttAvg= seasonStat(function(r){return r.putts;});
     var pct=function(v){return v==null?'-':Math.round(v*100)+'%';};
     var H=HOLESTATS;
-    var bits=function(a){return a.filter(function(x){return x;}).join('  ');};
+    var PAT=computePatterns(H);
+    /* ONE STAT PER LINE. Eric does not want them run together as sentence
+       after sentence - each number gets its own row. */
+    var bits=function(a){return a.filter(function(x){return x;}).join('<br>');};
+    /* "Miss left 12 of 20. Fault slice 4." for one category. Counts are shown
+       so a small sample reads as a small sample. */
+    var missLine=function(name){
+      if(!PAT||!PAT.byCat||!PAT.byCat[name]||!PAT.byCat[name].n) return '';
+      var c=PAT.byCat[name];
+      var dn=c.dir.reduce(function(a,r){return a+r[1];},0);
+      var out=[];
+      if(c.dir.length)    out.push('Miss '+c.dir[0][0].toLowerCase()+' '+c.dir[0][1]+' of '+dn+'.');
+      if(c.strike.length) out.push('Fault '+c.strike[0][0].toLowerCase()+' '+c.strike[0][1]+'.');
+      return out.join('<br>');
+    };
     var SUPPORT={
       'Driver':   bits([fwPct==null?'':'Fairways '+pct(fwPct)+'.',
                         H&&H.penaltyPer!=null?'Penalties '+H.penaltyPer.toFixed(1)+' a round.':'']),
@@ -1101,6 +1126,9 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       'Putting':  bits([puttAvg==null?'':'Averaging '+puttAvg.toFixed(1)+' putts.',
                         H&&H.threePuttPer!=null?'Three-putts '+H.threePuttPer.toFixed(1)+' a round ('+H.threePuttTotal+' total).':''])
     };
+    ['Driver','176+','101-175','100 & In'].forEach(function(k){
+      SUPPORT[k]=bits([SUPPORT[k], missLine(k)]);
+    });
     var ranked=SGBARS.filter(function(a){return !a[2];})   // drop the subtotal
                      .slice().sort(function(a,b){return a[1]-b[1];});
     var rollup=SGBARS.filter(function(a){return a[2];})[0];
@@ -1113,15 +1141,23 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
           '<span class="mono" style="font-weight:600;font-size:14px;color:'+(pos?'var(--green-pos)':'#E06070')+'">'+(pos?'+':'')+v.toFixed(2)+'</span></div>'+
         '<div class="h-title" style="font-size:18px;margin-top:6px">'+a[0]+'</div>'+
         '<div style="font-size:13px;color:var(--steel);line-height:1.45;margin-top:4px">'+(PLAN_DESC[a[0]]||'')+'</div>'+
-        (sup?'<div class="mono" style="font-size:12px;color:var(--steel);margin-top:6px;opacity:.9">'+sup+'</div>':'')+
+        (sup?'<div class="mono" style="font-size:12px;color:var(--steel);margin-top:6px;opacity:.9;line-height:1.8">'+sup+'</div>':'')+
       '</div>';
     }).join('')
-    + (rollup?'<div class="card" style="padding:14px 18px;margin-top:16px;opacity:.85">'+
+    + (rollup?'<div class="card" style="padding:16px 18px;margin-top:12px">'+
         '<div style="display:flex;align-items:center;justify-content:space-between">'+
-          '<span style="font-family:var(--font-caps);font-weight:800;font-size:10px;letter-spacing:.14em;color:var(--steel)">ROLL-UP, NOT RANKED</span>'+
+          '<span style="font-family:var(--font-caps);font-weight:800;font-size:10px;letter-spacing:.14em;color:var(--steel)">TOTAL</span>'+
           '<span class="mono" style="font-weight:600;font-size:14px;color:'+(rollup[1]>=0?'var(--green-pos)':'#E06070')+'">'+(rollup[1]>=0?'+':'')+rollup[1].toFixed(2)+'</span></div>'+
-        '<div class="h-title" style="font-size:16px;margin-top:6px">'+rollup[0]+'</div>'+
-        '<div style="font-size:12px;color:var(--steel);line-height:1.45;margin-top:4px">The sum of the four shot categories above. Listed for reference only - it is not a separate area to work on.</div>'+
+        '<div class="h-title" style="font-size:18px;margin-top:6px">'+rollup[0]+'</div>'+
+        /* Ball striking IS the full-swing game, so this card heads the strike
+           and miss detail that follows it rather than describing itself. */
+        '<div class="mono" style="font-size:12px;color:var(--steel);margin-top:6px;opacity:.9;line-height:1.8">'+
+          bits([fwPct==null?'':'Fairways '+pct(fwPct)+'.',
+                girPct==null?'':'Greens in regulation '+pct(girPct)+'.',
+                PAT&&PAT.teeDir.length?'Tee miss '+PAT.teeDir[0][0].toLowerCase()+' '+PAT.teeDir[0][1]+' of '+PAT.teeDir.reduce(function(a,r){return a+r[1];},0)+'.':'',
+                PAT&&PAT.appDir.length?'Approach miss '+PAT.appDir[0][0].toLowerCase()+' '+PAT.appDir[0][1]+' of '+PAT.appDir.reduce(function(a,r){return a+r[1];},0)+'.':'',
+                PAT&&PAT.strikeAll.length?'Most common fault '+PAT.strikeAll[0][0].toLowerCase()+'.':''])+
+        '</div>'+
       '</div>':'');
 
     /* Scoring trend -- the last five completed 18s, oldest to newest. This was
