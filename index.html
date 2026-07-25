@@ -229,30 +229,14 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
             <div class="lab" id="avg-topar" style="font-size:11px;margin-top:6px">SEASON AVG · +12.4 TO PAR</div>
           </div>
           <div style="text-align:right">
-            <div class="pill"><span style="color:var(--green-pos);font-size:11px">▾</span><span class="v">1.0</span></div>
-            <div class="lab" style="font-size:10px;letter-spacing:.12em;margin-top:6px">30 DAYS</div>
+            <div class="pill" id="trend-pill"></div>
+            <div class="lab" id="trend-lab" style="font-size:10px;letter-spacing:.12em;margin-top:6px">LAST 5 VS PRIOR 5</div>
           </div>
         </div>
-        <svg viewBox="0 0 320 112" style="width:100%;height:104px;margin-top:16px;display:block;overflow:visible">
+        <svg id="trend-svg" viewBox="0 0 320 112" style="width:100%;height:104px;margin-top:16px;display:block;overflow:visible">
           <defs><linearGradient id="gb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B22234"/><stop offset="1" stop-color="#8F1B2A"/></linearGradient></defs>
-          <!-- bars: strokes over par, rising off the par baseline -->
-          <rect x="12"  y="32" width="40" height="60" rx="5" fill="url(#gb)"/>
-          <rect x="76"  y="41" width="40" height="51" rx="5" fill="url(#gb)"/>
-          <rect x="140" y="32" width="40" height="60" rx="5" fill="url(#gb)"/>
-          <rect x="204" y="32" width="40" height="60" rx="5" fill="url(#gb)"/>
-          <rect x="268" y="37" width="40" height="55" rx="5" fill="url(#gb)"/>
-          <!-- par baseline -->
-          <line x1="6" y1="92" x2="314" y2="92" stroke="#8FA0B8" stroke-width="1" stroke-dasharray="3 3" opacity="0.75"/>
-          <!-- score (+ to par) above each bar -->
-          <g font-family="Spline Sans Mono" font-size="10" text-anchor="middle">
-            <text x="32"  y="26"><tspan fill="#F4EFE4">85 </tspan><tspan fill="#B22234">(+13)</tspan></text>
-            <text x="96"  y="35"><tspan fill="#F4EFE4">83 </tspan><tspan fill="#B22234">(+11)</tspan></text>
-            <text x="160" y="26"><tspan fill="#F4EFE4">85 </tspan><tspan fill="#B22234">(+13)</tspan></text>
-            <text x="224" y="26"><tspan fill="#F4EFE4">84 </tspan><tspan fill="#B22234">(+13)</tspan></text>
-            <text x="288" y="31"><tspan fill="#F4EFE4">84 </tspan><tspan fill="#B22234">(+12)</tspan></text>
-          </g>
         </svg>
-        <div class="gdate"><span>Apr 18</span><span>Apr 25</span><span>May 16</span><span>Jun 7</span><span>Jul 12</span></div>
+        <div class="gdate" id="trend-dates"></div>
       </div>
 
       <div class="card" style="padding:20px;margin-top:16px">
@@ -928,6 +912,44 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
         '<div class="h-title" style="font-size:18px;margin-top:6px">'+a[0]+'</div>'+
         '<div style="font-size:13px;color:var(--steel);line-height:1.45;margin-top:4px">'+(PLAN_DESC[a[0]]||'')+'</div></div>';
     }).join('');
+
+    /* Scoring trend -- the last five completed 18s, oldest to newest. This was
+       a hand-drawn SVG frozen at Apr 18 - Jul 12 and never moved when rounds
+       were added. Bars rise off the par baseline, so taller is worse. */
+    var f5=RS.filter(function(r){return r.holes===18;});
+    var last5=f5.slice(0,5).reverse();
+    if(last5.length){
+      var X=[12,76,140,204,268], W=40, BASE=92;
+      var bars='', labs='';
+      last5.forEach(function(r,i){
+        var h=Math.max(8,Math.min(78,Math.abs(r.vp)*4.6)), y=BASE-h, x=X[i]||12;
+        bars+='<rect x="'+x+'" y="'+y.toFixed(0)+'" width="'+W+'" height="'+h.toFixed(0)+'" rx="5" fill="url(#gb)"/>';
+        labs+='<text x="'+(x+W/2)+'" y="'+(y-6).toFixed(0)+'"><tspan fill="#F4EFE4">'+r.score+' </tspan>'+
+              '<tspan fill="#B22234">('+(r.vp>=0?'+':'')+r.vp+')</tspan></text>';
+      });
+      var svg=document.getElementById('trend-svg');
+      if(svg){
+        svg.innerHTML='<defs><linearGradient id="gb" x1="0" y1="0" x2="0" y2="1">'+
+          '<stop offset="0" stop-color="#B22234"/><stop offset="1" stop-color="#8F1B2A"/></linearGradient></defs>'+
+          bars+
+          '<line x1="6" y1="92" x2="314" y2="92" stroke="#8FA0B8" stroke-width="1" stroke-dasharray="3 3" opacity="0.75"/>'+
+          '<g font-family="Spline Sans Mono" font-size="10" text-anchor="middle">'+labs+'</g>';
+      }
+      var dl=document.getElementById('trend-dates');
+      if(dl) dl.innerHTML=last5.map(function(r){return '<span>'+r.date+'</span>';}).join('');
+      /* Trend: the five most recent 18s against the five before them. Lower is
+         better, so a fall is the good direction. */
+      var pill=document.getElementById('trend-pill');
+      if(pill){
+        var prior=f5.slice(5,10);
+        if(prior.length){
+          var mean=function(a){return a.reduce(function(x,r){return x+r.score;},0)/a.length;};
+          var delta=mean(f5.slice(0,5))-mean(prior), better=delta<=0;
+          pill.innerHTML='<span style="color:'+(better?'var(--green-pos)':'var(--red)')+';font-size:11px">'+
+            (better?'\u25BE':'\u25B4')+'</span><span class="v">'+Math.abs(delta).toFixed(1)+'</span>';
+        } else { pill.innerHTML='<span class="v">-</span>'; }
+      }
+    }
 
     /* Season average over COMPLETED 18s only -- a nine would drag a gross
        scoring average toward nonsense. These three numbers used to be typed
