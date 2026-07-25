@@ -1151,7 +1151,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
        contiguous - no value falls between two of them and ends up unlabelled. */
     var bandLabel=function(v){
       if(v>=1.5)   return 'STRENGTH';
-      if(v>=-0.99) return 'SOLID';
+      if(v>=-0.99) return 'MAINTAIN';
       if(v>=-3)    return 'FOCUS';
       if(v>=-5)    return 'TOP FOCUS';
       return 'NEEDS SIGNIFICANT IMPROVEMENT';
