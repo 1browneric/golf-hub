@@ -918,7 +918,8 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
                     acc:String(acc||''), n:sIdx+1, vsPar:vp});
       }
       holes.push({date:String(r[0]), par:+r[3]||0, putts:+r[44]||0, score:+r[45]||0,
-                  vsPar:vp, gir:String(r[48]||''), pen:+r[49]||0, shots:shots});
+                  vsPar:vp, fir:String(r[47]||''), gir:String(r[48]||''),
+                  pen:+r[49]||0, shots:shots});
     });
     if(!holes.length) return null;
     var rounds={};
@@ -928,6 +929,12 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
        The check mark is the sheet's GIR symbol; anything else is a miss. */
     var missed=holes.filter(function(h){return h.gir.indexOf('\u2713')<0;});
     var saved=missed.filter(function(h){return h.vsPar!=null && h.vsPar<=0;});
+    /* Counts, not averaged percentages - so fairways and greens can be written
+       in the same "46% (75 of 162)" form as everything else. Par 3s have no
+       fairway, so they are excluded from the fairway denominator. */
+    var girHit=holes.filter(function(h){return h.gir.indexOf('\u2713')>=0;}).length;
+    var firHoles=holes.filter(function(h){return h.par>3;});
+    var firHit=firHoles.filter(function(h){return h.fir.indexOf('\u2713')>=0;}).length;
     return {
       rounds:nRounds,
       scramblePct: missed.length? saved.length/missed.length : null,
@@ -935,6 +942,8 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       threePuttPer: holes.filter(function(h){return h.putts>=3;}).length/nRounds,
       threePuttTotal: holes.filter(function(h){return h.putts>=3;}).length,
       holes: holes,
+      girHit:girHit, girHoles:holes.length,
+      firHit:firHit, firHoles:firHoles.length,
       penaltyPer: holes.reduce(function(a,h){return a+h.pen;},0)/nRounds,
       doublePer: holes.filter(function(h){return h.vsPar!=null&&h.vsPar>=2;}).length/nRounds
     };
@@ -965,6 +974,9 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
              .sort(function(a,b){return b[1]-a[1];});
   }
   function pct(a,b){ return b? Math.round(a/b*100)+'%' : '-'; }
+  /* Eric's format for a proportion: rate first, sample in brackets.
+     "59% (25 of 42)" - never a bare count, never a percentage on its own. */
+  function rate(n,d){ return d? Math.round(n/d*100)+'% ('+n+' of '+d+')' : '-'; }
   function computePatterns(H){
     if(!H||!H.holes||!H.holes.length) return null;
     var all=[]; H.holes.forEach(function(h){ h.shots.forEach(function(sh){ all.push(sh); }); });
@@ -1011,7 +1023,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       return '<div style="margin-top:8px">'+
         '<div style="display:flex;justify-content:space-between;font-size:13px">'+
           '<span style="font-weight:600">'+r[0]+'</span>'+
-          '<span class="mono" style="color:var(--steel)">'+r[1]+'  '+pct(r[1],total)+'</span></div>'+
+          '<span class="mono" style="color:var(--steel)">'+rate(r[1],total)+'</span></div>'+
         '<div style="height:6px;border-radius:3px;background:rgba(143,160,184,.18);margin-top:4px">'+
           '<div style="height:6px;border-radius:3px;width:'+w+'%;background:var(--red)"></div></div>'+
       '</div>';
@@ -1109,19 +1121,20 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       if(!PAT||!PAT.byCat||!PAT.byCat[name]||!PAT.byCat[name].n) return '';
       var c=PAT.byCat[name];
       var dn=c.dir.reduce(function(a,r){return a+r[1];},0);
+      var sn=c.strike.reduce(function(a,r){return a+r[1];},0);
       var out=[];
-      if(c.dir.length)    out.push('Miss '+c.dir[0][0].toLowerCase()+' '+c.dir[0][1]+' of '+dn+'.');
-      if(c.strike.length) out.push('Fault '+c.strike[0][0].toLowerCase()+' '+c.strike[0][1]+'.');
+      if(c.dir.length)    out.push('Miss '+c.dir[0][0].toLowerCase()+' '+rate(c.dir[0][1],dn)+'.');
+      if(c.strike.length) out.push('Fault '+c.strike[0][0].toLowerCase()+' '+rate(c.strike[0][1],sn)+'.');
       return out.join('<br>');
     };
     var SUPPORT={
-      'Driver':   bits([fwPct==null?'':'Fairways '+pct(fwPct)+'.',
+      'Driver':   bits([H&&H.firHoles?'Fairways '+rate(H.firHit,H.firHoles)+'.':(fwPct==null?'':'Fairways '+pct(fwPct)+'.'),
                         H&&H.penaltyPer!=null?'Penalties '+H.penaltyPer.toFixed(1)+' a round.':'']),
-      '176+':     bits([girPct==null?'':'Greens in regulation '+pct(girPct)+'.']),
-      '101-175':  bits([girPct==null?'':'Greens in regulation '+pct(girPct)+'.',
+      '176+':     bits([H&&H.girHoles?'Greens in regulation '+rate(H.girHit,H.girHoles)+'.':(girPct==null?'':'Greens in regulation '+pct(girPct)+'.')]),
+      '101-175':  bits([H&&H.girHoles?'Greens in regulation '+rate(H.girHit,H.girHoles)+'.':(girPct==null?'':'Greens in regulation '+pct(girPct)+'.'),
                         H&&H.doublePer!=null?'Doubles or worse '+H.doublePer.toFixed(1)+' a round.':'']),
       '100 & In': bits([H&&H.scramblePct!=null
-                          ? 'Scrambling '+pct(H.scramblePct)+' ('+H.scrambleN+' of '+H.scrambleD+' greens missed).'
+                          ? 'Scrambling '+rate(H.scrambleN,H.scrambleD)+' greens missed.'
                           : '']),
       'Putting':  bits([puttAvg==null?'':'Averaging '+puttAvg.toFixed(1)+' putts.',
                         H&&H.threePuttPer!=null?'Three-putts '+H.threePuttPer.toFixed(1)+' a round ('+H.threePuttTotal+' total).':''])
@@ -1132,12 +1145,23 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     var ranked=SGBARS.filter(function(a){return !a[2];})   // drop the subtotal
                      .slice().sort(function(a,b){return a[1]-b[1];});
     var rollup=SGBARS.filter(function(a){return a[2];})[0];
+    /* Label comes from the NUMBER, not the rank. The old scheme tagged only the
+       worst category BIGGEST LEAK and called anything positive a STRENGTH, so
+       -0.31 and -1.31 read identically and +0.02 read as a strength. Bands are
+       contiguous - no value falls between two of them and ends up unlabelled. */
+    var bandLabel=function(v){
+      if(v>=1.5)   return 'STRENGTH';
+      if(v>=-0.99) return 'SOLID';
+      if(v>=-3)    return 'FOCUS';
+      if(v>=-5)    return 'TOP FOCUS';
+      return 'NEEDS SIGNIFICANT IMPROVEMENT';
+    };
     document.getElementById('plan-list').innerHTML=ranked.map(function(a,i){
-      var v=a[1],pos=v>=0,tag=(i===0?'BIGGEST LEAK':(pos?'STRENGTH':'FOCUS'));
+      var v=a[1],pos=v>=0,tag=bandLabel(v);
       var sup=SUPPORT[a[0]]||'';
       return '<div class="card" style="padding:16px 18px;margin-top:12px">'+
         '<div style="display:flex;align-items:center;justify-content:space-between">'+
-          '<span style="font-family:var(--font-caps);font-weight:800;font-size:10px;letter-spacing:.14em;color:var(--steel)">'+tag+'</span>'+
+          '<span style="font-family:var(--font-caps);font-weight:800;font-size:10px;letter-spacing:.14em;color:var(--steel);padding-right:10px;line-height:1.3">'+tag+'</span>'+
           '<span class="mono" style="font-weight:600;font-size:14px;color:'+(pos?'var(--green-pos)':'#E06070')+'">'+(pos?'+':'')+v.toFixed(2)+'</span></div>'+
         '<div class="h-title" style="font-size:18px;margin-top:6px">'+a[0]+'</div>'+
         '<div style="font-size:13px;color:var(--steel);line-height:1.45;margin-top:4px">'+(PLAN_DESC[a[0]]||'')+'</div>'+
@@ -1152,11 +1176,11 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
         /* Ball striking IS the full-swing game, so this card heads the strike
            and miss detail that follows it rather than describing itself. */
         '<div class="mono" style="font-size:12px;color:var(--steel);margin-top:6px;opacity:.9;line-height:1.8">'+
-          bits([fwPct==null?'':'Fairways '+pct(fwPct)+'.',
-                girPct==null?'':'Greens in regulation '+pct(girPct)+'.',
-                PAT&&PAT.teeDir.length?'Tee miss '+PAT.teeDir[0][0].toLowerCase()+' '+PAT.teeDir[0][1]+' of '+PAT.teeDir.reduce(function(a,r){return a+r[1];},0)+'.':'',
-                PAT&&PAT.appDir.length?'Approach miss '+PAT.appDir[0][0].toLowerCase()+' '+PAT.appDir[0][1]+' of '+PAT.appDir.reduce(function(a,r){return a+r[1];},0)+'.':'',
-                PAT&&PAT.strikeAll.length?'Most common fault '+PAT.strikeAll[0][0].toLowerCase()+'.':''])+
+          bits([H&&H.firHoles?'Fairways '+rate(H.firHit,H.firHoles)+'.':'',
+                H&&H.girHoles?'Greens in regulation '+rate(H.girHit,H.girHoles)+'.':'',
+                PAT&&PAT.teeDir.length?'Tee miss '+PAT.teeDir[0][0].toLowerCase()+' '+rate(PAT.teeDir[0][1],PAT.teeDir.reduce(function(a,r){return a+r[1];},0))+'.':'',
+                PAT&&PAT.appDir.length?'Approach miss '+PAT.appDir[0][0].toLowerCase()+' '+rate(PAT.appDir[0][1],PAT.appDir.reduce(function(a,r){return a+r[1];},0))+'.':'',
+                PAT&&PAT.strikeAll.length?'Most common fault '+PAT.strikeAll[0][0].toLowerCase()+' '+rate(PAT.strikeAll[0][1],PAT.strikeAll.reduce(function(a,r){return a+r[1];},0))+'.':''])+
         '</div>'+
       '</div>':'');
 
