@@ -833,6 +833,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
      --------------------------------------------------------------------- */
   var HOOK='https://script.google.com/macros/s/AKfycbzdjnlvHfSpAbEE0LkUG-lJ7kE3BB5ENzikMY5EYSkr3Oa_cjF1kkx3SfzEjwkicFgX/exec';
   var CACHE_KEY='gh_rounds_cache_v1';
+  var HOLE_CACHE='gh_holes_cache_v1';
   var MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   /* course -> location. The sheet does not carry a location, so it comes from
      the course library plus the baked seed, which holds the ones Eric has
@@ -891,6 +892,43 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     '</div>';
   }
 
+  /* ---------------------------------------------------------------------
+     HOLE-LEVEL STATS for the Improvement tab. The Rounds tab cannot answer
+     these -- scrambling, three-putts, penalties and doubles all live per hole.
+     Read from the Hole Log via ?tab=holes and recomputed on every open, so
+     deleting a round updates them with no other action.
+     Hole Log columns after the 3 header rows:
+       0 Date  1 Course  2 Hole  3 Par  4 Yds  ...  44 Putts  45 Score
+       46 +/- par  47 FIR  48 GIR  49 Pen
+     --------------------------------------------------------------------- */
+  var HOLESTATS=null;
+  function parseHoles(rows){
+    var holes=[];
+    (rows||[]).slice(3).forEach(function(r){
+      if(!r||!r[0]||r[45]===''||r[45]==null) return;
+      holes.push({date:String(r[0]), par:+r[3]||0, putts:+r[44]||0, score:+r[45]||0,
+                  vsPar:(r[46]===''||r[46]==null)?null:+r[46],
+                  gir:String(r[48]||''), pen:+r[49]||0});
+    });
+    if(!holes.length) return null;
+    var rounds={};
+    holes.forEach(function(h){ rounds[h.date]=1; });
+    var nRounds=Object.keys(rounds).length||1;
+    /* Scrambling: of the greens MISSED, how often par or better was still made.
+       The check mark is the sheet's GIR symbol; anything else is a miss. */
+    var missed=holes.filter(function(h){return h.gir.indexOf('\u2713')<0;});
+    var saved=missed.filter(function(h){return h.vsPar!=null && h.vsPar<=0;});
+    return {
+      rounds:nRounds,
+      scramblePct: missed.length? saved.length/missed.length : null,
+      scrambleN: saved.length, scrambleD: missed.length,
+      threePuttPer: holes.filter(function(h){return h.putts>=3;}).length/nRounds,
+      threePuttTotal: holes.filter(function(h){return h.putts>=3;}).length,
+      penaltyPer: holes.reduce(function(a,h){return a+h.pen;},0)/nRounds,
+      doublePer: holes.filter(function(h){return h.vsPar!=null&&h.vsPar>=2;}).length/nRounds
+    };
+  }
+
   function renderRounds(RS){
     if(!RS||!RS.length) return;
     var C=CATS;
@@ -934,12 +972,19 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     var girPct = seasonStat(function(r){return r.gir==null?null:r.gir/18;});
     var puttAvg= seasonStat(function(r){return r.putts;});
     var pct=function(v){return v==null?'-':Math.round(v*100)+'%';};
+    var H=HOLESTATS;
+    var bits=function(a){return a.filter(function(x){return x;}).join('  ');};
     var SUPPORT={
-      'Driver':     fwPct==null?'':'Fairways '+pct(fwPct)+' this season.',
-      '176+':       girPct==null?'':'Greens in regulation '+pct(girPct)+'.',
-      '101-175':    girPct==null?'':'Greens in regulation '+pct(girPct)+'.',
-      '100 & In':   '',
-      'Putting':    puttAvg==null?'':'Averaging '+puttAvg.toFixed(1)+' putts a round.'
+      'Driver':   bits([fwPct==null?'':'Fairways '+pct(fwPct)+'.',
+                        H&&H.penaltyPer!=null?'Penalties '+H.penaltyPer.toFixed(1)+' a round.':'']),
+      '176+':     bits([girPct==null?'':'Greens in regulation '+pct(girPct)+'.']),
+      '101-175':  bits([girPct==null?'':'Greens in regulation '+pct(girPct)+'.',
+                        H&&H.doublePer!=null?'Doubles or worse '+H.doublePer.toFixed(1)+' a round.':'']),
+      '100 & In': bits([H&&H.scramblePct!=null
+                          ? 'Scrambling '+pct(H.scramblePct)+' ('+H.scrambleN+' of '+H.scrambleD+' greens missed).'
+                          : '']),
+      'Putting':  bits([puttAvg==null?'':'Averaging '+puttAvg.toFixed(1)+' putts.',
+                        H&&H.threePuttPer!=null?'Three-putts '+H.threePuttPer.toFixed(1)+' a round ('+H.threePuttTotal+' total).':''])
     };
     var ranked=SGBARS.filter(function(a){return !a[2];})   // drop the subtotal
                      .slice().sort(function(a,b){return a[1]-b[1];});
@@ -1022,11 +1067,21 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     var seed=null;
     try{var c=JSON.parse(localStorage.getItem(CACHE_KEY));if(c&&c.rows)seed=parseRounds(c.rows);}catch(e){}
     renderRounds(seed&&seed.length?seed:ROUNDS);
-    fetch(HOOK).then(function(r){return r.json();}).then(function(j){
+    /* Hole Log first so the Improvement stats are present on the first paint;
+       a failure here must never stop the rounds themselves rendering. */
+    try{var hc=JSON.parse(localStorage.getItem(HOLE_CACHE)); if(hc&&hc.rows) HOLESTATS=parseHoles(hc.rows);}catch(e){}
+    fetch(HOOK+'?tab=holes').then(function(r){return r.json();}).then(function(j){
       if(j&&j.ok&&j.rows){
-        try{localStorage.setItem(CACHE_KEY,JSON.stringify({rows:j.rows,t:Date.now()}));}catch(e){}
-        renderRounds(parseRounds(j.rows));
+        try{localStorage.setItem(HOLE_CACHE,JSON.stringify({rows:j.rows,t:Date.now()}));}catch(e){}
+        HOLESTATS=parseHoles(j.rows);
       }
+    }).catch(function(){}).then(function(){
+      return fetch(HOOK).then(function(r){return r.json();}).then(function(j){
+        if(j&&j.ok&&j.rows){
+          try{localStorage.setItem(CACHE_KEY,JSON.stringify({rows:j.rows,t:Date.now()}));}catch(e){}
+          renderRounds(parseRounds(j.rows));
+        }
+      });
     }).catch(function(){});
   })();
 
