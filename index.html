@@ -985,16 +985,6 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       '<span class="mono" style="flex:1;text-align:right;font-size:13px;color:var(--steel)">'+c.total+'</span></div>';
   }).join('');
 
-  document.getElementById('plan-list').innerHTML=SGBARS.slice().sort(function(a,b){return a[1]-b[1];}).map(function(a,i){
-    var v=a[1],pos=v>=0,tag=(i===0?'BIGGEST LEAK':(pos?'STRENGTH':'FOCUS'));
-    return '<div class="card" style="padding:16px 18px;margin-top:12px">'+
-      '<div style="display:flex;align-items:center;justify-content:space-between">'+
-        '<span style="font-family:var(--font-caps);font-weight:800;font-size:10px;letter-spacing:.14em;color:var(--steel)">'+tag+'</span>'+
-        '<span class="mono" style="font-weight:600;font-size:14px;color:'+(pos?'var(--green-pos)':'#E06070')+'">'+(pos?'+':'')+v.toFixed(1)+'</span></div>'+
-      '<div class="h-title" style="font-size:18px;margin-top:6px">'+a[0]+'</div>'+
-      '<div style="font-size:13px;color:var(--steel);line-height:1.45;margin-top:4px">'+(PLAN_DESC[a[0]]||'')+'</div></div>';
-  }).join('');
-
   document.getElementById('course-list').innerHTML=COURSES.map(function(c){
     // Any Course has no fixed location or par — it carries its own subtitle.
     var sub=c.sub||(c.loc+' · Par '+c.par);
