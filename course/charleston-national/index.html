@@ -417,6 +417,46 @@ const BOOK = {"1":{"hole":"data:image/webp;base64,UklGRqYcAQBXRUJQVlA4IJocAQAw3g
 const COURSE = {"name":"Charleston National Golf Club","city":"Mount Pleasant, South Carolina","lat":32.87116,"lon":-79.7704};
 </script>
 <script>
+/* Each group is a list of ROWS. Rows are explicit rather than left to flex
+   wrapping, which fills line one greedily and put Pull beside Toe instead of
+   beside Push. Line one of Strike is contact, line two is shape. */
+const ACC_GROUPS = [
+  ["Strike", [["Good","Fat","Thin","Heel","Toe"],
+              ["Pull","Push","Hook","Slice"]]],
+  ["Miss",   [["Left","Right","Short","Long"]]],
+  ["Finish", [["Fairway","Rough","Deep Rough","Green"],
+              ["Sand","Water","OB","Unplayable"]]]
+];
+/* A Finish tag names the lie the next shot is played from, so saving a shot
+   prefills it and Eric never types the same fact twice. Green/Water/OB/
+   Unplayable are deliberately absent: the green means putting, and a penalty
+   drop can be anywhere. */
+const ACC_LIE = {Fairway:"Fairway", Rough:"Rough", "Deep Rough":"Deep Rough",
+                 Sand:"Sand"};
+function accLie(v){
+  const t = accTags(v).find(x => x in ACC_LIE);
+  return t ? ACC_LIE[t] : null;
+}
+const ACCS  = ACC_GROUPS.reduce((a,g) => a.concat(...g[1]), []);
+const BAD_ACC = new Set(["Water","OB","Unplayable"]);
+
+/* Parse a stored Result into its tag list; unknown words are dropped so a
+   hand-edited value can never break a round. */
+function accTags(v){
+  if (!v) return [];
+  const out = [];
+  String(v).split(/[,/]/).forEach(p => {
+    const want = p.trim().toLowerCase();
+    ACCS.forEach(t => { if (t.toLowerCase() === want && !out.includes(t)) out.push(t); });
+  });
+  return out;
+}
+function accIsBad(v){ return accTags(v).some(t => BAD_ACC.has(t)); }
+/* Keep the stored order canonical so two identical shots compare equal. */
+function accJoin(tags){
+  return ACCS.filter(t => tags.includes(t)).join(", ") || null;
+}
+
 /* Generated from skills/round-tracker/pull_round.py — do not hand-edit. */
 var EXPECTED = {"10": [null, 2.18, 2.34, 2.43, 3.45], "20": [null, 2.4, 2.59, 2.53, 3.51], "30": [null, 2.52, 2.7, 2.66, 3.57], "40": [null, 2.6, 2.78, 2.82, 3.71], "50": [null, 2.66, 2.87, 2.92, 3.79], "60": [null, 2.7, 2.91, 3.15, 3.83], "70": [null, 2.72, 2.93, 3.21, 3.84], "80": [null, 2.75, 2.96, 3.24, 3.84], "90": [null, 2.77, 2.99, 3.24, 3.82], "100": [2.92, 2.8, 3.02, 3.23, 3.8], "120": [2.99, 2.85, 3.08, 3.21, 3.78], "140": [2.97, 2.91, 3.15, 3.22, 3.8], "160": [2.99, 2.98, 3.23, 3.28, 3.81], "180": [3.05, 3.08, 3.31, 3.4, 3.82], "200": [3.12, 3.19, 3.42, 3.55, 3.87], "220": [3.17, 3.32, 3.53, 3.7, 3.92], "240": [3.25, 3.45, 3.64, 3.84, 3.97], "260": [3.45, 3.58, 3.74, 3.93, 4.03], "280": [3.65, 3.69, 3.83, 4.0, 4.1], "300": [3.71, 3.78, 3.9, 4.04, 4.2], "320": [3.79, 3.84, 3.95, 4.12, 4.31], "340": [3.86, 3.88, 4.02, 4.26, 4.44], "360": [3.92, 3.95, 4.11, 4.41, 4.56], "380": [3.96, 4.03, 4.21, 4.55, 4.66], "400": [3.99, 4.11, 4.3, 4.69, 4.75], "420": [4.02, 4.19, 4.4, 4.83, 4.84], "440": [4.08, 4.27, 4.49, 4.97, 4.94], "460": [4.17, 4.34, 4.58, 5.11, 5.03], "480": [4.28, 4.42, 4.68, 5.25, 5.13], "500": [4.41, 4.5, 4.77, 5.4, 5.22], "520": [4.54, 4.58, 4.87, 5.54, 5.32], "540": [4.65, 4.66, 4.96, 5.68, 5.41], "560": [4.74, 4.74, 5.06, 5.82, 5.51], "580": [4.79, 4.82, 5.15, 5.96, 5.6], "600": [4.82, 4.89, 5.25, 6.1, 5.7]};
 var LIE_COL = {"Tee": 0, "Fairway": 1, "Rough": 2, "Deep Rough": 2, "Other": 2, "Sand": 3, "Recovery": 4};
@@ -743,45 +783,7 @@ const TYPES = ["Drive","Long App (176+)","Mid App (101-175)","Short App (100&In)
    the stored value is a flat list. Rounds logged before this change hold a
    single value and 05/26 uses the slash form "OB/Unplayable"; accTags() reads
    all three. Mirrors ACC_TAGS in skills/round-tracker/pull_round.py. */
-/* Each group is a list of ROWS. Rows are explicit rather than left to flex
-   wrapping, which fills line one greedily and put Pull beside Toe instead of
-   beside Push. Line one of Strike is contact, line two is shape. */
-const ACC_GROUPS = [
-  ["Strike", [["Good","Fat","Thin","Heel","Toe"],
-              ["Pull","Push","Hook","Slice"]]],
-  ["Miss",   [["Left","Right","Short","Long"]]],
-  ["Finish", [["Fairway","Rough","Deep Rough","Green"],
-              ["Sand","Water","OB","Unplayable"]]]
-];
-/* A Finish tag names the lie the next shot is played from, so saving a shot
-   prefills it and Eric never types the same fact twice. Green/Water/OB/
-   Unplayable are deliberately absent: the green means putting, and a penalty
-   drop can be anywhere. */
-const ACC_LIE = {Fairway:"Fairway", Rough:"Rough", "Deep Rough":"Deep Rough",
-                 Sand:"Sand"};
-function accLie(v){
-  const t = accTags(v).find(x => x in ACC_LIE);
-  return t ? ACC_LIE[t] : null;
-}
-const ACCS  = ACC_GROUPS.reduce((a,g) => a.concat(...g[1]), []);
-const BAD_ACC = new Set(["Water","OB","Unplayable"]);
 
-/* Parse a stored Result into its tag list; unknown words are dropped so a
-   hand-edited value can never break a round. */
-function accTags(v){
-  if (!v) return [];
-  const out = [];
-  String(v).split(/[,/]/).forEach(p => {
-    const want = p.trim().toLowerCase();
-    ACCS.forEach(t => { if (t.toLowerCase() === want && !out.includes(t)) out.push(t); });
-  });
-  return out;
-}
-function accIsBad(v){ return accTags(v).some(t => BAD_ACC.has(t)); }
-/* Keep the stored order canonical so two identical shots compare equal. */
-function accJoin(tags){
-  return ACCS.filter(t => tags.includes(t)).join(", ") || null;
-}
 
 /* ---- per-hole tour-caddy intel (read off the Par The Course books) ----
    tee = the Par The Course recommended play + any warning; avoid = where the strokes are;
