@@ -1100,6 +1100,19 @@ async function saveRound(){
   /* Post the finished round straight to the sheet. The page is holding the
      real round object right now; nothing downstream has to reconstruct it. */
   let landed = null, sheetErr = null;
+  /* applySG writes rnd.sg_round and every hole's sg_hole straight into the
+     sheet's three strokes-gained bands. buildRoundJSON does NOT compute them --
+     the Overview calls the engine separately -- so posting its output alone
+     landed a round with EVERY strokes-gained cell blank, round and all 18 holes
+     (2026-07-25, Shoal Creek, Rounds row 14). Compute all three baselines here,
+     from the same engine the Overview uses, before anything is sent. */
+  const SG_BASES = ["scratch", "5hcp", "9hcp"];
+  data.round.sg_round = {};
+  SG_BASES.forEach(function(b){ data.round.sg_round[b] = roundSG(data.holes, b); });
+  data.holes.forEach(function(h){
+    h.sg_hole = {};
+    SG_BASES.forEach(function(b){ h.sg_hole[b] = holeSG(h, b); });
+  });
   try {
     const resp = await fetch(SHEET_HOOK, { method:"POST", headers:{"Content-Type":"text/plain"},
       body: JSON.stringify({ token: SHEET_TOKEN, round: data.round, holes: data.holes }) });
