@@ -563,6 +563,11 @@ function roundSG(holes, baseline){
     SG_KEYS.forEach(function(k){ tot[k] += s[k]; });
   });
   SG_KEYS.forEach(function(k){ tot[k] = sgRound(tot[k], 2); });
+  /* Ball Strike is the SUM OF THE FOUR SHOT CATEGORIES and is displayed as
+     their subtotal, so it has to add up in the numbers actually shown.
+     Totalling it independently across 18 holes left it off the sum of the
+     displayed parts by up to 0.03 -- invisible at 1dp, visible at 2dp. */
+  tot.ball_strike = sgRound(tot.driver + tot.p176 + tot.p101 + tot.p100, 2);
   return tot;
 }
 
