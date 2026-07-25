@@ -407,14 +407,6 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
   ];
   // Factual category descriptors — the Improvement view is derived straight from
   // the real strokes-gained (SGBARS), ranked worst-first. No invented drills/stats.
-  var PLAN_DESC={
-    'Ball Striking':'Full-swing ball-striking, tee to green. The sum of the four shot categories above.',
-    'Putting':'Strokes gained or lost on the greens.',
-    '101-175':'Approach shots from 101 to 175 yards.',
-    '100 & In':'Wedges and short approaches inside 100 yards.',
-    '176+':'Long approaches from 176 yards and out.',
-    'Driver':'Off the tee.'
-  };
 
   // ---- Caddie — ported verbatim from the course trackers (Shoal Creek / Paradise
   // Pointe). Data from otto_golf.md: 2026 Golf Distances with Wind Chart.
@@ -1169,8 +1161,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
           '<span style="font-family:var(--font-caps);font-weight:800;font-size:10px;letter-spacing:.14em;color:var(--steel);padding-right:10px;line-height:1.3">'+tag+'</span>'+
           '<span class="mono" style="font-weight:600;font-size:14px;color:'+(pos?'var(--green-pos)':'#E06070')+'">'+(pos?'+':'')+v.toFixed(2)+'</span></div>'+
         '<div class="h-title" style="font-size:18px;margin-top:6px">'+a[0]+'</div>'+
-        '<div style="font-size:13px;color:var(--steel);line-height:1.45;margin-top:4px">'+(PLAN_DESC[a[0]]||'')+'</div>'+
-        (sup?'<div class="mono" style="font-size:12px;color:var(--steel);margin-top:6px;opacity:.9;line-height:1.8">'+sup+'</div>':'')+
+        (sup?'<div class="mono" style="font-size:12px;color:var(--steel);margin-top:8px;opacity:.9;line-height:1.8">'+sup+'</div>':'')+
       '</div>';
     }).join('')
     + (rollup?'<div class="card" style="padding:16px 18px;margin-top:12px">'+
@@ -1178,8 +1169,6 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
           '<span style="font-family:var(--font-caps);font-weight:800;font-size:10px;letter-spacing:.14em;color:var(--steel)">TOTAL</span>'+
           '<span class="mono" style="font-weight:600;font-size:14px;color:'+(rollup[1]>=0?'var(--green-pos)':'#E06070')+'">'+(rollup[1]>=0?'+':'')+rollup[1].toFixed(2)+'</span></div>'+
         '<div class="h-title" style="font-size:18px;margin-top:6px">'+rollup[0]+'</div>'+
-        /* Ball striking IS the full-swing game, so this card heads the strike
-           and miss detail that follows it rather than describing itself. */
         '<div class="mono" style="font-size:12px;color:var(--steel);margin-top:6px;opacity:.9;line-height:1.8">'+
           bits([H&&H.firHoles?'Fairways '+rate(H.firHit,H.firHoles)+'.':'',
                 H&&H.girHoles?'Greens in regulation '+rate(H.girHit,H.girHoles)+'.':'',
