@@ -864,7 +864,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     var holes=r.par>=71?18:9, firDen=holes===18?'14':'7', girDen=holes===18?'18':'9';
     var toPar=(r.vp>0?'+':'')+r.vp;
     var stat=function(k,v){return '<div style="flex:1;text-align:center"><div class="mono" style="font-weight:600;font-size:14px">'+v+'</div><div class="lab" style="font-weight:600;font-size:8px;letter-spacing:.08em;margin-top:2px">'+k+'</div></div>';};
-    var cell=function(nm,v){var p=v>=0;return '<div style="background:var(--navy-deep);border-radius:9px;padding:8px 6px;text-align:center"><div class="mono" style="font-weight:600;font-size:13px;color:'+(p?'var(--green-pos)':'#E06070')+'">'+(p?'+':'')+v.toFixed(1)+'</div><div class="lab" style="font-weight:600;font-size:7.5px;letter-spacing:.04em;margin-top:2px">'+nm+'</div></div>';};
+    var cell=function(nm,v){var p=v>=0;return '<div style="background:var(--navy-deep);border-radius:9px;padding:8px 6px;text-align:center"><div class="mono" style="font-weight:600;font-size:13px;color:'+(p?'var(--green-pos)':'#E06070')+'">'+(p?'+':'')+v.toFixed(2)+'</div><div class="lab" style="font-weight:600;font-size:7.5px;letter-spacing:.04em;margin-top:2px">'+nm+'</div></div>';};
     return '<div class="card" style="padding:16px 16px 14px;margin-bottom:10px;cursor:pointer">'+
       '<div style="display:flex;align-items:flex-start;justify-content:space-between">'+
         '<div><div class="h-title" style="font-size:18px">'+r.course+'</div>'+
@@ -888,7 +888,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     var H=RS.reduce(function(a,r){return a+len(r);},0)||1;
     var SGBARS=C.map(function(n,i){
       var t=RS.reduce(function(a,r){return a+(r.sg[i]||0);},0)/H*18;
-      return [n, Math.round(t*10)/10];
+      return [n, Math.round(t*100)/100];
     });
 
     document.getElementById('rounds-list').innerHTML=RS.map(card).join('');
@@ -898,7 +898,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       var v=a[1],pos=v>=0,half=Math.min(46,Math.abs(v)/4*46).toFixed(1);
       return '<div style="margin-bottom:14px">'+
         '<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-weight:600;font-size:13px">'+a[0]+'</span>'+
-        '<span class="mono" style="font-weight:600;font-size:13px;color:'+(pos?'var(--green-pos)':'var(--red)')+'">'+(pos?'+':'')+v.toFixed(1)+'</span></div>'+
+        '<span class="mono" style="font-weight:600;font-size:13px;color:'+(pos?'var(--green-pos)':'var(--red)')+'">'+(pos?'+':'')+v.toFixed(2)+'</span></div>'+
         '<div class="sgbar"><div class="mid"></div><div style="position:absolute;top:0;bottom:0;'+(pos?'left:50%':'right:50%')+';width:'+half+'%;background:'+(pos?'var(--green-pos)':'var(--red)')+';border-radius:4px"></div></div>'+
       '</div>';
     }).join('');
@@ -908,7 +908,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       return '<div class="card" style="padding:16px 18px;margin-top:12px">'+
         '<div style="display:flex;align-items:center;justify-content:space-between">'+
           '<span style="font-family:var(--font-caps);font-weight:800;font-size:10px;letter-spacing:.14em;color:var(--steel)">'+tag+'</span>'+
-          '<span class="mono" style="font-weight:600;font-size:14px;color:'+(pos?'var(--green-pos)':'#E06070')+'">'+(pos?'+':'')+v.toFixed(1)+'</span></div>'+
+          '<span class="mono" style="font-weight:600;font-size:14px;color:'+(pos?'var(--green-pos)':'#E06070')+'">'+(pos?'+':'')+v.toFixed(2)+'</span></div>'+
         '<div class="h-title" style="font-size:18px;margin-top:6px">'+a[0]+'</div>'+
         '<div style="font-size:13px;color:var(--steel);line-height:1.45;margin-top:4px">'+(PLAN_DESC[a[0]]||'')+'</div></div>';
     }).join('');
