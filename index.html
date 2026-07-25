@@ -344,6 +344,8 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       <div class="eyebrow">FOCUS AREAS</div>
       <div class="h-title" style="font-size:32px;margin-top:6px">Improvement Plan</div>
       <div id="plan-list"></div>
+      <div class="sectlab" style="margin:28px 0 12px">MISS &amp; STRIKE PATTERNS</div>
+      <div id="pattern-list"></div>
     </section>
 
   </div>
@@ -906,9 +908,18 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     var holes=[];
     (rows||[]).slice(3).forEach(function(r){
       if(!r||!r[0]||r[45]===''||r[45]==null) return;
+      var vp=(r[46]===''||r[46]==null)?null:+r[46];
+      /* Six shot slots of six fields each, starting at column 5:
+         club, lie, dist_before, dist_after, type, acc. */
+      var shots=[];
+      for(var sIdx=0;sIdx<6;sIdx++){
+        var b=5+sIdx*6, club=r[b], lie=r[b+1], typ=r[b+4], acc=r[b+5];
+        if(!club&&!acc) continue;
+        shots.push({club:String(club||''), lie:String(lie||''), type:String(typ||''),
+                    acc:String(acc||''), n:sIdx+1, vsPar:vp});
+      }
       holes.push({date:String(r[0]), par:+r[3]||0, putts:+r[44]||0, score:+r[45]||0,
-                  vsPar:(r[46]===''||r[46]==null)?null:+r[46],
-                  gir:String(r[48]||''), pen:+r[49]||0});
+                  vsPar:vp, gir:String(r[48]||''), pen:+r[49]||0, shots:shots});
     });
     if(!holes.length) return null;
     var rounds={};
@@ -924,9 +935,112 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       scrambleN: saved.length, scrambleD: missed.length,
       threePuttPer: holes.filter(function(h){return h.putts>=3;}).length/nRounds,
       threePuttTotal: holes.filter(function(h){return h.putts>=3;}).length,
+      holes: holes,
       penaltyPer: holes.reduce(function(a,h){return a+h.pen;},0)/nRounds,
       doublePer: holes.filter(function(h){return h.vsPar!=null&&h.vsPar>=2;}).length/nRounds
     };
+  }
+
+  /* ---------------------------------------------------------------------
+     MISS AND STRIKE PATTERNS. Every shot carries Result tags from the 21-tag
+     vocabulary, grouped Strike / Miss / Finish. This reads them across every
+     round in the sheet and reports what actually keeps happening, with the
+     count behind each claim so a one-round fluke is visible as one round.
+     Nothing is smoothed or predicted - these are tallies.
+     --------------------------------------------------------------------- */
+  var STRIKE=['Fat','Thin','Heel','Toe','Pull','Push','Hook','Slice'];
+  var DIRECTION=['Left','Right','Short','Long'];
+  var FINISH=['Fairway','Green','Rough','Deep Rough','Sand','Water','OB','Unplayable'];
+  var TROUBLE=['Sand','Water','OB','Unplayable','Deep Rough'];
+  function tags(acc){
+    if(!acc) return [];
+    return String(acc).split(/[,\/]/).map(function(t){return t.trim();}).filter(Boolean);
+  }
+  function tally(shots,vocab,pick){
+    var c={},n=0;
+    shots.forEach(function(sh){
+      var t=tags(sh.acc);
+      vocab.forEach(function(v){ if(t.indexOf(v)>=0){ c[v]=(c[v]||0)+1; n++; } });
+    });
+    return Object.keys(c).map(function(k){return [k,c[k]];})
+             .sort(function(a,b){return b[1]-a[1];});
+  }
+  function pct(a,b){ return b? Math.round(a/b*100)+'%' : '-'; }
+  function computePatterns(H){
+    if(!H||!H.holes||!H.holes.length) return null;
+    var all=[]; H.holes.forEach(function(h){ h.shots.forEach(function(sh){ all.push(sh); }); });
+    if(!all.length) return null;
+    var tee=all.filter(function(sh){return sh.type==='Drive';});
+    var app=all.filter(function(sh){return sh.type&&sh.type.indexOf('App')>=0;});
+    /* Scoring by where the tee shot finished - the only place the tags can be
+       tied to a number of strokes without inventing a per-shot model. */
+    var byFinish={};
+    H.holes.forEach(function(h){
+      if(!h.shots.length||h.vsPar==null) return;
+      var t=tags(h.shots[0].acc);
+      var where = TROUBLE.filter(function(x){return t.indexOf(x)>=0;})[0]
+               || (t.indexOf('Rough')>=0?'Rough':(t.indexOf('Fairway')>=0?'Fairway':null));
+      if(!where) return;
+      var k = (where==='Fairway')?'Fairway':(where==='Rough'?'Rough':'Trouble');
+      byFinish[k]=byFinish[k]||{n:0,sum:0};
+      byFinish[k].n++; byFinish[k].sum+=h.vsPar;
+    });
+    return {
+      shots:all.length, teeN:tee.length, appN:app.length,
+      teeDir:tally(tee,DIRECTION), teeStrike:tally(tee,STRIKE), teeFinish:tally(tee,FINISH),
+      appDir:tally(app,DIRECTION), appStrike:tally(app,STRIKE),
+      strikeAll:tally(all,STRIKE),
+      byFinish:byFinish
+    };
+  }
+  function patternCard(title,sub,rows,total){
+    if(!rows||!rows.length) return '';
+    var bars=rows.slice(0,5).map(function(r){
+      var w=total?Math.max(4,Math.round(r[1]/total*100)):0;
+      return '<div style="margin-top:8px">'+
+        '<div style="display:flex;justify-content:space-between;font-size:13px">'+
+          '<span style="font-weight:600">'+r[0]+'</span>'+
+          '<span class="mono" style="color:var(--steel)">'+r[1]+'  '+pct(r[1],total)+'</span></div>'+
+        '<div style="height:6px;border-radius:3px;background:rgba(143,160,184,.18);margin-top:4px">'+
+          '<div style="height:6px;border-radius:3px;width:'+w+'%;background:var(--red)"></div></div>'+
+      '</div>';
+    }).join('');
+    return '<div class="card" style="padding:16px 18px;margin-top:12px">'+
+      '<div class="h-title" style="font-size:17px">'+title+'</div>'+
+      '<div style="font-size:12px;color:var(--steel);margin-top:2px">'+sub+'</div>'+
+      bars+'</div>';
+  }
+  function renderPatterns(H){
+    var el=document.getElementById('pattern-list');
+    if(!el) return;
+    var P=computePatterns(H);
+    if(!P){ el.innerHTML='<div class="card" style="padding:16px 18px;margin-top:12px">'+
+      '<div style="font-size:13px;color:var(--steel)">No shot detail logged yet.</div></div>'; return; }
+    var teeDirN=P.teeDir.reduce(function(a,r){return a+r[1];},0);
+    var teeStrN=P.teeStrike.reduce(function(a,r){return a+r[1];},0);
+    var appDirN=P.appDir.reduce(function(a,r){return a+r[1];},0);
+    var strAllN=P.strikeAll.reduce(function(a,r){return a+r[1];},0);
+    var cost='';
+    var order=['Fairway','Rough','Trouble'];
+    var have=order.filter(function(k){return P.byFinish[k];});
+    if(have.length>1){
+      cost='<div class="card" style="padding:16px 18px;margin-top:12px">'+
+        '<div class="h-title" style="font-size:17px">What the tee shot costs</div>'+
+        '<div style="font-size:12px;color:var(--steel);margin-top:2px">Average score to par on the hole, by where the drive finished</div>'+
+        have.map(function(k){
+          var d=P.byFinish[k], avg=d.sum/d.n;
+          return '<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px">'+
+            '<span style="font-weight:600">'+k+'</span>'+
+            '<span class="mono" style="color:'+(avg<=0?'var(--green-pos)':'var(--red)')+'">'+
+              (avg>=0?'+':'')+avg.toFixed(2)+'  <span style="color:var(--steel)">('+d.n+' holes)</span></span></div>';
+        }).join('')+'</div>';
+    }
+    el.innerHTML =
+      patternCard('Off the tee - where it goes','Direction tags on '+P.teeN+' tee shots',P.teeDir,teeDirN)+
+      patternCard('Off the tee - strike','Strike tags on tee shots',P.teeStrike,teeStrN)+
+      patternCard('Approach misses','Direction tags on '+P.appN+' approach shots',P.appDir,appDirN)+
+      patternCard('Strike faults, every club','Across all '+P.shots+' shots logged',P.strikeAll,strAllN)+
+      cost;
   }
 
   function renderRounds(RS){
@@ -942,6 +1056,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       return [c.label, Math.round(t*100)/100, c.subtotal];
     });
 
+    renderPatterns(HOLESTATS);
     document.getElementById('rounds-list').innerHTML=RS.map(card).join('');
     document.getElementById('latest-list').innerHTML=RS.slice(0,3).map(card).join('');
 
