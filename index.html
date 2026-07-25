@@ -919,15 +919,50 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       '</div>';
     }).join('');
 
-    document.getElementById('plan-list').innerHTML=SGBARS.slice().sort(function(a,b){return a[1]-b[1];}).map(function(a,i){
+    /* IMPROVEMENT RANKING - the four shot categories plus Putting, worst first.
+       BALL STRIKING IS EXCLUDED FROM THE RANKING: it is the SUM of the four
+       shot categories, so ranking it alongside them double-counts and it can
+       never be an independent "focus area". It is shown once underneath as a
+       roll-up. Each row carries the season stat that supports its category, so
+       the number and the thing you would actually work on sit together. */
+    var full18=RS.filter(function(r){return r.holes===18;});
+    var seasonStat=function(pick){
+      var vals=full18.map(pick).filter(function(v){return v!=null&&v!=='';}).map(Number);
+      return vals.length? vals.reduce(function(a,b){return a+b;},0)/vals.length : null;
+    };
+    var fwPct  = seasonStat(function(r){return r.fw==null?null:r.fw/14;});
+    var girPct = seasonStat(function(r){return r.gir==null?null:r.gir/18;});
+    var puttAvg= seasonStat(function(r){return r.putts;});
+    var pct=function(v){return v==null?'-':Math.round(v*100)+'%';};
+    var SUPPORT={
+      'Driver':     fwPct==null?'':'Fairways '+pct(fwPct)+' this season.',
+      '176+':       girPct==null?'':'Greens in regulation '+pct(girPct)+'.',
+      '101-175':    girPct==null?'':'Greens in regulation '+pct(girPct)+'.',
+      '100 & In':   '',
+      'Putting':    puttAvg==null?'':'Averaging '+puttAvg.toFixed(1)+' putts a round.'
+    };
+    var ranked=SGBARS.filter(function(a){return !a[2];})   // drop the subtotal
+                     .slice().sort(function(a,b){return a[1]-b[1];});
+    var rollup=SGBARS.filter(function(a){return a[2];})[0];
+    document.getElementById('plan-list').innerHTML=ranked.map(function(a,i){
       var v=a[1],pos=v>=0,tag=(i===0?'BIGGEST LEAK':(pos?'STRENGTH':'FOCUS'));
+      var sup=SUPPORT[a[0]]||'';
       return '<div class="card" style="padding:16px 18px;margin-top:12px">'+
         '<div style="display:flex;align-items:center;justify-content:space-between">'+
           '<span style="font-family:var(--font-caps);font-weight:800;font-size:10px;letter-spacing:.14em;color:var(--steel)">'+tag+'</span>'+
           '<span class="mono" style="font-weight:600;font-size:14px;color:'+(pos?'var(--green-pos)':'#E06070')+'">'+(pos?'+':'')+v.toFixed(2)+'</span></div>'+
         '<div class="h-title" style="font-size:18px;margin-top:6px">'+a[0]+'</div>'+
-        '<div style="font-size:13px;color:var(--steel);line-height:1.45;margin-top:4px">'+(PLAN_DESC[a[0]]||'')+'</div></div>';
-    }).join('');
+        '<div style="font-size:13px;color:var(--steel);line-height:1.45;margin-top:4px">'+(PLAN_DESC[a[0]]||'')+'</div>'+
+        (sup?'<div class="mono" style="font-size:12px;color:var(--steel);margin-top:6px;opacity:.9">'+sup+'</div>':'')+
+      '</div>';
+    }).join('')
+    + (rollup?'<div class="card" style="padding:14px 18px;margin-top:16px;opacity:.85">'+
+        '<div style="display:flex;align-items:center;justify-content:space-between">'+
+          '<span style="font-family:var(--font-caps);font-weight:800;font-size:10px;letter-spacing:.14em;color:var(--steel)">ROLL-UP, NOT RANKED</span>'+
+          '<span class="mono" style="font-weight:600;font-size:14px;color:'+(rollup[1]>=0?'var(--green-pos)':'#E06070')+'">'+(rollup[1]>=0?'+':'')+rollup[1].toFixed(2)+'</span></div>'+
+        '<div class="h-title" style="font-size:16px;margin-top:6px">'+rollup[0]+'</div>'+
+        '<div style="font-size:12px;color:var(--steel);line-height:1.45;margin-top:4px">The sum of the four shot categories above. Listed for reference only - it is not a separate area to work on.</div>'+
+      '</div>':'');
 
     /* Scoring trend -- the last five completed 18s, oldest to newest. This was
        a hand-drawn SVG frozen at Apr 18 - Jul 12 and never moved when rounds
