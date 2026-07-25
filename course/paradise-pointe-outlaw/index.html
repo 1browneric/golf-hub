@@ -1075,7 +1075,11 @@ async function saveRound(){
   let sent = false;
   try {
     await seedChannel();
-    const marker = { kind:"round_saved", t: Date.now(), score: data.round.score, page: location.href, topic: TOPIC };
+    const marker = { kind:"round_saved", t: Date.now(), score: data.round.score, page: location.href, topic: TOPIC,
+                     /* The round's OWN date. Without it the reader had to scrape the
+                        page's build-time ROUND constant, which is why every rebuilt
+                        round landed on the date the page was generated. */
+                     date: data.round.date };
     await postMsg(marker);
     try { await fetch(`${NTFY}/${DISPATCH}`, { method:"POST", body: JSON.stringify(marker) }); } catch(e){}
     sent = true;
@@ -1306,9 +1310,23 @@ fetch("https://api.open-meteo.com/v1/forecast?latitude="+COURSE.lat+"&longitude=
 /* editable round date (masthead) — persists locally, feeds the export */
 const DK = LS_KEY + "_date";
 const dEl = document.getElementById("rdate");
-dEl.value = localStorage.getItem(DK) || new Date().toISOString().slice(0,10);
+/* Round date. Two bugs lived here until 2026-07-24, both of which put the
+   WRONG DATE on a real round:
+   1. new Date().toISOString() is UTC. After 7pm Central it has already rolled
+      over, so an evening round defaulted to TOMORROW. Same UTC-vs-local trap
+      that made the sheet write land a day early. Build the date from the local
+      getFullYear/getMonth/getDate instead, exactly as any-course does.
+   2. The stored value was honoured forever, so every later round on this course
+      silently reused the date of the last one. Now a hand-set date is honoured
+      only for the day it was set; any other day starts at today. */
+const todayLocal = () => { const d = new Date(), p = n => String(n).padStart(2,"0");
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; };
+let dSaved = null;
+try { dSaved = JSON.parse(localStorage.getItem(DK) || "null"); } catch(e){}
+dEl.value = (dSaved && dSaved.setOn === todayLocal() && dSaved.date) ? dSaved.date : todayLocal();
 ROUND.date = dEl.value;
-dEl.addEventListener("change", () => { if(dEl.value){ ROUND.date = dEl.value; localStorage.setItem(DK, dEl.value); } });
+dEl.addEventListener("change", () => { if(dEl.value){ ROUND.date = dEl.value;
+  localStorage.setItem(DK, JSON.stringify({ date: dEl.value, setOn: todayLocal() })); } });
 
 function render(){
   document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on", b.dataset.tab===tab));

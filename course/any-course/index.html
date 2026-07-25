@@ -880,7 +880,11 @@ async function saveRound(){
   let sent = false;
   try {
     await seedChannel();
-    const marker = { kind:"round_saved", t: Date.now(), score: data.round.score, page: location.href, topic: TOPIC };
+    const marker = { kind:"round_saved", t: Date.now(), score: data.round.score, page: location.href, topic: TOPIC,
+                     /* The round's OWN date. Without it the reader had to scrape the
+                        page's build-time ROUND constant, which is why every rebuilt
+                        round landed on the date the page was generated. */
+                     date: data.round.date };
     await postMsg(marker);
     try { await fetch(`${NTFY}/${DISPATCH}`, { method:"POST", body: JSON.stringify(marker) }); } catch(e){}
     sent = true;
