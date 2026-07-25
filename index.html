@@ -190,7 +190,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
             <div class="t">My Rounds</div>
           </div>
           <div class="mright">
-            <div class="mono" style="font-weight:600;font-size:24px;line-height:.9">84.2</div>
+            <div class="mono" id="avg-hub" style="font-weight:600;font-size:24px;line-height:.9">84.2</div>
             <div class="lab" style="font-weight:600;font-size:8px;letter-spacing:.12em;margin-top:3px">SEASON AVG</div>
           </div>
         </div>
@@ -225,8 +225,8 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
         <div class="lab" style="font-weight:700;font-size:11px;letter-spacing:.2em">HOW I'M PLAYING</div>
         <div class="gtop">
           <div>
-            <div class="big">84.2</div>
-            <div class="lab" style="font-size:11px;margin-top:6px">SEASON AVG · +12.4 TO PAR</div>
+            <div class="big" id="avg-how">84.2</div>
+            <div class="lab" id="avg-topar" style="font-size:11px;margin-top:6px">SEASON AVG · +12.4 TO PAR</div>
           </div>
           <div style="text-align:right">
             <div class="pill"><span style="color:var(--green-pos);font-size:11px">▾</span><span class="v">1.0</span></div>
@@ -276,7 +276,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-top:6px">
         <div class="h-title" style="font-size:32px">My Rounds</div>
         <div style="text-align:right">
-          <div class="mono" style="font-weight:600;font-size:30px;line-height:.9">84.2</div>
+          <div class="mono" id="avg-rounds" style="font-weight:600;font-size:30px;line-height:.9">84.2</div>
           <div class="lab" style="font-weight:600;font-size:9px;letter-spacing:.14em;margin-top:3px">SEASON AVG</div>
         </div>
       </div>
@@ -825,22 +825,57 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
   /* Season strokes gained, DERIVED from ROUNDS rather than hard-coded. It was
      a second literal array that nobody kept in step, so it still showed April's
      numbers after ROUNDS had been refreshed (Eric caught it 2026-07-24). */
-  var SGBARS=(function(){
-    var C=['Driver','176+','101-175','100 & In','Putting','Ball Strike'];
-    /* Weighted by holes, then expressed per 18. Strokes gained accumulates per
-       shot, so a nine holds half the evidence of a full round and must carry
-       half the weight — a plain per-round mean let each nine count as a whole
-       round and pulled every category toward zero. */
-    /* holes is written by hub_sync; fall back to par so an older generator
-       cannot silently re-weight a nine as a full round (that regressed once,
-       2026-07-24, when the VM ran a build behind). */
-    var len=function(r){return r.holes||(r.par>=60?18:9);};
-    var H=ROUNDS.reduce(function(a,r){return a+len(r);},0);
-    return C.map(function(n,i){
-      var t=ROUNDS.reduce(function(a,r){return a+r.sg[i];},0)/H*18;
-      return [n, Math.round(t*10)/10];
+  /* ---------------------------------------------------------------------
+     LIVE READ. The hub is a VIEW OF THE SHEET: every round in Rounds shows
+     here, and the page never decides which ones count. It used to render a
+     `var ROUNDS=[...]` array baked in by hub_sync, which meant the hub was
+     only as fresh as the last agent run and push -- on 2026-07-24 it showed
+     8 of 10 rounds for exactly that reason. Now it reads the Rounds tab from
+     the sheet's Web App on every open, so a round is on the hub the moment it
+     is in the sheet. The baked array stays as the offline seed.
+     --------------------------------------------------------------------- */
+  var HOOK='https://script.google.com/macros/s/AKfycbzdjnlvHfSpAbEE0LkUG-lJ7kE3BB5ENzikMY5EYSkr3Oa_cjF1kkx3SfzEjwkicFgX/exec';
+  var CACHE_KEY='gh_rounds_cache_v1';
+  var MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  /* course -> location. The sheet does not carry a location, so it comes from
+     the course library plus the baked seed, which holds the ones Eric has
+     played that are not tracker courses (Colbert Hills, Excelsior, ...). */
+  var LOC=(function(){var m={};
+    COURSES.forEach(function(c){if(c.loc){m[c.name]=c.loc;m[c.name.replace(' Golf Course','').replace(' Golf Club','')]=c.loc;}});
+    ROUNDS.forEach(function(r){if(r.loc)m[r.course]=r.loc;});
+    return m;})();
+
+  /* Rounds tab, after the 3 header rows:
+     0 Date  1 Course  2 Par  3 Gross  4 +/-  5 F9  6 B9  7 FW  8 FW%
+     9 GIR  10 GIR%  11 Putts  12-17 SG vs scratch  18-23 SG vs 5 HCP
+     24-29 SG vs 9 HCP  30 Date(text)  31 Notes
+     The hub shows the 5 HCP band, so SG comes from 18-23. */
+  function parseRounds(rows){
+    var out=[];
+    (rows||[]).slice(3).forEach(function(r){
+      if(!r||!r[0]||r[3]===''||r[3]==null) return;
+      var d=/^(\d{1,2})\/(\d{1,2})/.exec(String(r[0])); if(!d) return;
+      var mm=+d[1], dd=+d[2];
+      var sg=r.slice(18,24).map(function(v){var n=parseFloat(v);return isNaN(n)?0:n;});
+      var full=String(r[1]||'');
+      out.push({
+        key: mm*100+dd,
+        course: full.replace(' Golf Course','').replace(' Golf Club',''),
+        loc: LOC[full]||LOC[full.replace(' Golf Course','').replace(' Golf Club','')]||'',
+        date: MON[mm-1]+' '+dd,
+        par:+r[2]||0, score:+r[3]||0,
+        vp:(r[4]===''||r[4]==null)?((+r[3]||0)-(+r[2]||0)):+r[4],
+        fw:r[7], gir:r[9], putts:r[11],
+        holes:(r[6]===''||r[6]==null||+r[6]===0)?9:18,
+        sg:sg
+      });
     });
-  })();
+    /* Newest first BY DATE, not by row: rounds are not always entered in
+       order, and on 2026-07-24 row order put Jul 19 above Jul 25. */
+    out.sort(function(a,b){return b.key-a.key;});
+    return out;
+  }
+
   function card(r){
     var holes=r.par>=71?18:9, firDen=holes===18?'14':'7', girDen=holes===18?'18':'9';
     var toPar=(r.vp>0?'+':'')+r.vp;
@@ -858,18 +893,69 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
         CATS.map(function(nm,i){return cell(nm,r.sg[i]);}).join('')+'</div>'+
     '</div>';
   }
-  document.getElementById('rounds-list').innerHTML=ROUNDS.map(card).join('');
 
-  document.getElementById('sgbars-hub').innerHTML=document.getElementById('sgbars-rounds').innerHTML=SGBARS.map(function(a){
-    var v=a[1],pos=v>=0,half=Math.min(46,Math.abs(v)/4*46).toFixed(1);
-    return '<div style="margin-bottom:14px">'+
-      '<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-weight:600;font-size:13px">'+a[0]+'</span>'+
-      '<span class="mono" style="font-weight:600;font-size:13px;color:'+(pos?'var(--green-pos)':'var(--red)')+'">'+(pos?'+':'')+v.toFixed(1)+'</span></div>'+
-      '<div class="sgbar"><div class="mid"></div><div style="position:absolute;top:0;bottom:0;'+(pos?'left:50%':'right:50%')+';width:'+half+'%;background:'+(pos?'var(--green-pos)':'var(--red)')+';border-radius:4px"></div></div>'+
-    '</div>';
-  }).join('');
+  function renderRounds(RS){
+    if(!RS||!RS.length) return;
+    var C=['Driver','176+','101-175','100 & In','Putting','Ball Strike'];
+    /* Weighted by holes, then expressed per 18. Strokes gained accumulates per
+       shot, so a nine holds half the evidence of a full round and must carry
+       half the weight. */
+    var len=function(r){return r.holes||(r.par>=60?18:9);};
+    var H=RS.reduce(function(a,r){return a+len(r);},0)||1;
+    var SGBARS=C.map(function(n,i){
+      var t=RS.reduce(function(a,r){return a+(r.sg[i]||0);},0)/H*18;
+      return [n, Math.round(t*10)/10];
+    });
 
-  document.getElementById('latest-list').innerHTML=ROUNDS.slice(0,3).map(card).join('');
+    document.getElementById('rounds-list').innerHTML=RS.map(card).join('');
+    document.getElementById('latest-list').innerHTML=RS.slice(0,3).map(card).join('');
+
+    document.getElementById('sgbars-hub').innerHTML=document.getElementById('sgbars-rounds').innerHTML=SGBARS.map(function(a){
+      var v=a[1],pos=v>=0,half=Math.min(46,Math.abs(v)/4*46).toFixed(1);
+      return '<div style="margin-bottom:14px">'+
+        '<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-weight:600;font-size:13px">'+a[0]+'</span>'+
+        '<span class="mono" style="font-weight:600;font-size:13px;color:'+(pos?'var(--green-pos)':'var(--red)')+'">'+(pos?'+':'')+v.toFixed(1)+'</span></div>'+
+        '<div class="sgbar"><div class="mid"></div><div style="position:absolute;top:0;bottom:0;'+(pos?'left:50%':'right:50%')+';width:'+half+'%;background:'+(pos?'var(--green-pos)':'var(--red)')+';border-radius:4px"></div></div>'+
+      '</div>';
+    }).join('');
+
+    document.getElementById('plan-list').innerHTML=SGBARS.slice().sort(function(a,b){return a[1]-b[1];}).map(function(a,i){
+      var v=a[1],pos=v>=0,tag=(i===0?'BIGGEST LEAK':(pos?'STRENGTH':'FOCUS'));
+      return '<div class="card" style="padding:16px 18px;margin-top:12px">'+
+        '<div style="display:flex;align-items:center;justify-content:space-between">'+
+          '<span style="font-family:var(--font-caps);font-weight:800;font-size:10px;letter-spacing:.14em;color:var(--steel)">'+tag+'</span>'+
+          '<span class="mono" style="font-weight:600;font-size:14px;color:'+(pos?'var(--green-pos)':'#E06070')+'">'+(pos?'+':'')+v.toFixed(1)+'</span></div>'+
+        '<div class="h-title" style="font-size:18px;margin-top:6px">'+a[0]+'</div>'+
+        '<div style="font-size:13px;color:var(--steel);line-height:1.45;margin-top:4px">'+(PLAN_DESC[a[0]]||'')+'</div></div>';
+    }).join('');
+
+    /* Season average over COMPLETED 18s only -- a nine would drag a gross
+       scoring average toward nonsense. These three numbers used to be typed
+       into the HTML and never moved. */
+    var full=RS.filter(function(r){return r.holes===18;});
+    if(full.length){
+      var avg=full.reduce(function(a,r){return a+r.score;},0)/full.length;
+      var tp =full.reduce(function(a,r){return a+r.vp;},0)/full.length;
+      var set=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
+      set('avg-hub',avg.toFixed(1)); set('avg-how',avg.toFixed(1)); set('avg-rounds',avg.toFixed(1));
+      var e=document.getElementById('avg-topar');
+      if(e) e.innerHTML='SEASON AVG &middot; '+(tp>=0?'+':'')+tp.toFixed(1)+' TO PAR';
+    }
+  }
+
+  /* Draw immediately from cache (or the baked seed), then refresh from the
+     sheet. Offline shows the last numbers seen instead of nothing. */
+  (function load(){
+    var seed=null;
+    try{var c=JSON.parse(localStorage.getItem(CACHE_KEY));if(c&&c.rows)seed=parseRounds(c.rows);}catch(e){}
+    renderRounds(seed&&seed.length?seed:ROUNDS);
+    fetch(HOOK).then(function(r){return r.json();}).then(function(j){
+      if(j&&j.ok&&j.rows){
+        try{localStorage.setItem(CACHE_KEY,JSON.stringify({rows:j.rows,t:Date.now()}));}catch(e){}
+        renderRounds(parseRounds(j.rows));
+      }
+    }).catch(function(){});
+  })();
 
   document.getElementById('club-list').innerHTML=CLUBS.map(function(c){
     return '<div class="crow"><span style="flex:2;font-weight:600;font-size:14px;color:#fff">'+c.name+(c.spec?' <span style="font-weight:500;font-size:10px;color:var(--steel)">'+c.spec+'</span>':'')+'</span>'+
