@@ -927,12 +927,17 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     var nRounds=Object.keys(rounds).length||1;
     /* Scrambling: of the greens MISSED, how often par or better was still made.
        The check mark is the sheet's GIR symbol; anything else is a miss. */
-    var missed=holes.filter(function(h){return h.gir.indexOf('\u2713')<0;});
+    /* A green is missed only when the sheet says so with a cross. Treating a
+       BLANK as a miss inflated the denominator - four holes have no GIR
+       recorded, and the hub read 83 greens missed where the sheet counted 79.
+       Count what was actually logged, matching the sheet's COUNTIF exactly. */
+    var missed=holes.filter(function(h){return h.gir.indexOf('\u2717')>=0;});
     var saved=missed.filter(function(h){return h.vsPar!=null && h.vsPar<=0;});
     /* Counts, not averaged percentages - so fairways and greens can be written
        in the same "46% (75 of 162)" form as everything else. Par 3s have no
        fairway, so they are excluded from the fairway denominator. */
     var girHit=holes.filter(function(h){return h.gir.indexOf('\u2713')>=0;}).length;
+    var girRec=holes.filter(function(h){return h.gir.trim()!=='';}).length;
     var firHoles=holes.filter(function(h){return h.par>3;});
     var firHit=firHoles.filter(function(h){return h.fir.indexOf('\u2713')>=0;}).length;
     return {
@@ -942,7 +947,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       threePuttPer: holes.filter(function(h){return h.putts>=3;}).length/nRounds,
       threePuttTotal: holes.filter(function(h){return h.putts>=3;}).length,
       holes: holes,
-      girHit:girHit, girHoles:holes.length,
+      girHit:girHit, girHoles:girRec,
       firHit:firHit, firHoles:firHoles.length,
       penaltyPer: holes.reduce(function(a,h){return a+h.pen;},0)/nRounds,
       doublePer: holes.filter(function(h){return h.vsPar!=null&&h.vsPar>=2;}).length/nRounds
