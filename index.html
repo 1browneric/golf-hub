@@ -171,8 +171,6 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
 .cnote-row{display:flex;gap:14px;align-items:baseline;padding:7px 0;
   border-bottom:1px solid rgba(12,35,64,.1)}
 .cnote-row .k{flex:0 0 40%;font-weight:700;color:var(--navy)}
-.cnote-row.hot .k{color:var(--red)}
-.cnote-row.hot{background:rgba(178,34,52,.06);border-radius:6px;padding-left:8px;padding-right:8px}
 .cnote-row .v{flex:1;text-align:right;color:#5C6B82;text-wrap:balance}
 .windsub{display:flex;gap:6px;margin-bottom:10px}
 .windbtn{flex:1;padding:8px 4px;border-radius:8px;border:1.5px solid rgba(12,35,64,.2);background:transparent;cursor:pointer;
@@ -874,9 +872,8 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     var cold = WX.temp!=null && WX.temp<REF_TEMP-5;
     return '<div class="cnote">'+lead+scale+
       condLabel('WEATHER CONDITIONS')+
-      '<div class="cnote-row hot"><span class="k">Wet ball</span>'+
-        '<span class="v">Dew, fog or rain. Flies shorter. Club up.</span></div>'+
       condRows([
+        ['Wet ball','Dew, fog or rain. Flies shorter. Club up.'],
         ['Dry and firm','Normal flight, but more roll out'],
         ['Warmer',      'Carries further'+(warm?' - about '+Math.round((WX.temp-REF_TEMP)/20*5)+' yds today':'')],
         ['Colder',      'Carries less'+(cold?' - about '+Math.round((WX.temp-REF_TEMP)/20*5)+' yds today':'')+', and you swing slower in layers'],
