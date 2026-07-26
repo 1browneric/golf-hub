@@ -160,6 +160,24 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
 .chart .par{color:var(--red);font-size:11px}
 .chart td.cl .bagn{font-family:var(--font-body);font-weight:700;color:var(--navy)}
 .chart td.cl .bags{font-family:var(--font-body);font-weight:500;font-size:10px;color:#8792A4;margin-left:6px;letter-spacing:0}
+/* Wind / Temp notes. These deliberately reuse the .chart type scale so the
+   Caddie reads as one thing across every tab - font, size and label colour all
+   come from the same place rather than from inline styles that drift. */
+.cnote{font-family:var(--font-data);font-size:12.5px;color:#16243A}
+.cnote-lead{font-family:var(--font-data);font-size:13px;line-height:1.65;font-weight:700;
+  color:var(--navy);margin-bottom:2px}
+.cnote-lbl{font-family:var(--font-data);font-size:9px;letter-spacing:.12em;text-transform:uppercase;
+  color:#5C6B82;font-weight:600;margin-top:16px;padding-bottom:5px;border-bottom:1.5px solid var(--navy)}
+.cnote-row{display:flex;gap:14px;align-items:baseline;padding:7px 0;
+  border-bottom:1px solid rgba(12,35,64,.1)}
+.cnote-row .k{flex:0 0 40%;font-weight:700;color:var(--navy)}
+.cnote-row .v{flex:1;text-align:right;color:#5C6B82;text-wrap:balance}
+/* The wet-ball line matters more than the rest of the table - Eric flagged it
+   as extremely important - so it is called out rather than buried in a row. */
+.cnote-flag{margin-top:14px;padding:11px 12px;border-radius:10px;background:rgba(178,34,52,.08);
+  border-left:3px solid var(--red);font-family:var(--font-data);font-size:12.5px;line-height:1.6;color:#16243A}
+.cnote-flag b{color:var(--red);display:block;font-size:9px;letter-spacing:.12em;
+  text-transform:uppercase;margin-bottom:4px}
 .windsub{display:flex;gap:6px;margin-bottom:10px}
 .windbtn{flex:1;padding:8px 4px;border-radius:8px;border:1.5px solid rgba(12,35,64,.2);background:transparent;cursor:pointer;
   font-family:var(--font-data);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#5C6B82}
@@ -781,17 +799,14 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
      keeps the base data underneath for reference. */
   function condRows(rows){
     return rows.map(function(r){
-      return '<div style="display:flex;gap:10px;margin-top:8px;font-size:13px;line-height:1.5">'+
-        '<span style="flex:1;font-weight:600">'+r[0]+'</span>'+
-        '<span style="flex:1;text-align:right;color:rgba(22,36,58,.75)">'+r[1]+'</span></div>';
+      return '<div class="cnote-row"><span class="k">'+r[0]+'</span>'+
+             '<span class="v">'+r[1]+'</span></div>';
     }).join('');
   }
-  function condLabel(t){
-    return '<div style="font-family:var(--font-caps);font-weight:800;font-size:10px;letter-spacing:.14em;'+
-      'color:rgba(22,36,58,.62);margin-top:16px">'+t+'</div>';
-  }
-  function condLead(txt){
-    return '<div style="font-size:14px;line-height:1.6;font-weight:600;margin-bottom:2px">'+txt+'</div>';
+  function condLabel(t){ return '<div class="cnote-lbl">'+t+'</div>'; }
+  function condLead(txt){ return '<div class="cnote-lead">'+txt+'</div>'; }
+  function condFlag(title, txt){
+    return '<div class="cnote-flag"><b>'+title+'</b>'+txt+'</div>';
   }
   /* What the wind actually does to HIS clubs, read off the chart.
      i = 0/1/2 for 5/10/20 mph. */
@@ -818,7 +833,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       live=condLead('It is blowing '+Math.round(WX.wind)+' mph right now'+
         (WX.windDir?' from the '+WX.windDir:'')+' - into it, expect a wider miss as well as a shorter one.');
     }
-    return live+lead+
+    return '<div class="cnote">'+live+lead+
       (mine.length?condLabel('OFF YOUR OWN CHART')+condRows(mine):'')+
       condLabel('THE NUMBERS')+condRows([
         ['Hurt vs help','Even in a breeze, up to about 1.5 to 1 when it blows'],
@@ -837,7 +852,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
         ['In a crosswind','Should not move much'],
         ['Missing long left','Add loft'],
         ['Missing long right','Take loft off']
-      ]);
+      ])+'</div>';
   }
   function caddyTempNotes(){
     var lead='', scale='';
@@ -856,15 +871,15 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       return [t+' degrees', (y>0?'+':'')+y+' yds'+(t===REF_TEMP?' (the baseline)':'')];
     });
     scale=condLabel('A FULL SHOT, AGAINST 70 DEGREES')+condRows(rows);
-    return lead+scale+
+    return '<div class="cnote">'+lead+scale+
+      condFlag('A wet ball',
+        'Dew, fog or rain on the ball means more drag and more spin, so it flies '+
+        'SHORTER than any number on this screen. Early morning dew counts. Club up.')+
       condLabel('WHY')+condRows([
         ['Warmer','More ball speed, more shaft flex and spin, body moves better'],
-        ['Colder','Less ball speed, less spin, more clothing so slower swing']
-      ])+
-      condLabel('WHAT DOES NOT MOVE IT')+condRows([
-        ['Humidity','Negligible on distance'],
-        ['A wet ball - dew, fog, rain','More drag and more spin, so it flies shorter']
-      ]);
+        ['Colder','Less ball speed, less spin, more clothing so slower swing'],
+        ['Humidity','Negligible on distance']
+      ])+'</div>';
   }
   function caddyBody(){
     if(caddyTab==="dist") return caddyDistChart();
@@ -1321,10 +1336,9 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
           SUPPORT['Scoring']+'</div>'+
       '</div>':'')
     + (rollup?'<div class="card" style="padding:16px 18px;margin-top:12px">'+
-        '<div style="display:flex;align-items:center;justify-content:space-between">'+
-          '<span style="font-family:var(--font-caps);font-weight:800;font-size:10px;letter-spacing:.14em;color:var(--steel)"></span>'+
+        '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">'+
+          '<span class="h-title" style="font-size:18px">'+rollup[0]+'</span>'+
           '<span class="mono" style="font-weight:600;font-size:14px;color:'+(rollup[1]>=0?'var(--green-pos)':'#E06070')+'">'+(rollup[1]>=0?'+':'')+rollup[1].toFixed(2)+'</span></div>'+
-        '<div class="h-title" style="font-size:18px;margin-top:6px">'+rollup[0]+'</div>'+
         '<div class="mono" style="font-size:12px;color:var(--steel);margin-top:6px;opacity:.9;line-height:1.8">'+
           bits([H&&H.firHoles?'Fairways '+rate(H.firHit,H.firHoles)+'.':'',
                 H&&H.girHoles?'Greens in regulation '+rate(H.girHit,H.girHoles)+'.':'',
