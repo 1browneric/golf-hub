@@ -373,17 +373,16 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
 <script>
 (function(){
   // per-round SG vs a 5-handicap (each round)
+  /* NO ROUNDS ARE BAKED IN. This array used to hold a copy of the sheet, and
+     it went stale the moment Eric played - it was 12 rounds against the
+     sheet's 10, still holding two deleted test rounds, and it is what paints
+     on a first visit before the live read returns. A copy of the data that
+     has to be manually refreshed will always drift, so there is no copy: the
+     page reads Rounds from the sheet on every open and caches that read in
+     localStorage for the next one. First paint on a brand new device is empty
+     for the length of one fetch, which is the correct trade for never showing
+     a round Eric has deleted. */
   var ROUNDS=[
-    {course:'Shoal Creek',loc:'Kansas City, MO',date:'Jul 25',par:71,score:81,vp:10,fw:10,gir:11,putts:37,holes:18,sg:[1.42,-0.59,-0.05,-0.1,-2.84,0.68]},
-    {course:'Shoal Creek',loc:'Kansas City, MO',date:'Jul 21',par:36,score:40,vp:4,fw:3,gir:7,putts:20,holes:9,sg:[1.46,0.19,0.78,-1.29,-1.06,1.14]},
-    {course:'Sunflower Hills',loc:'',date:'Jul 12',par:72,score:84,vp:12,fw:7,gir:9,putts:39,holes:18,sg:[2.18,0.81,-2.48,-0.1,-3.26,0.42]},
-    {course:'Shoal Creek',loc:'Kansas City, MO',date:'Jun 7',par:71,score:84,vp:13,fw:8,gir:8,putts:37,holes:18,sg:[-2.62,-0.54,0.37,-0.65,-0.53,-3.43]},
-    {course:'Shoal Creek',loc:'Kansas City, MO',date:'May 26',par:36,score:42,vp:6,fw:6,gir:6,putts:19,holes:9,sg:[-0.31,-0.12,0,-1.49,-1.28,-1.92]},
-    {course:'Colbert Hills',loc:'',date:'May 16',par:72,score:85,vp:13,fw:6,gir:6,putts:34,holes:18,sg:[-1,-1.2,-0.79,-2.57,0.78,-5.56]},
-    {course:'Fred Arbanas',loc:'',date:'Apr 25',par:72,score:83,vp:11,fw:7,gir:7,putts:40,holes:18,sg:[2.19,-0.75,0.76,-0.32,-4.17,1.88]},
-    {course:'Excelsior Springs',loc:'',date:'Apr 18',par:72,score:85,vp:13,fw:7,gir:3,putts:29,holes:18,sg:[0.43,-1.25,-1.28,-5.03,1.11,-7.13]},
-    {course:'Shoal Creek',loc:'Kansas City, MO',date:'Jan 18',par:71,score:81,vp:10,fw:10,gir:11,putts:37,holes:18,sg:[1.42,-0.59,-0.05,-0.1,-2.84,0.68]},
-    {course:'Shoal Creek',loc:'Kansas City, MO',date:'Jan 17',par:71,score:81,vp:10,fw:10,gir:11,putts:37,holes:18,sg:[1.42,-0.59,-0.05,-0.1,-2.84,0.68]}
   ];
   // Eric's club distances — calm carry (total). spec = smaller sub-label (model/loft). Updated per Eric 2026-07-13.
   var CLUBS=[
