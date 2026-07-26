@@ -998,6 +998,11 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       var full=String(r[1]||'');
       out.push({
         key: mm*100+dd,
+        /* full = the name exactly as the sheet stores it. The Hole Log stores
+           the same string, so date+full is what joins a round to its holes;
+           `course` below is the shortened display name and must not be used
+           for the join. */
+        full: full,
         course: full.replace(' Golf Course','').replace(' Golf Club',''),
         loc: LOC[full]||LOC[full.replace(' Golf Course','').replace(' Golf Club','')]||'',
         date: MON[mm-1]+' '+dd,
@@ -1014,12 +1019,149 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     return out;
   }
 
-  function card(r){
+  /* ---------------------------------------------------------------------
+     ROUND EXPANSION. The card is the collapsed state and is unchanged; tapping
+     it reveals the round's own detail underneath (Eric, 2026-07-26: "I like the
+     way it looks now as a base then once you click in a round it would expand
+     to more data"). Everything here is scoped to ONE round -- the season views
+     already exist on Rounds and Improvement and are not repeated.
+     Format follows the recap email Eric approved on 2026-07-23: the same
+     scoring marks, the same check/X, the same hole-by-hole shape.
+     --------------------------------------------------------------------- */
+  function holesForRound(key,full){
+    if(!HOLESTATS||!HOLESTATS.holes) return [];
+    return HOLESTATS.holes.filter(function(h){
+      return h.key===key && h.course===full;
+    }).sort(function(a,b){return a.hole-b.hole;});
+  }
+  /* Tracker scoring notation, same rules as recap.py _mark: circle birdie,
+     double circle eagle, square bogey, double square worse, plain par. The
+     shape carries the meaning, so colour is decoration -- it never has to be
+     read on its own. */
+  function mark(score,par,size){
+    size=size||22;
+    var d=score-par, col, bw, edge, rad;
+    if(d<=-2){col='var(--green-pos)';bw=3;edge='double';rad='border-radius:50%;';}
+    else if(d===-1){col='var(--green-pos)';bw=2;edge='solid';rad='border-radius:50%;';}
+    else if(d===0){col='var(--cream)';bw=0;edge='none';rad='';}
+    else if(d===1){col='#E06070';bw=2;edge='solid';rad='';}
+    else {col='#E06070';bw=3;edge='double';rad='';}
+    return '<span style="display:inline-block;box-sizing:border-box;width:'+size+'px;'+
+      'height:'+size+'px;text-align:center;font:700 '+(size-10)+'px/'+(size-2*bw)+'px var(--font-data);'+
+      'color:'+col+';'+(bw?'border:'+bw+'px '+edge+' '+col+';':'')+rad+'">'+score+'</span>';
+  }
+  function yn(v){
+    var s=String(v||'');
+    if(s.indexOf('✓')>=0) return '<span style="color:#6FA8DC">✓</span>';
+    if(s.indexOf('✗')>=0) return '<span style="color:#E06070">✗</span>';
+    return '<span style="color:var(--steel)">&ndash;</span>';
+  }
+  function detailStat(k,v){
+    return '<div style="display:flex;justify-content:space-between;padding:6px 0;'+
+      'border-bottom:1px solid rgba(143,160,184,.14)">'+
+      '<span style="font-size:12px;color:var(--steel)">'+k+'</span>'+
+      '<span class="mono" style="font-size:12px;font-weight:600">'+v+'</span></div>';
+  }
+  function roundDetail(r){
+    var hs=holesForRound(r.key,r.full);
+    /* null, not an empty-state string: the caller must be able to tell "no
+       holes for this round" from "the Hole Log has not arrived yet", because
+       caching the latter would leave the card permanently empty offline. */
+    if(!hs.length) return null;
+    var num=function(v,dp){return v==null?'&ndash;':v.toFixed(dp==null?0:dp);};
+    var sum=function(pick){return hs.reduce(function(a,h){return a+(pick(h)||0);},0);};
+    var cnt=function(test){return hs.filter(test).length;};
+    var p1s=hs.map(function(h){return h.p1;}).filter(function(v){return v!=null;});
+    var avgP1=p1s.length? p1s.reduce(function(a,b){return a+b;},0)/p1s.length : null;
+    var missed=hs.filter(function(h){return h.gir.indexOf('✗')>=0;});
+    var saved=missed.filter(function(h){return h.vsPar!=null&&h.vsPar<=0;});
+
+    /* SCORECARD -- horizontally scrollable so 18 holes never squeeze the
+       430px column or push the page sideways. */
+    var cell='text-align:center;padding:3px 0;min-width:30px';
+    var sc='<div style="overflow-x:auto;margin-top:14px"><table style="border-collapse:separate;border-spacing:2px 0">'+
+      '<tr><td style="font-size:9px;letter-spacing:.1em;color:var(--steel);padding-right:8px;text-align:right;font-family:var(--font-caps);font-weight:700">HOLE</td>'+
+        hs.map(function(h){return '<td style="'+cell+';font-family:var(--font-caps);font-weight:700;font-size:10px;background:var(--navy-deep);color:var(--cream);padding:4px 0">'+h.hole+'</td>';}).join('')+'</tr>'+
+      '<tr><td style="font-size:9px;letter-spacing:.1em;color:var(--steel);padding-right:8px;text-align:right;font-family:var(--font-caps);font-weight:700">PAR</td>'+
+        hs.map(function(h){return '<td class="mono" style="'+cell+';font-size:10px;color:var(--steel)">'+h.par+'</td>';}).join('')+'</tr>'+
+      '<tr><td style="font-size:9px;letter-spacing:.1em;color:var(--steel);padding-right:8px;text-align:right;font-family:var(--font-caps);font-weight:700">SCORE</td>'+
+        hs.map(function(h){return '<td style="'+cell+';padding:4px 0">'+mark(h.score,h.par,22)+'</td>';}).join('')+'</tr>'+
+      '<tr><td style="font-size:9px;letter-spacing:.1em;color:var(--steel);padding-right:8px;text-align:right;font-family:var(--font-caps);font-weight:700">PUTTS</td>'+
+        hs.map(function(h){return '<td class="mono" style="'+cell+';font-size:10px;color:var(--steel)">'+h.putts+'</td>';}).join('')+'</tr>'+
+      '</table></div>';
+
+    /* THIS ROUND'S NUMBERS -- the per-hole facts the summary card cannot show.
+       Scoring shape leads with doubles, the same order Improvement uses. */
+    var stats=groupLabel('THIS ROUND')+
+      '<div style="margin-top:8px">'+
+      detailStat('Doubles or worse', cnt(function(h){return h.vsPar!=null&&h.vsPar>=2;}))+
+      detailStat('Bogeys',           cnt(function(h){return h.vsPar===1;}))+
+      detailStat('Pars',             cnt(function(h){return h.vsPar===0;}))+
+      detailStat('Birdies or better',cnt(function(h){return h.vsPar!=null&&h.vsPar<0;}))+
+      detailStat('Penalty strokes',  sum(function(h){return h.pen;}))+
+      detailStat('3-putts',          cnt(function(h){return h.putts>=3;}))+
+      detailStat('1-putts',          cnt(function(h){return h.putts===1;}))+
+      detailStat('First putt average', avgP1==null?'&ndash;':num(avgP1)+' ft')+
+      detailStat('Scrambling', missed.length? saved.length+' of '+missed.length : '&ndash;')+
+      '</div>';
+
+    /* MISS AND STRIKE for this round only, reusing the season engine. */
+    var P=computePatterns({holes:hs});
+    var pat='';
+    if(P){
+      pat=groupLabel('TEE SHOTS · '+P.teeN)+bars(P.teeDir,P.teeN)+
+          groupLabel('APPROACHES · '+P.appN)+bars(P.appDir,P.appN)+
+          groupLabel('STRIKE')+bars(P.strikeAll,P.shots);
+    }
+
+    /* HOLE BY HOLE -- numbers row then its shot line, same as the recap. */
+    var hbh=groupLabel('HOLE BY HOLE')+hs.map(function(h){
+      var t=h.sg.reduce(function(a,v,i){return i===5?a:a+v;},0); // 0-4, Ball Strike (5) is their subtotal
+      var sgc=t>=0?'var(--green-pos)':'#E06070';
+      /* A blank Dist Aft means the ball did not travel to a measured distance:
+         it either finished on the green OR was lost. Reading it as "grn"
+         unconditionally (as the recap email still does) prints an OB tee ball
+         as if it found the putting surface -- hole 1 on 07/26 read
+         "398→grn Toe, Hook, Left, Unplayable". The penalty tags disambiguate. */
+      var LOST=['OB','Unplayable','Water','Lost'];
+      var shots=h.shots.map(function(s){
+        var pen=tags(s.acc).some(function(t){return LOST.indexOf(t)>=0;});
+        var to=s.da!=null?s.da:(pen?'lost':'grn');
+        return s.club+' '+s.lie+' '+(s.db==null?'':s.db+'→'+to)+(s.acc?' '+s.acc:'');
+      }).join(' · ');
+      return '<div style="padding:9px 0;border-bottom:1px solid rgba(143,160,184,.14)">'+
+        '<div style="display:flex;align-items:center;gap:9px">'+
+          '<span style="display:inline-block;min-width:24px;text-align:center;font-family:var(--font-caps);font-weight:700;font-size:11px;background:var(--navy-deep);color:var(--cream);padding:4px 5px;border-radius:5px">'+h.hole+'</span>'+
+          '<span class="mono" style="font-size:11px;color:var(--steel)">'+h.par+' · '+h.yds+'y</span>'+
+          mark(h.score,h.par,22)+
+          '<span class="mono" style="font-size:12px">'+yn(h.fir)+' '+yn(h.gir)+'</span>'+
+          '<span class="mono" style="font-size:11px;color:var(--steel)">'+h.putts+'p</span>'+
+          '<span class="mono" style="font-size:11px;font-weight:600;color:'+sgc+';margin-left:auto">'+(t>=0?'+':'')+t.toFixed(2)+'</span>'+
+        '</div>'+
+        (shots?'<div class="mono" style="font-size:10px;color:var(--steel);margin-top:5px;line-height:1.5">'+shots+'</div>':'')+
+      '</div>';
+    }).join('');
+
+    return '<div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(143,160,184,.22)">'+
+      sc+stats+pat+hbh+'</div>';
+  }
+
+  function esc(s){
+    return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;')
+      .replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  function card(r,expand){
     var holes=r.par>=71?18:9, firDen=holes===18?'14':'7', girDen=holes===18?'18':'9';
     var toPar=(r.vp>0?'+':'')+r.vp;
     var stat=function(k,v){return '<div style="flex:1;text-align:center"><div class="mono" style="font-weight:600;font-size:14px">'+v+'</div><div class="lab" style="font-weight:600;font-size:8px;letter-spacing:.08em;margin-top:2px">'+k+'</div></div>';};
     var cell=function(nm,v,sub){var p=v>=0;return '<div style="background:var(--navy-deep);border-radius:9px;padding:8px 6px;text-align:center"><div class="mono" style="font-weight:600;font-size:13px;color:'+(p?'var(--green-pos)':'#E06070')+'">'+(p?'+':'')+v.toFixed(2)+'</div><div class="lab" style="font-weight:'+(sub?'800':'600')+';font-size:7.5px;letter-spacing:.04em;margin-top:2px">'+nm+'</div></div>';};
-    return '<div class="card" style="padding:16px 16px 14px;margin-bottom:10px;cursor:pointer">'+
+    /* expand=true on the Rounds screen (tapping opens the round's detail in
+       place); false on the hub, where the three latest cards are a preview and
+       tapping goes to Rounds. Before this the cards carried cursor:pointer and
+       no handler at all, so the affordance was dead on both screens. */
+    return '<div class="card rcard" data-key="'+r.key+'" data-full="'+esc(r.full)+'"'+
+      (expand?' data-expand="1"':' data-go="rounds"')+
+      ' style="padding:16px 16px 14px;margin-bottom:10px;cursor:pointer">'+
       '<div style="display:flex;align-items:flex-start;justify-content:space-between">'+
         '<div><div class="h-title" style="font-size:18px">'+r.course+'</div>'+
         '<div style="font-family:var(--font-body);font-size:12px;color:var(--steel);margin-top:2px">'+r.loc+' · '+r.date+'</div></div>'+
@@ -1029,6 +1171,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
         stat('FIR',r.fw+'/'+firDen)+stat('GIR',r.gir+'/'+girDen)+stat('PUTTS',r.putts)+'</div>'+
       '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:12px">'+
         CATS.map(function(c){return cell(c.label,r.sg[c.i],c.subtotal);}).join('')+'</div>'+
+      (expand?'<div class="rdetail" hidden></div>':'')+
     '</div>';
   }
 
@@ -1042,6 +1185,10 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
        46 +/- par  47 FIR  48 GIR  49 Pen
      --------------------------------------------------------------------- */
   var HOLESTATS=null;
+  /* The rounds last rendered, so a tapped card can find its own round object.
+     Rounds and the Hole Log are two separate fetches, so a card can be tapped
+     before the holes land -- see resetDetails(). */
+  var LAST_RS=null;
   function parseHoles(rows){
     var holes=[];
     (rows||[]).slice(3).forEach(function(r){
@@ -1049,18 +1196,32 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       var vp=(r[46]===''||r[46]==null)?null:+r[46];
       /* Six shot slots of six fields each, starting at column 5:
          club, lie, dist_before, dist_after, type, acc. */
+      var ft=function(i){ var v=parseFloat(r[i]); return isNaN(v)?null:v; };
       var shots=[];
       for(var sIdx=0;sIdx<6;sIdx++){
         var b=5+sIdx*6, club=r[b], lie=r[b+1], typ=r[b+4], acc=r[b+5];
         if(!club&&!acc) continue;
+        /* db/da are carried for the round expansion's shot line only; no stat
+           reads them. A blank Dist Aft means the ball finished on the green
+           (or was lost), which is exactly how auto_gir keys GIR. */
         shots.push({club:String(club||''), lie:String(lie||''), type:String(typ||''),
-                    acc:String(acc||''), n:sIdx+1, vsPar:vp});
+                    acc:String(acc||''), n:sIdx+1, vsPar:vp,
+                    db:ft(b+2), da:ft(b+3)});
       }
-      var ft=function(i){ var v=parseFloat(r[i]); return isNaN(v)?null:v; };
-      holes.push({date:String(r[0]), par:+r[3]||0, putts:+r[44]||0, score:+r[45]||0,
-                  p1:ft(41), p2:ft(42),
+      /* date+course keys a hole to its round. The sheet refuses a duplicate
+         date+course, so the pair is unique; date alone is not (two courses in
+         one day would merge into one expansion). */
+      var dm=/^(\d{1,2})\/(\d{1,2})/.exec(String(r[0]));
+      holes.push({date:String(r[0]), key:dm?(+dm[1]*100+ +dm[2]):null,
+                  course:String(r[1]||''), hole:+r[2]||0, yds:+r[4]||0,
+                  par:+r[3]||0, putts:+r[44]||0, score:+r[45]||0,
+                  p1:ft(41), p2:ft(42), p3:ft(43),
                   vsPar:vp, fir:String(r[47]||''), gir:String(r[48]||''),
-                  pen:+r[49]||0, shots:shots});
+                  pen:+r[49]||0, shots:shots,
+                  /* Per-hole SG vs 5 HCP (cols 56-61), matching the band the
+                     hub shows everywhere else. Order in the sheet is
+                     Driver, 176+, 101-175, 100&In, Putting, Ball Strike. */
+                  sg:[56,57,58,59,60,61].map(function(i){var v=parseFloat(r[i]);return isNaN(v)?0:v;})});
     });
     if(!holes.length) return null;
     var rounds={};
@@ -1226,8 +1387,13 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       return [c.label, Math.round(t*100)/100, c.subtotal];
     });
 
-    document.getElementById('rounds-list').innerHTML=RS.map(card).join('');
-    document.getElementById('latest-list').innerHTML=RS.slice(0,3).map(card).join('');
+    /* NOT RS.map(card) -- map passes the index as the second argument, which
+       would land in `expand` and make every card truthy-expandable. */
+    document.getElementById('rounds-list').innerHTML=
+      RS.map(function(r){return card(r,true);}).join('');
+    document.getElementById('latest-list').innerHTML=
+      RS.slice(0,3).map(function(r){return card(r,false);}).join('');
+    LAST_RS=RS;
 
     document.getElementById('sgbars-hub').innerHTML=document.getElementById('sgbars-rounds').innerHTML=SGBARS.map(function(a){
       var v=a[1],pos=v>=0,half=Math.min(46,Math.abs(v)/4*46).toFixed(1);
@@ -1523,6 +1689,37 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       grabPuttInputs();
       puttIn.out=puttRead();
       document.getElementById('puttout').innerHTML=puttIn.out;
+      return;
+    }
+    /* Round expansion. Checked BEFORE the data-go router: a hub preview card
+       carries data-go="rounds" and no data-expand, so it still navigates. */
+    var rc=e.target.closest('.rcard[data-expand]');
+    if(rc){
+      var box=rc.querySelector('.rdetail');
+      if(box){
+        if(box.hidden){
+          if(!box.dataset.built){
+            var r=(LAST_RS||[]).filter(function(x){
+              return String(x.key)===rc.dataset.key && x.full===rc.dataset.full;
+            })[0];
+            /* Rendered on first open, not up front: 18 holes of shots for
+               every round is a lot of DOM to build for cards never tapped. */
+            var html=r?roundDetail(r):null;
+            if(html){
+              box.innerHTML=html;
+              box.dataset.built='1';   // only cache a real render
+            } else {
+              box.innerHTML='<div style="font-size:12px;color:var(--steel);'+
+                'padding:14px 2px 2px">'+(HOLESTATS&&HOLESTATS.holes?
+                  'No hole-by-hole data logged for this round.':
+                  'Loading hole detail…')+'</div>';
+            }
+          }
+          box.hidden=false;
+        } else {
+          box.hidden=true;
+        }
+      }
       return;
     }
     var go=e.target.closest('[data-go]'); if(go){show(go.dataset.go);return;}
