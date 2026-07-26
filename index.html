@@ -334,7 +334,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
           <button class="caddytab on" data-cad="swing">Swing</button>
           <button class="caddytab" data-cad="dist">My Bag</button>
           <button class="caddytab" data-cad="wind">Wind</button>
-          <button class="caddytab" data-cad="cond">Conditions</button>
+          <button class="caddytab" data-cad="temp">Temp</button>
           <button class="caddytab" data-cad="putt">Putting</button>
         </div>
         <div id="caddybody"></div>
@@ -578,7 +578,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
      ball speed, spin and body flexibility together. That is 0.25 yd per degree.
      REF_TEMP is the temperature the yardages were measured at; the adjustment
      is shown on screen rather than folded in silently, so it can be checked. */
-  var WX={temp:null, code:null, humidity:null};
+  var WX={temp:null, code:null, humidity:null, wind:null, windDir:null};
   var REF_TEMP=70;
   function tempAdj(carry){
     if(WX.temp==null) return 0;
@@ -773,56 +773,103 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     puttIn.stimp=document.getElementById('pt-stimp').value;
     puttIn.ud=document.getElementById('pt-ud').value;
   }
-  /* Eric's own Wind and Temperature notes, kept where he reads them. These
-     are HIS rules, transcribed - not sourced from anywhere else and not
-     rewritten. The Wind chart above is measured data; this is the reasoning
-     behind it and the parts a chart cannot express (dispersion, loft). */
-  function condNote(title, rows){
-    return '<div style="margin-top:14px">'+
-      '<div style="font-family:var(--font-caps);font-weight:800;font-size:10px;letter-spacing:.14em;'+
-        'color:rgba(22,36,58,.62)">'+title+'</div>'+
-      rows.map(function(r){
-        return '<div style="display:flex;gap:10px;margin-top:8px;font-size:13px;line-height:1.5">'+
-          '<span style="flex:1;font-weight:600">'+r[0]+'</span>'+
-          '<span style="flex:1;text-align:right;color:rgba(22,36,58,.75)">'+r[1]+'</span></div>';
-      }).join('')+'</div>';
+  /* Eric's own Wind and Temperature notes. He asked for these to be split and
+     for the insight rather than the raw table: "feel free to summarize or
+     provide easier insite to these. Thats just the base data!"
+     So each tab LEADS with what the numbers mean - computed from his own CADDY
+     chart where possible, so the figures are his, not a rule of thumb - and
+     keeps the base data underneath for reference. */
+  function condRows(rows){
+    return rows.map(function(r){
+      return '<div style="display:flex;gap:10px;margin-top:8px;font-size:13px;line-height:1.5">'+
+        '<span style="flex:1;font-weight:600">'+r[0]+'</span>'+
+        '<span style="flex:1;text-align:right;color:rgba(22,36,58,.75)">'+r[1]+'</span></div>';
+    }).join('');
   }
-  function caddyConditions(){
+  function condLabel(t){
+    return '<div style="font-family:var(--font-caps);font-weight:800;font-size:10px;letter-spacing:.14em;'+
+      'color:rgba(22,36,58,.62);margin-top:16px">'+t+'</div>';
+  }
+  function condLead(txt){
+    return '<div style="font-size:14px;line-height:1.6;font-weight:600;margin-bottom:2px">'+txt+'</div>';
+  }
+  /* What the wind actually does to HIS clubs, read off the chart.
+     i = 0/1/2 for 5/10/20 mph. */
+  function windCost(club, i){
+    var c=CADDY[club]; if(!c) return null;
+    return { hurt: Math.round(c.c[0]-c.h[i][0]), help: Math.round(c.t[i][0]-c.c[0]) };
+  }
+  function caddyWindNotes(){
+    var d10=windCost('D',1), d20=windCost('D',2), n10=CADDY['9i']?windCost('9i',1):null;
+    /* The note says the hurt:help ratio is about 1.5 to 1; the chart says 1.0
+       at 5 mph and 1.4 by 20. Both are right - the ratio GROWS with the wind,
+       and 1.5 is the strong-wind end of it. Saying that is more use than
+       either number on its own, and stops the screen contradicting itself. */
+    var lead=condLead('A light wind hurts and helps about the same. The harder it blows the more '+
+      'one-sided it gets'+(d20?', and at 20 mph into the wind costs your driver '+d20.hurt+
+      ' yards where downwind only gives back '+d20.help:'')+
+      ' - so club up into it, and never bank on the help coming home.');
+    var mine=[];
+    if(d10) mine.push(['Driver, 10 mph', d10.hurt+' yds into, '+d10.help+' yds down']);
+    if(d20) mine.push(['Driver, 20 mph', d20.hurt+' yds into, '+d20.help+' yds down']);
+    if(n10) mine.push(['9 iron, 10 mph', n10.hurt+' yds into, '+n10.help+' yds down']);
     var live='';
-    if(WX.temp!=null){
-      var swing=Math.round((WX.temp-REF_TEMP)/20*5);
-      live='<div style="font-size:13px;line-height:1.6;margin-bottom:4px">'+
-        'Right now '+Math.round(WX.temp)+' degrees: a full shot carries about '+
-        (swing>0?'+':'')+swing+' yards against '+REF_TEMP+' degrees'+
-        (wetBall()?', and the ball is wet so it will fly shorter still':'')+'.</div>';
+    if(WX.wind!=null&&WX.wind>=8){
+      live=condLead('It is blowing '+Math.round(WX.wind)+' mph right now'+
+        (WX.windDir?' from the '+WX.windDir:'')+' - into it, expect a wider miss as well as a shorter one.');
     }
-    return live+
-      condNote('WIND', [
-        ['Hurt vs help','About 1.5 to 1'],
+    return live+lead+
+      (mine.length?condLabel('OFF YOUR OWN CHART')+condRows(mine):'')+
+      condLabel('THE NUMBERS')+condRows([
+        ['Hurt vs help','Even in a breeze, up to about 1.5 to 1 when it blows'],
         ['10 mph into','15-20 yards of hurt'],
         ['10 mph down','10-12 yards of help'],
-        ['Higher lofted clubs','More spin, so more wind effect'],
-        ['Helping wind','Tightens left/right dispersion'],
-        ['Hurting wind','Widens left/right dispersion'],
-        ['Right-to-left wind','Wider dispersion'],
-        ['Left-to-right wind','Tighter dispersion'],
-        ['Why','Mishits, not the wind - loft and spin change'],
-        ['Driver in a crosswind','Should not move much'],
-        ['Driver missing long left','Add loft'],
-        ['Driver missing long right','Take loft off']
+        ['Higher lofted clubs','More spin, so more wind effect']
       ])+
-      condNote('TEMPERATURE', [
-        ['Every 20 degrees','About 5 yards'],
+      condLabel('WHERE IT PUTS THE BALL')+condRows([
+        ['Helping','Tightens left/right dispersion'],
+        ['Hurting','Widens left/right dispersion'],
+        ['Right-to-left','Wider dispersion'],
+        ['Left-to-right','Tighter dispersion'],
+        ['Why','Mishits, not the wind - loft and spin change']
+      ])+
+      condLabel('DRIVER')+condRows([
+        ['In a crosswind','Should not move much'],
+        ['Missing long left','Add loft'],
+        ['Missing long right','Take loft off']
+      ]);
+  }
+  function caddyTempNotes(){
+    var lead='', scale='';
+    if(WX.temp!=null){
+      var swing=(WX.temp-REF_TEMP)/20*5;
+      var s1=Math.round(swing);
+      lead=condLead(Math.round(WX.temp)+' degrees right now: a full shot carries about '+
+        (s1>0?'+':'')+s1+' yards against 70'+
+        (Math.abs(s1)>=3?', which is most of a club':'')+
+        (wetBall()?'. The ball is wet, so it will fly shorter still':'')+'.');
+    } else {
+      lead=condLead('Every 20 degrees is worth about 5 yards on a full shot.');
+    }
+    var rows=[40,50,60,70,80,90,100].map(function(t){
+      var y=Math.round((t-REF_TEMP)/20*5);
+      return [t+' degrees', (y>0?'+':'')+y+' yds'+(t===REF_TEMP?' (the baseline)':'')];
+    });
+    scale=condLabel('A FULL SHOT, AGAINST 70 DEGREES')+condRows(rows);
+    return lead+scale+
+      condLabel('WHY')+condRows([
         ['Warmer','More ball speed, more shaft flex and spin, body moves better'],
-        ['Colder','Less ball speed, less spin, more clothing so slower swing'],
+        ['Colder','Less ball speed, less spin, more clothing so slower swing']
+      ])+
+      condLabel('WHAT DOES NOT MOVE IT')+condRows([
         ['Humidity','Negligible on distance'],
-        ['Wet ball - dew, fog, rain','More drag and more spin, so it flies shorter']
+        ['A wet ball - dew, fog, rain','More drag and more spin, so it flies shorter']
       ]);
   }
   function caddyBody(){
     if(caddyTab==="dist") return caddyDistChart();
-    if(caddyTab==="wind") return caddyWindChart();
-    if(caddyTab==="cond") return caddyConditions();
+    if(caddyTab==="wind") return caddyWindChart()+caddyWindNotes();
+    if(caddyTab==="temp") return caddyTempNotes();
     if(caddyTab==="putt") return puttBody();
     // swing
     return '<div class="edrow">'+
@@ -1414,6 +1461,9 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
         WX.temp=(typeof c.temperature_2m==='number')?c.temperature_2m:null;
         WX.code=(typeof c.weather_code==='number')?c.weather_code:null;
         WX.humidity=(typeof c.relative_humidity_2m==='number')?c.relative_humidity_2m:null;
+        WX.wind=(typeof c.wind_speed_10m==='number')?c.wind_speed_10m:null;
+        WX.windDir=(typeof c.wind_direction_10m==='number')
+          ? ['N','NE','E','SE','S','SW','W','NW'][Math.round(c.wind_direction_10m/45)%8] : null;
         if(d.temperature_2m_max)wxSet('wx-hilo',num(d.temperature_2m_max[0],'°')+' · '+num(d.temperature_2m_min[0],'°'));
       })
       .catch(function(){wxSet('wx-cond','Weather unavailable');})
