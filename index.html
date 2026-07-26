@@ -171,13 +171,9 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
 .cnote-row{display:flex;gap:14px;align-items:baseline;padding:7px 0;
   border-bottom:1px solid rgba(12,35,64,.1)}
 .cnote-row .k{flex:0 0 40%;font-weight:700;color:var(--navy)}
+.cnote-row.hot .k{color:var(--red)}
+.cnote-row.hot{background:rgba(178,34,52,.06);border-radius:6px;padding-left:8px;padding-right:8px}
 .cnote-row .v{flex:1;text-align:right;color:#5C6B82;text-wrap:balance}
-/* The wet-ball line matters more than the rest of the table - Eric flagged it
-   as extremely important - so it is called out rather than buried in a row. */
-.cnote-flag{margin-top:14px;padding:11px 12px;border-radius:10px;background:rgba(178,34,52,.08);
-  border-left:3px solid var(--red);font-family:var(--font-data);font-size:12.5px;line-height:1.6;color:#16243A}
-.cnote-flag b{color:var(--red);display:block;font-size:9px;letter-spacing:.12em;
-  text-transform:uppercase;margin-bottom:4px}
 .windsub{display:flex;gap:6px;margin-bottom:10px}
 .windbtn{flex:1;padding:8px 4px;border-radius:8px;border:1.5px solid rgba(12,35,64,.2);background:transparent;cursor:pointer;
   font-family:var(--font-data);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#5C6B82}
@@ -805,9 +801,6 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
   }
   function condLabel(t){ return '<div class="cnote-lbl">'+t+'</div>'; }
   function condLead(txt){ return '<div class="cnote-lead">'+txt+'</div>'; }
-  function condFlag(title, txt){
-    return '<div class="cnote-flag"><b>'+title+'</b>'+txt+'</div>';
-  }
   /* What the wind actually does to HIS clubs, read off the chart.
      i = 0/1/2 for 5/10/20 mph. */
   function windCost(club, i){
@@ -871,16 +864,36 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       return [t+' degrees', (y>0?'+':'')+y+' yds'+(t===REF_TEMP?' (the baseline)':'')];
     });
     scale=condLabel('A FULL SHOT, AGAINST 70 DEGREES')+condRows(rows);
+    /* One section, one row per condition, a short recommendation on the right.
+       Eric's shape: "putting wet, dry, colder, warmer, humidity, raining,
+       snowing, windy, just some quick comments or recommendations on the right
+       side." Kept short on purpose - a value that wraps to three lines with one
+       word stranded is the thing he flagged twice. Wet leads because it is the
+       one that makes every number above it wrong. */
+    var warm = WX.temp!=null && WX.temp>REF_TEMP+5;
+    var cold = WX.temp!=null && WX.temp<REF_TEMP-5;
     return '<div class="cnote">'+lead+scale+
-      condFlag('A wet ball',
-        'Dew, fog or rain on the ball means more drag and more spin, so it flies '+
-        'SHORTER than any number on this screen. Early morning dew counts. Club up.')+
-      condLabel('WHY')+condRows([
-        ['Warmer','More ball speed, more shaft flex and spin, body moves better'],
-        ['Colder','Less ball speed, less spin, more clothing so slower swing'],
-        ['Humidity','Negligible on distance']
+      condLabel('WEATHER CONDITIONS')+
+      '<div class="cnote-row hot"><span class="k">Wet ball</span>'+
+        '<span class="v">Dew, fog or rain. Flies shorter. Club up.</span></div>'+
+      condRows([
+        ['Dry and firm','Normal flight, but more roll out'],
+        ['Warmer',      'Carries further'+(warm?' - about '+Math.round((WX.temp-REF_TEMP)/20*5)+' yds today':'')],
+        ['Colder',      'Carries less'+(cold?' - about '+Math.round((WX.temp-REF_TEMP)/20*5)+' yds today':'')+', and you swing slower in layers'],
+        ['Humidity',    'No real effect. Ignore it.'],
+        ['Raining',     'Wet ball and soft ground. Club up, expect no roll'],
+        ['Snowing',     'Cold and wet together. Everything comes up short'],
+        ['Windy',       'Into it costs more than downwind gives back']
+      ])+
+      condLabel('TIME OF THE ROUND')+
+      condRows([
+        ['First off',   'Dew on the ball, so it flies shorter. Greens are slow - hit putts firmer'],
+        ['Mid morning', 'Dew burns off. Greens start to quicken'],
+        ['Afternoon',   'Firmest and fastest. Most carry and most roll'],
+        ['Late',        'Dew returns and greens get bumpy. Air cools, so carry drops off']
       ])+'</div>';
   }
+
   function caddyBody(){
     if(caddyTab==="dist") return caddyDistChart();
     if(caddyTab==="wind") return caddyWindChart()+caddyWindNotes();
