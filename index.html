@@ -333,6 +333,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
           <button class="caddytab on" data-cad="swing">Swing</button>
           <button class="caddytab" data-cad="dist">My Bag</button>
           <button class="caddytab" data-cad="wind">Wind</button>
+          <button class="caddytab" data-cad="cond">Conditions</button>
           <button class="caddytab" data-cad="putt">Putting</button>
         </div>
         <div id="caddybody"></div>
@@ -530,6 +531,8 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       var c=BAG[i];
       if(!CADDY[c]) continue;
       var e=caddyEval(c,dir,mph);
+      var ta=tempAdj(e.carry);
+      e.carry+=ta; e.total+=ta;
       if(cap!=null && e.total>cap) continue;
       var score=e.carry<dist ? (dist-e.carry)*1.25 : e.carry-dist;
       if(!best||score<best.score) best={club:c,score:score,carry:e.carry,total:e.total,drift:e.drift,shape:e.shape};
@@ -550,6 +553,12 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       lines.push("Play it straight at your target.");
     }
     if(best.shape) lines.push("Shape: "+best.shape+".");
+    /* State the adjustment rather than hiding it inside the number. */
+    var ta=Math.round(tempAdj(best.carry));
+    if(WX.temp!=null && Math.abs(ta)>=1){
+      lines.push(Math.round(WX.temp)+" degrees: "+(ta>0?"+":"")+ta+" yds on carry vs "+REF_TEMP+".");
+    }
+    if(wetBall()) lines.push("Wet ball - more drag and more spin, so it flies shorter than this.");
     if(dist<90){
       var feel=SHORT_GAME[0];
       for(var j=0;j<SHORT_GAME.length;j++) if(Math.abs(SHORT_GAME[j][0]-dist)<Math.abs(feel[0]-dist)) feel=SHORT_GAME[j];
@@ -558,6 +567,26 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     return lines.join("<br>");
   }
   var caddyIn={dist:null,cap:null,mph:null,dir:"calm",out:""};
+  /* Live conditions, filled in by the weather load. The chart in CADDY is
+     measured, so it already carries the wind hurt/help asymmetry from Eric's
+     notes (a 10 mph headwind costs 13 yds off the driver, a 10 mph tailwind
+     gives back 11). Temperature was the gap: the page put 94 on screen and
+     picked the same club it would have picked at 50.
+     Eric's note: "20 degree differences is about 5 yards of change", covering
+     ball speed, spin and body flexibility together. That is 0.25 yd per degree.
+     REF_TEMP is the temperature the yardages were measured at; the adjustment
+     is shown on screen rather than folded in silently, so it can be checked. */
+  var WX={temp:null, code:null, humidity:null};
+  var REF_TEMP=70;
+  function tempAdj(carry){
+    if(WX.temp==null) return 0;
+    /* Scaled by club: a 5-yard swing on a 275-yard driver is not 5 yards on a
+       95-yard wedge. Eric's 5-per-20 is quoted for a full shot, so it is
+       applied in proportion to the stock carry against the driver. */
+    return (WX.temp-REF_TEMP)/20*5*(carry/275);
+  }
+  var WET_CODES=[45,48,51,53,55,56,57,61,63,65,66,67,80,81,82,95,96,99];
+  function wetBall(){ return WX.code!=null && WET_CODES.indexOf(WX.code)>=0; }
   var caddyTab="swing";   // swing | dist | wind
   var windTab="into";     // into | down | lr | rl
   function numOrNull(v){var n=parseFloat(v);return isFinite(n)?n:null;}
@@ -742,9 +771,56 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     puttIn.stimp=document.getElementById('pt-stimp').value;
     puttIn.ud=document.getElementById('pt-ud').value;
   }
+  /* Eric's own Wind and Temperature notes, kept where he reads them. These
+     are HIS rules, transcribed - not sourced from anywhere else and not
+     rewritten. The Wind chart above is measured data; this is the reasoning
+     behind it and the parts a chart cannot express (dispersion, loft). */
+  function condNote(title, rows){
+    return '<div style="margin-top:14px">'+
+      '<div style="font-family:var(--font-caps);font-weight:800;font-size:10px;letter-spacing:.14em;'+
+        'color:rgba(22,36,58,.62)">'+title+'</div>'+
+      rows.map(function(r){
+        return '<div style="display:flex;gap:10px;margin-top:8px;font-size:13px;line-height:1.5">'+
+          '<span style="flex:1;font-weight:600">'+r[0]+'</span>'+
+          '<span style="flex:1;text-align:right;color:rgba(22,36,58,.75)">'+r[1]+'</span></div>';
+      }).join('')+'</div>';
+  }
+  function caddyConditions(){
+    var live='';
+    if(WX.temp!=null){
+      var swing=Math.round((WX.temp-REF_TEMP)/20*5);
+      live='<div style="font-size:13px;line-height:1.6;margin-bottom:4px">'+
+        'Right now '+Math.round(WX.temp)+' degrees: a full shot carries about '+
+        (swing>0?'+':'')+swing+' yards against '+REF_TEMP+' degrees'+
+        (wetBall()?', and the ball is wet so it will fly shorter still':'')+'.</div>';
+    }
+    return live+
+      condNote('WIND', [
+        ['Hurt vs help','About 1.5 to 1'],
+        ['10 mph into','15-20 yards of hurt'],
+        ['10 mph down','10-12 yards of help'],
+        ['Higher lofted clubs','More spin, so more wind effect'],
+        ['Helping wind','Tightens left/right dispersion'],
+        ['Hurting wind','Widens left/right dispersion'],
+        ['Right-to-left wind','Wider dispersion'],
+        ['Left-to-right wind','Tighter dispersion'],
+        ['Why','Mishits, not the wind - loft and spin change'],
+        ['Driver in a crosswind','Should not move much'],
+        ['Driver missing long left','Add loft'],
+        ['Driver missing long right','Take loft off']
+      ])+
+      condNote('TEMPERATURE', [
+        ['Every 20 degrees','About 5 yards'],
+        ['Warmer','More ball speed, more shaft flex and spin, body moves better'],
+        ['Colder','Less ball speed, less spin, more clothing so slower swing'],
+        ['Humidity','Negligible on distance'],
+        ['Wet ball - dew, fog, rain','More drag and more spin, so it flies shorter']
+      ]);
+  }
   function caddyBody(){
     if(caddyTab==="dist") return caddyDistChart();
     if(caddyTab==="wind") return caddyWindChart();
+    if(caddyTab==="cond") return caddyConditions();
     if(caddyTab==="putt") return puttBody();
     // swing
     return '<div class="edrow">'+
@@ -906,7 +982,9 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
         shots.push({club:String(club||''), lie:String(lie||''), type:String(typ||''),
                     acc:String(acc||''), n:sIdx+1, vsPar:vp});
       }
+      var ft=function(i){ var v=parseFloat(r[i]); return isNaN(v)?null:v; };
       holes.push({date:String(r[0]), par:+r[3]||0, putts:+r[44]||0, score:+r[45]||0,
+                  p1:ft(41), p2:ft(42),
                   vsPar:vp, fir:String(r[47]||''), gir:String(r[48]||''),
                   pen:+r[49]||0, shots:shots});
     });
@@ -941,7 +1019,25 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       girHit:girHit, girHoles:girRec,
       firHit:firHit, firHoles:firHoles.length,
       penaltyPer: holes.reduce(function(a,h){return a+h.pen;},0)/nRounds,
-      doublePer: holes.filter(function(h){return h.vsPar!=null&&h.vsPar>=2;}).length/nRounds
+      doublePer: holes.filter(function(h){return h.vsPar!=null&&h.vsPar>=2;}).length/nRounds,
+      /* Scoring shape. Jon Sherman's point in The Four Foundations of Golf is
+         that for an amateur the score is driven by how OFTEN the big number
+         shows up, not by birdies - so the doubles line is the headline and the
+         birdies line is the context, not the other way round. */
+      doubleTotal: holes.filter(function(h){return h.vsPar!=null&&h.vsPar>=2;}).length,
+      birdiePer: holes.filter(function(h){return h.vsPar!=null&&h.vsPar<0;}).length/nRounds,
+      birdieTotal: holes.filter(function(h){return h.vsPar!=null&&h.vsPar<0;}).length,
+      parPer: holes.filter(function(h){return h.vsPar===0;}).length/nRounds,
+      parTotal: holes.filter(function(h){return h.vsPar===0;}).length,
+      /* Speed control, the way Sherman measures it: not "how many putts" but
+         "how often did the first putt finish inside three feet". Only holes
+         that actually took a second putt can answer it. */
+      leaveN: holes.filter(function(h){return h.putts>=2&&h.p2!=null&&h.p2<=3;}).length,
+      leaveD: holes.filter(function(h){return h.putts>=2&&h.p2!=null;}).length,
+      firstPuttAvg: (function(){
+        var v=holes.map(function(h){return h.p1;}).filter(function(x){return x!=null;});
+        return v.length? v.reduce(function(a,b){return a+b;},0)/v.length : null;
+      })()
     };
   }
 
@@ -1101,13 +1197,18 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
                         H&&H.penaltyPer!=null?'Penalties '+H.penaltyPer.toFixed(1)+' a round.':'']),
       '176+':     bits([reachLine('176+')]),
       '101-175':  bits([reachLine('101-175')]),
+      'Scoring':  bits([H&&H.doublePer!=null?'Doubles or worse '+H.doublePer.toFixed(1)+' a round ('+H.doubleTotal+' total).':'',
+                        H&&H.birdiePer!=null?'Birdies '+H.birdiePer.toFixed(1)+' a round ('+H.birdieTotal+' total).':'',
+                        H&&H.parPer!=null?'Pars '+H.parPer.toFixed(1)+' a round ('+H.parTotal+' total).':'']),
       '100 & In': bits([H&&H.scramblePct!=null
                           ? 'Up and down after a missed green '+rate(H.scrambleN,H.scrambleD)+'.'
                           : '',
                         reachLine('100 & In')]),
       'Putting':  bits([puttAvg==null?'':'Averaging '+puttAvg.toFixed(1)+' putts.',
                         H&&H.onePuttPer!=null?'One-putts '+H.onePuttPer.toFixed(1)+' a round ('+H.onePuttTotal+' total).':'',
-                        H&&H.threePuttPer!=null?'Three-putts '+H.threePuttPer.toFixed(1)+' a round ('+H.threePuttTotal+' total).':''])
+                        H&&H.threePuttPer!=null?'Three-putts '+H.threePuttPer.toFixed(1)+' a round ('+H.threePuttTotal+' total).':'',
+                        H&&H.firstPuttAvg!=null?'First putt averages '+H.firstPuttAvg.toFixed(0)+' feet.':'',
+                        H&&H.leaveD?'First putt left inside 3 feet '+rate(H.leaveN,H.leaveD)+'.':''])
     };
 
     /* The miss and strike bars belong INSIDE the category they describe, not
@@ -1165,6 +1266,11 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
         catDetail(a[0])+
       '</div>';
     }).join('')
+    + (SUPPORT['Scoring']?'<div class="card" style="padding:16px 18px;margin-top:12px">'+
+        '<div class="h-title" style="font-size:18px">Scoring</div>'+
+        '<div class="mono" style="font-size:12px;color:var(--steel);margin-top:8px;opacity:.9;line-height:1.8">'+
+          SUPPORT['Scoring']+'</div>'+
+      '</div>':'')
     + (rollup?'<div class="card" style="padding:16px 18px;margin-top:12px">'+
         '<div style="display:flex;align-items:center;justify-content:space-between">'+
           '<span style="font-family:var(--font-caps);font-weight:800;font-size:10px;letter-spacing:.14em;color:var(--steel)"></span>'+
@@ -1302,6 +1408,10 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
           wxSet('wx-wind',Math.round(c.wind_speed_10m)+' '+['N','NE','E','SE','S','SW','W','NW'][Math.round(c.wind_direction_10m/45)%8]);
         }
         wxSet('wx-hum',num(c.relative_humidity_2m,'%'));
+        /* Feed the caddie, not just the display. */
+        WX.temp=(typeof c.temperature_2m==='number')?c.temperature_2m:null;
+        WX.code=(typeof c.weather_code==='number')?c.weather_code:null;
+        WX.humidity=(typeof c.relative_humidity_2m==='number')?c.relative_humidity_2m:null;
         if(d.temperature_2m_max)wxSet('wx-hilo',num(d.temperature_2m_max[0],'°')+' · '+num(d.temperature_2m_min[0],'°'));
       })
       .catch(function(){wxSet('wx-cond','Weather unavailable');})
