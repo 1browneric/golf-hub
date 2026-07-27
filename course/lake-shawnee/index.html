@@ -1181,6 +1181,25 @@ function scoreClass(g, par){
    than any geometry that could be re-derived from satellite imagery, so nothing
    here is reconstructed: hole plan on one tab, green slope + pin sheets on the other. */
 let bookSide = "hole";
+/* PREFETCH THE BOOK. There is no service worker on either hub, so nothing is
+   cached for offline. The book is 36 images, ~220 KB a hole; fetched lazily you
+   would be waiting on cell signal standing on the tee, and Lake Shawnee sits in
+   a river valley. So once the page is open on a good connection, quietly pull
+   every page into the HTTP cache. Deliberately after first paint and one at a
+   time so it never competes with the round starting. */
+(function prefetchBook(){
+  let i = 1;
+  const step = () => {
+    if (i > 18) return;
+    const n = String(i).padStart(2,"0");
+    Promise.all([fetch(`book/h${n}.jpg`,{cache:"force-cache"}).catch(()=>{}),
+                 fetch(`book/g${n}.jpg`,{cache:"force-cache"}).catch(()=>{})])
+      .then(()=>{ i++; setTimeout(step, 250); });
+  };
+  if ("requestIdleCallback" in window) requestIdleCallback(()=>setTimeout(step,1500));
+  else setTimeout(step, 2500);
+})();
+
 function viewBook(){
   const n = String(hole).padStart(2,"0");
   const src = bookSide === "green" ? `book/g${n}.jpg` : `book/h${n}.jpg`;
