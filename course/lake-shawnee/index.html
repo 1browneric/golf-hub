@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Round Tracker — Lake Shawnee</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1192,8 +1195,7 @@ let bookSide = "hole";
   const step = () => {
     if (i > 18) return;
     const n = String(i).padStart(2,"0");
-    Promise.all([fetch(`book/h${n}.jpg`,{cache:"force-cache"}).catch(()=>{}),
-                 fetch(`book/g${n}.jpg`,{cache:"force-cache"}).catch(()=>{})])
+    Promise.all(["h","g","s"].map(k=>fetch(`book/${k}${n}.jpg`,{cache:"force-cache"}).catch(()=>{})))
       .then(()=>{ i++; setTimeout(step, 250); });
   };
   if ("requestIdleCallback" in window) requestIdleCallback(()=>setTimeout(step,1500));
@@ -1202,18 +1204,20 @@ let bookSide = "hole";
 
 function viewBook(){
   const n = String(hole).padStart(2,"0");
-  const src = bookSide === "green" ? `book/g${n}.jpg` : `book/h${n}.jpg`;
-  const cap = bookSide === "green"
-    ? `Hole ${hole} green &middot; slope, fall lines and four pin sheets`
-    : `Hole ${hole} &middot; par ${parFor(hole)}, ${ydsFor(hole)} yds from the Blue tees`;
+  const SIDES = [["hole","Hole map","h"],["green","Green","g"],["strategy","Strategy","s"]];
+  const cur = SIDES.find(x=>x[0]===bookSide) || SIDES[0];
+  const src = `book/${cur[2]}${n}.jpg`;
+  const caps = {
+    hole:     `Hole ${hole} &middot; par ${parFor(hole)}, ${ydsFor(hole)} yds from the Blue tees`,
+    green:    `Hole ${hole} green &middot; slope, fall lines and four pin sheets`,
+    strategy: `Hole ${hole} &middot; approach ladder and the shot plan`
+  };
+  const bar = SIDES.map(x=>`<button class="bookbtn ${x[0]===bookSide?"on":""}" data-book="${x[0]}">${x[1]}</button>`).join("");
   return `${holeNav("top", HOLES[hole-1])}
   <div class="bookwrap">
-    <div class="booktabs">
-      <button class="bookbtn ${bookSide==="hole"?"on":""}" data-book="hole">Hole plan</button>
-      <button class="bookbtn ${bookSide==="green"?"on":""}" data-book="green">Green</button>
-    </div>
-    <img class="bookimg" src="${src}" alt="Par The Course diagram, hole ${hole}">
-    <div class="bookcap">${cap}</div>
+    <div class="booktabs">${bar}</div>
+    <img class="bookimg" src="${src}" alt="Par The Course ${cur[1]}, hole ${hole}">
+    <div class="bookcap">${caps[bookSide]}</div>
   </div>
   ${holeNav("bottom", HOLES[hole-1])}`;
 }
