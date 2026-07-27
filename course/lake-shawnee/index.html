@@ -78,6 +78,13 @@ input,textarea,select{font-family:inherit}
 .holefacts .teetag{margin-left:8px;text-transform:uppercase;font-size:9px;letter-spacing:.14em;color:#8792A4}
 .holeleft{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1 1 auto}
 .holefacts{white-space:nowrap}
+.bookwrap{padding:2px 0 10px}
+.booktabs{display:flex;gap:6px;margin:0 0 10px}
+.bookbtn{flex:1;padding:9px 4px;border-radius:9px;border:1.5px solid rgba(12,35,64,.25);background:#F4EFE4;
+  color:#0C2340;font-family:var(--mono,monospace);font-size:10px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
+.bookbtn.on{background:#0C2340;border-color:#0C2340;color:#F4EFE4;font-weight:700}
+.bookimg{width:100%;height:auto;display:block;border-radius:12px;background:#fff}
+.bookcap{font-family:var(--mono,monospace);font-size:10px;letter-spacing:.08em;color:#5C6B82;text-align:center;margin-top:6px}
 .parchip{width:42px;height:42px;border-radius:11px;border:1.5px solid rgba(12,35,64,.3);
   font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:16px;font-weight:700;color:#5C6B82}
 .parchip.on{background:#0C2340;border-color:#0C2340;color:#F4EFE4}
@@ -294,6 +301,7 @@ input,textarea,select{font-family:inherit}
   <nav class="tabs" role="tablist">
     <button class="tab on" data-tab="hole" role="tab">Hole</button>
     <button class="tab" data-tab="overview" role="tab">Overview</button>
+    <button class="tab" data-tab="book" role="tab">Book</button>
   </nav>
   <main class="main" id="main"></main>
   <div class="savestat" id="savestat" role="status">Loading</div>
@@ -1167,10 +1175,34 @@ function scoreClass(g, par){
   return g<par ? "birdie" : g>par ? "over" : "";
 }
 
+
+/* PAR THE COURSE book pages. These are the surveyed yardage-book and green-book
+   diagrams for this course, one image per hole, dropped in as-is. They are better
+   than any geometry that could be re-derived from satellite imagery, so nothing
+   here is reconstructed: hole plan on one tab, green slope + pin sheets on the other. */
+let bookSide = "hole";
+function viewBook(){
+  const n = String(hole).padStart(2,"0");
+  const src = bookSide === "green" ? `book/g${n}.jpg` : `book/h${n}.jpg`;
+  const cap = bookSide === "green"
+    ? `Hole ${hole} green &middot; slope, fall lines and four pin sheets`
+    : `Hole ${hole} &middot; par ${parFor(hole)}, ${ydsFor(hole)} yds from the Blue tees`;
+  return `${holeNav("top", HOLES[hole-1])}
+  <div class="bookwrap">
+    <div class="booktabs">
+      <button class="bookbtn ${bookSide==="hole"?"on":""}" data-book="hole">Hole plan</button>
+      <button class="bookbtn ${bookSide==="green"?"on":""}" data-book="green">Green</button>
+    </div>
+    <img class="bookimg" src="${src}" alt="Par The Course diagram, hole ${hole}">
+    <div class="bookcap">${cap}</div>
+  </div>
+  ${holeNav("bottom", HOLES[hole-1])}`;
+}
+
 function render(){
   document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on", b.dataset.tab===tab));
   const main = $("#main");
-  main.innerHTML = tab==="hole" ? viewHole() : viewOverview();
+  main.innerHTML = tab==="hole" ? viewHole() : tab==="book" ? viewBook() : viewOverview();
   bind();
   const st = $("#savestat");
   st.textContent = mode==="live" ? "Live sync" : mode==="offline" ? "Offline" : "Connecting";
@@ -1626,6 +1658,14 @@ const numOrNull = s => { const v = String(s).trim(); if (v==="") return null; co
 
 document.querySelectorAll(".tab").forEach(b => {
   b.addEventListener("click", () => { tab=b.dataset.tab; editing=null; render(); });
+});
+/* Book side toggle. Bound per render because viewBook() rebuilds these buttons,
+   so a listener attached once at boot would point at dead nodes. */
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-book]");
+  if (t){ bookSide = t.dataset.book; render(); }
+});
+(()=>{
 });
 $("#in-course").addEventListener("change", e => { setCell("course", e.target.value.trim()); });
 $("#in-date").addEventListener("change", e => { setCell("rdate", e.target.value); });
