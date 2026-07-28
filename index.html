@@ -940,7 +940,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     {name:'Paradise Pointe · Posse',loc:'Smithville, MO',par:72,slug:'paradise-pointe-posse'},
     {name:'Paradise Pointe · Outlaw',loc:'Smithville, MO',par:72,slug:'paradise-pointe-outlaw'},
     {name:'Charleston National Golf Club',loc:'Mount Pleasant, SC',par:72,slug:'charleston-national'},
-    {name:'Lake Shawnee Golf Course',loc:'Topeka, KS',par:70,slug:'lake-shawnee'}
+    {name:'Lake Shawnee Golf Course',loc:'Topeka, KS',par:70,slug:'lake-shawnee',v:'b3'}
   ];
 
   function el(html){var t=document.createElement('template');t.innerHTML=html.trim();return t.content.firstChild;}
@@ -1613,7 +1613,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
   document.getElementById('course-list').innerHTML=COURSES.map(function(c){
     // Any Course has no fixed location or par — it carries its own subtitle.
     var sub=c.sub||(c.loc+' · Par '+c.par);
-    return '<a class="mod" href="course/'+c.slug+'/" style="text-decoration:none;color:inherit">'+
+    return '<a class="mod" href="course/'+c.slug+'/'+(c.v?'?'+c.v:'')+'" style="text-decoration:none;color:inherit">'+
       '<div class="mleft"><div class="t">'+c.name+'</div>'+
       '<div class="s">'+sub+'</div></div>'+
       '<div class="mright"><div class="lab" style="font-weight:700;font-size:10px;letter-spacing:.14em;color:var(--red)">START</div></div>'+
