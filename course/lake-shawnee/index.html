@@ -88,6 +88,15 @@ input,textarea,select{font-family:inherit}
 .bookbtn.on{background:#0C2340;border-color:#0C2340;color:#F4EFE4;font-weight:700}
 .bookimg{width:100%;height:auto;display:block;border-radius:12px;background:#fff}
 .bookcap{font-family:var(--mono,monospace);font-size:10px;letter-spacing:.08em;color:#5C6B82;text-align:center;margin-top:6px}
+/* ---- course book: same shape as the other course trackers ---- */
+.book{margin-top:14px;background:#F4EFE4;border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.bookbar{display:flex;align-items:stretch;border-bottom:1px solid rgba(12,35,64,.15);background:#E7E0CE}
+.bookseg{flex:1;padding:12px 0 11px;font-family:var(--mono,monospace);font-size:10px;letter-spacing:.1em;
+  text-transform:uppercase;color:#5C6B82;border-bottom:2px solid transparent;background:none;border-left:0;border-right:0;border-top:0;cursor:pointer}
+.bookseg.on{background:#F4EFE4;color:#0C2340;font-weight:700;border-bottom-color:#B22234}
+.bookbody{padding:10px 10px 12px}
+.bookframe{position:relative;border-radius:10px;overflow:hidden;background:#fff}
+.bookimg{width:100%;display:block;-webkit-user-select:none;user-select:none}
 .parchip{width:42px;height:42px;border-radius:11px;border:1.5px solid rgba(12,35,64,.3);
   font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:16px;font-weight:700;color:#5C6B82}
 .parchip.on{background:#0C2340;border-color:#0C2340;color:#F4EFE4}
@@ -304,7 +313,6 @@ input,textarea,select{font-family:inherit}
   <nav class="tabs" role="tablist">
     <button class="tab on" data-tab="hole" role="tab">Hole</button>
     <button class="tab" data-tab="overview" role="tab">Overview</button>
-    <button class="tab" data-tab="book" role="tab">Book</button>
   </nav>
   <main class="main" id="main"></main>
   <div class="savestat" id="savestat" role="status">Loading</div>
@@ -1202,30 +1210,28 @@ let bookSide = "hole";
   else setTimeout(step, 2500);
 })();
 
-function viewBook(){
+/* The course book sits INSIDE the hole screen, under the hole card and above the
+   Caddie - the same place and the same classes it occupies on Shoal Creek and
+   Paradise Pointe. It is not a separate tab. */
+function bookBlock(){
   const n = String(hole).padStart(2,"0");
-  const SIDES = [["hole","Hole map","h"],["green","Green","g"],["strategy","Strategy","s"]];
+  const SIDES = [["hole","Hole","h"],["green","Green","g"],["strategy","Strategy","s"]];
   const cur = SIDES.find(x=>x[0]===bookSide) || SIDES[0];
-  const src = `book/${cur[2]}${n}.jpg`;
-  const caps = {
-    hole:     `Hole ${hole} &middot; par ${parFor(hole)}, ${ydsFor(hole)} yds from the Blue tees`,
-    green:    `Hole ${hole} green &middot; slope, fall lines and four pin sheets`,
-    strategy: `Hole ${hole} &middot; approach ladder and the shot plan`
-  };
-  const bar = SIDES.map(x=>`<button class="bookbtn ${x[0]===bookSide?"on":""}" data-book="${x[0]}">${x[1]}</button>`).join("");
-  return `${holeNav("top", HOLES[hole-1])}
-  <div class="bookwrap">
-    <div class="booktabs">${bar}</div>
-    <img class="bookimg" src="${src}" alt="Par The Course ${cur[1]}, hole ${hole}">
-    <div class="bookcap">${caps[bookSide]}</div>
-  </div>
-  ${holeNav("bottom", HOLES[hole-1])}`;
+  const segs = SIDES.map(x=>`<button class="bookseg ${x[0]===bookSide?"on":""}" data-book="${x[0]}">${x[1]}</button>`).join("");
+  return `<section class="book">
+    <div class="bookbar">${segs}</div>
+    <div class="bookbody">
+      <div class="bookframe">
+        <img class="bookimg" src="book/${cur[2]}${n}.jpg" alt="Par The Course ${cur[1]}, hole ${hole}">
+      </div>
+    </div>
+  </section>`;
 }
 
 function render(){
   document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on", b.dataset.tab===tab));
   const main = $("#main");
-  main.innerHTML = tab==="hole" ? viewHole() : tab==="book" ? viewBook() : viewOverview();
+  main.innerHTML = tab==="hole" ? viewHole() : viewOverview();
   bind();
   const st = $("#savestat");
   st.textContent = mode==="live" ? "Live sync" : mode==="offline" ? "Offline" : "Connecting";
@@ -1375,6 +1381,9 @@ function viewHole(){
       <input type="text" id="holenote" placeholder="Hole note (optional)" value="${esc(f.note || "")}">
     </div>
   </section>
+
+  ${bookBlock()}
+
   <section class="caddy">
     <div class="caddyhead">Caddie</div>
     <div class="caddytabs">
@@ -1682,7 +1691,7 @@ const numOrNull = s => { const v = String(s).trim(); if (v==="") return null; co
 document.querySelectorAll(".tab").forEach(b => {
   b.addEventListener("click", () => { tab=b.dataset.tab; editing=null; render(); });
 });
-/* Book side toggle. Bound per render because viewBook() rebuilds these buttons,
+/* Book side toggle. Bound per render because bookBlock() rebuilds these buttons,
    so a listener attached once at boot would point at dead nodes. */
 document.addEventListener("click", e => {
   const t = e.target.closest("[data-book]");
