@@ -1,6 +1,6 @@
 # Session 4 - Putting: Lag It Close, Bury the Short Ones
 
-Run time about 10 minutes. Goal: two skills, one session. First, lag putting from 20 to 60 feet on different slopes and speeds so three-putt never enters your mind. Second, ruthless conviction inside four feet.
+Goal: two skills, one session. First, lag putting from 20 to 60 feet on different slopes and speeds so three-putt never enters your mind. Second, ruthless conviction inside four feet.
 
 ## Lag putting - the ghost circle
 

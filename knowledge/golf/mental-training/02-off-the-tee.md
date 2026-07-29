@@ -1,6 +1,6 @@
 # Session 2 - Off the Tee at Paradise Pointe
 
-Run time about 10 minutes. Goal: own the first swing of the day on both courses, then build a menu of tee shots at different distances and shapes so no tee box feels unfamiliar.
+Goal: own the first swing of the day on both courses, then build a menu of tee shots at different distances and shapes so no tee box feels unfamiliar.
 
 ## The Outlaw - first tee
 
