@@ -1214,7 +1214,7 @@ let bookSide = "hole";
   const step = () => {
     if (i > 18) return;
     const n = String(i).padStart(2,"0");
-    Promise.all(["o","g","h"].map(k=>fetch(`book/${k}${n}.jpg`,{cache:"force-cache"}).catch(()=>{})))
+    Promise.all(["o","c","g"].map(k=>fetch(`book/${k}${n}.jpg`,{cache:"force-cache"}).catch(()=>{})))
       .then(()=>{ i++; setTimeout(step, 250); });
   };
   if ("requestIdleCallback" in window) requestIdleCallback(()=>setTimeout(step,1500));
@@ -1256,7 +1256,14 @@ function bookBlock(){
      scale and axis to "the farthest turf pixel from the green", a point that is not
      the tee and does not exist on the page - which put all 18 ribbons 24-26 degrees
      and 64-261 yards off. The PTC pages remain on the Green page where they belong. */
-  const SIDES = [["hole","Hole","o"],["green","Green","g"],["strategy","Strategy","s"]];
+  /* Green page: the green filling the frame, with the PTC slope sheet registered onto
+     it by the sheet's OWN printed grid - its 0 line is the surveyed green front and
+     its 7/14/21/28 lines give exact scale, so nothing about the fit is inferred.
+     Front-to-back orientation, not tee-to-green: this is the putting axis. The
+     satellite beneath is soft by necessity (z19 is the imagery ceiling and this
+     framing is ~8x), so it reads as surrounds context while the PTC art carries the
+     slope. Plain PTC sheets remain at g<nn>.jpg. */
+  const SIDES = [["hole","Hole","o"],["green","Green","c"],["strategy","Strategy","s"]];
   const cur = SIDES.find(x=>x[0]===bookSide) || SIDES[0];
   const segs = SIDES.map(x=>`<button class="bookseg ${x[0]===bookSide?"on":""}" data-book="${x[0]}">${x[1]}</button>`).join("");
   return `<section class="book">
@@ -1361,8 +1368,6 @@ function viewHole(){
             : `<div class="confirmok">Score ${f.score} confirmed &middot; matches your shots</div>`))
     : "";
 
-  const parChips = [3,4,5].map(p =>
-    `<button class="parchip ${par===p?"on":""}" data-par="${p}">${p}</button>`).join("");
   return `
   ${holeNav("top", h)}
   <section class="holecard">
@@ -1371,7 +1376,6 @@ function viewHole(){
         <div class="holenum">No. ${h.n}</div>
         <div class="holefacts">PAR <b>${parFor(h.n)}</b> &middot; HDCP <b>${siFor(h.n)}</b> &middot; <b>${ydsFor(h.n)}</b> yds <span class="teetag">${tee}</span></div>
       </div>
-      <div class="parpick"><span class="plbl">Par</span>${parChips}</div>
     </div>
     <div class="modesel" id="modesel">
       <button class="modebtn ${adv?"":"on"}" data-mode="basic">Basic</button>
