@@ -1,0 +1,207 @@
+{
+  "course": "Paradise Pointe \u00b7 Posse",
+  "slug": "paradise-pointe-posse",
+  "tees": "Blue",
+  "source": "osm-course-book output committed at course/paradise-pointe-posse/index.html",
+  "holes": [
+    {
+      "hole": 1,
+      "par": 4,
+      "yardage": 413,
+      "audio": "assets/audio/mental-training/courses/paradise-pointe-posse/h01.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 2,
+      "par": 4,
+      "yardage": 431,
+      "audio": "assets/audio/mental-training/courses/paradise-pointe-posse/h02.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 3,
+      "par": 4,
+      "yardage": 352,
+      "audio": "assets/audio/mental-training/courses/paradise-pointe-posse/h03.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 4,
+      "par": 5,
+      "yardage": 525,
+      "audio": "assets/audio/mental-training/courses/paradise-pointe-posse/h04.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "trouble",
+        "shape"
+      ]
+    },
+    {
+      "hole": 5,
+      "par": 3,
+      "yardage": 171,
+      "audio": "assets/audio/mental-training/courses/paradise-pointe-posse/h05.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 6,
+      "par": 5,
+      "yardage": 550,
+      "audio": "assets/audio/mental-training/courses/paradise-pointe-posse/h06.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 7,
+      "par": 4,
+      "yardage": 315,
+      "audio": "assets/audio/mental-training/courses/paradise-pointe-posse/h07.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 8,
+      "par": 3,
+      "yardage": 141,
+      "audio": "assets/audio/mental-training/courses/paradise-pointe-posse/h08.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 9,
+      "par": 4,
+      "yardage": 368,
+      "audio": "assets/audio/mental-training/courses/paradise-pointe-posse/h09.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 10,
+      "par": 4,
+      "yardage": 396,
+      "audio": "assets/audio/mental-training/courses/paradise-pointe-posse/h10.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 11,
+      "par": 4,
+      "yardage": 332,
+      "audio": "assets/audio/mental-training/courses/paradise-pointe-posse/h11.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 12,
+      "par": 3,
+      "yardage": 195,
+      "audio": "assets/audio/mental-training/courses/paradise-pointe-posse/h12.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 13,
+      "par": 4,
+      "yardage": 357,
+      "audio": "assets/audio/mental-training/courses/paradise-pointe-posse/h13.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 14,
+      "par": 5,
+      "yardage": 585,
+      "audio": "assets/audio/mental-training/courses/paradise-pointe-posse/h14.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 15,
+      "par": 3,
+      "yardage": 177,
+      "audio": "assets/audio/mental-training/courses/paradise-pointe-posse/h15.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 16,
+      "par": 4,
+      "yardage": 367,
+      "audio": "assets/audio/mental-training/courses/paradise-pointe-posse/h16.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 17,
+      "par": 4,
+      "yardage": 348,
+      "audio": "assets/audio/mental-training/courses/paradise-pointe-posse/h17.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 18,
+      "par": 5,
+      "yardage": 560,
+      "audio": "assets/audio/mental-training/courses/paradise-pointe-posse/h18.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    }
+  ]
+}

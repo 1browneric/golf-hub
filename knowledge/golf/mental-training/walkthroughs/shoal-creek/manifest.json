@@ -1,0 +1,207 @@
+{
+  "course": "Shoal Creek Golf Course",
+  "slug": "shoal-creek",
+  "tees": "Blue",
+  "source": "osm-course-book output committed at course/shoal-creek/index.html",
+  "holes": [
+    {
+      "hole": 1,
+      "par": 4,
+      "yardage": 398,
+      "audio": "assets/audio/mental-training/courses/shoal-creek/h01.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 2,
+      "par": 4,
+      "yardage": 364,
+      "audio": "assets/audio/mental-training/courses/shoal-creek/h02.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 3,
+      "par": 3,
+      "yardage": 168,
+      "audio": "assets/audio/mental-training/courses/shoal-creek/h03.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 4,
+      "par": 4,
+      "yardage": 385,
+      "audio": "assets/audio/mental-training/courses/shoal-creek/h04.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 5,
+      "par": 3,
+      "yardage": 209,
+      "audio": "assets/audio/mental-training/courses/shoal-creek/h05.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 6,
+      "par": 4,
+      "yardage": 330,
+      "audio": "assets/audio/mental-training/courses/shoal-creek/h06.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 7,
+      "par": 5,
+      "yardage": 543,
+      "audio": "assets/audio/mental-training/courses/shoal-creek/h07.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 8,
+      "par": 4,
+      "yardage": 387,
+      "audio": "assets/audio/mental-training/courses/shoal-creek/h08.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 9,
+      "par": 5,
+      "yardage": 494,
+      "audio": "assets/audio/mental-training/courses/shoal-creek/h09.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 10,
+      "par": 4,
+      "yardage": 362,
+      "audio": "assets/audio/mental-training/courses/shoal-creek/h10.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 11,
+      "par": 3,
+      "yardage": 180,
+      "audio": "assets/audio/mental-training/courses/shoal-creek/h11.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 12,
+      "par": 4,
+      "yardage": 320,
+      "audio": "assets/audio/mental-training/courses/shoal-creek/h12.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 13,
+      "par": 5,
+      "yardage": 488,
+      "audio": "assets/audio/mental-training/courses/shoal-creek/h13.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 14,
+      "par": 4,
+      "yardage": 383,
+      "audio": "assets/audio/mental-training/courses/shoal-creek/h14.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 15,
+      "par": 4,
+      "yardage": 387,
+      "audio": "assets/audio/mental-training/courses/shoal-creek/h15.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 16,
+      "par": 4,
+      "yardage": 318,
+      "audio": "assets/audio/mental-training/courses/shoal-creek/h16.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 17,
+      "par": 3,
+      "yardage": 158,
+      "audio": "assets/audio/mental-training/courses/shoal-creek/h17.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "trouble",
+        "shape"
+      ]
+    },
+    {
+      "hole": 18,
+      "par": 4,
+      "yardage": 414,
+      "audio": "assets/audio/mental-training/courses/shoal-creek/h18.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    }
+  ]
+}
