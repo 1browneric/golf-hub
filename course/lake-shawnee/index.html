@@ -1248,7 +1248,10 @@ function bookBlock(){
   const n = String(hole).padStart(2,"0");
   /* Hole page: the PTC book over the GPS satellite, rendered as a clean portrait
      page - play-direction up, imagery filling the frame, the book's chrome masked,
-     both layers sharing one orientation so nothing sits sideways. Tee and green are
+     both layers sharing one orientation so nothing sits sideways. The imagery is
+     fetched per hole at zoom 19 - the provider's native ceiling, 0.23 m/px - framed
+     to that hole's own page corners, rather than sampled from one zoom-17 mosaic of
+     the whole course, which is what made the first version look soft. Tee and green are
      pinned per hole to BlueGolf's surveyed coordinates. All 18 re-reviewed on this
      renderer, including 15, whose earlier failure was the midpoint solve and not
      the anchors. */
