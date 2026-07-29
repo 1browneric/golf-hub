@@ -1246,16 +1246,17 @@ function strategyFor(hh){
 
 function bookBlock(){
   const n = String(hole).padStart(2,"0");
-  /* Hole page: the PTC book over the GPS satellite, rendered as a clean portrait
-     page - play-direction up, imagery filling the frame, the book's chrome masked,
-     both layers sharing one orientation so nothing sits sideways. The imagery is
-     fetched per hole at zoom 19 - the provider's native ceiling, 0.23 m/px - framed
-     to that hole's own page corners, rather than sampled from one zoom-17 mosaic of
-     the whole course, which is what made the first version look soft. Tee and green are
-     pinned per hole to BlueGolf's surveyed coordinates. All 18 re-reviewed on this
-     renderer, including 15, whose earlier failure was the midpoint solve and not
-     the anchors. */
-  const SIDES = [["hole","Hole","h"],["green","Green","g"],["strategy","Strategy","s"]];
+  /* Hole page: a GPS hole map built from BlueGolf's surveyed tee, dogleg and green,
+     over per-hole satellite at zoom 19 (the provider's real detail ceiling here -
+     z20/z21 return upsampled tiles at 15% of the detail energy). Play-direction up,
+     yardage-to-green every 50 along the line of play.
+     The PTC-over-satellite overlay was abandoned on evidence: the PTC page is an
+     APPROACH diagram that starts near the 110 yard line and contains no tee, so it
+     cannot be registered to a tee-to-green frame at all. Earlier attempts anchored
+     scale and axis to "the farthest turf pixel from the green", a point that is not
+     the tee and does not exist on the page - which put all 18 ribbons 24-26 degrees
+     and 64-261 yards off. The PTC pages remain on the Green page where they belong. */
+  const SIDES = [["hole","Hole","o"],["green","Green","g"],["strategy","Strategy","s"]];
   const cur = SIDES.find(x=>x[0]===bookSide) || SIDES[0];
   const segs = SIDES.map(x=>`<button class="bookseg ${x[0]===bookSide?"on":""}" data-book="${x[0]}">${x[1]}</button>`).join("");
   return `<section class="book">
