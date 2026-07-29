@@ -1214,7 +1214,7 @@ let bookSide = "hole";
   const step = () => {
     if (i > 18) return;
     const n = String(i).padStart(2,"0");
-    Promise.all(["h","g"].map(k=>fetch(`book/${k}${n}.jpg`,{cache:"force-cache"}).catch(()=>{})))
+    Promise.all(["o","g","h"].map(k=>fetch(`book/${k}${n}.jpg`,{cache:"force-cache"}).catch(()=>{})))
       .then(()=>{ i++; setTimeout(step, 250); });
   };
   if ("requestIdleCallback" in window) requestIdleCallback(()=>setTimeout(step,1500));
@@ -1246,8 +1246,13 @@ function strategyFor(hh){
 
 function bookBlock(){
   const n = String(hole).padStart(2,"0");
-  const SIDES = [["hole","Hole","h"],["green","Green","g"],["strategy","Strategy","s"]];
+  /* Hole page: the PTC diagram over the GPS satellite, anchored to BlueGolf's
+     surveyed tee and green per hole (Eric approved it live 2026-07-28). Hole 15's
+     overlay failed review - its carry band sits left of the real creek - so that
+     one stays on the plain PTC diagram until re-fit. */
+  const SIDES = [["hole","Hole","o"],["green","Green","g"],["strategy","Strategy","s"]];
   const cur = SIDES.find(x=>x[0]===bookSide) || SIDES[0];
+  if (bookSide==="hole" && hole===15) cur[2]="h";
   const segs = SIDES.map(x=>`<button class="bookseg ${x[0]===bookSide?"on":""}" data-book="${x[0]}">${x[1]}</button>`).join("");
   return `<section class="book">
     <div class="bookbar">${segs}</div>
