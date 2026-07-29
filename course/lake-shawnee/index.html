@@ -1255,7 +1255,7 @@ function bookBlock(){
      pinned per hole to BlueGolf's surveyed coordinates. All 18 re-reviewed on this
      renderer, including 15, whose earlier failure was the midpoint solve and not
      the anchors. */
-  const SIDES = [["hole","Hole","o"],["green","Green","g"],["strategy","Strategy","s"]];
+  const SIDES = [["hole","Hole","h"],["green","Green","g"],["strategy","Strategy","s"]];
   const cur = SIDES.find(x=>x[0]===bookSide) || SIDES[0];
   const segs = SIDES.map(x=>`<button class="bookseg ${x[0]===bookSide?"on":""}" data-book="${x[0]}">${x[1]}</button>`).join("");
   return `<section class="book">
