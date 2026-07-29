@@ -1263,7 +1263,7 @@ function bookBlock(){
      satellite beneath is soft by necessity (z19 is the imagery ceiling and this
      framing is ~8x), so it reads as surrounds context while the PTC art carries the
      slope. Plain PTC sheets remain at g<nn>.jpg. */
-  const SIDES = [["hole","Hole","o"],["green","Green","c"],["strategy","Strategy","s"]];
+  const SIDES = [["hole","Hole","o"],["green","Green","g"],["strategy","Strategy","s"]];
   const cur = SIDES.find(x=>x[0]===bookSide) || SIDES[0];
   const segs = SIDES.map(x=>`<button class="bookseg ${x[0]===bookSide?"on":""}" data-book="${x[0]}">${x[1]}</button>`).join("");
   return `<section class="book">
