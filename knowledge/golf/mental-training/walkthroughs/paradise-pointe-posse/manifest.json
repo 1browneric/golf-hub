@@ -9,199 +9,217 @@
       "par": 4,
       "yardage": 413,
       "audio": "assets/audio/mental-training/courses/paradise-pointe-posse/h01.mp3",
-      "audio_built": false,
+      "audio_built": true,
       "derived": true,
       "gaps": [
         "shape"
-      ]
+      ],
+      "duration": "1:17  0.4 MB"
     },
     {
       "hole": 2,
       "par": 4,
       "yardage": 431,
       "audio": "assets/audio/mental-training/courses/paradise-pointe-posse/h02.mp3",
-      "audio_built": false,
+      "audio_built": true,
       "derived": true,
       "gaps": [
         "shape"
-      ]
+      ],
+      "duration": "1:18  0.4 MB"
     },
     {
       "hole": 3,
       "par": 4,
       "yardage": 352,
       "audio": "assets/audio/mental-training/courses/paradise-pointe-posse/h03.mp3",
-      "audio_built": false,
+      "audio_built": true,
       "derived": true,
       "gaps": [
         "shape"
-      ]
+      ],
+      "duration": "1:22  0.4 MB"
     },
     {
       "hole": 4,
       "par": 5,
       "yardage": 525,
       "audio": "assets/audio/mental-training/courses/paradise-pointe-posse/h04.mp3",
-      "audio_built": false,
+      "audio_built": true,
       "derived": true,
       "gaps": [
         "trouble",
         "shape"
-      ]
+      ],
+      "duration": "1:21  0.4 MB"
     },
     {
       "hole": 5,
       "par": 3,
       "yardage": 171,
       "audio": "assets/audio/mental-training/courses/paradise-pointe-posse/h05.mp3",
-      "audio_built": false,
+      "audio_built": true,
       "derived": true,
       "gaps": [
         "shape"
-      ]
+      ],
+      "duration": "1:16  0.4 MB"
     },
     {
       "hole": 6,
       "par": 5,
       "yardage": 550,
       "audio": "assets/audio/mental-training/courses/paradise-pointe-posse/h06.mp3",
-      "audio_built": false,
+      "audio_built": true,
       "derived": true,
       "gaps": [
         "shape"
-      ]
+      ],
+      "duration": "1:26  0.4 MB"
     },
     {
       "hole": 7,
       "par": 4,
       "yardage": 315,
       "audio": "assets/audio/mental-training/courses/paradise-pointe-posse/h07.mp3",
-      "audio_built": false,
+      "audio_built": true,
       "derived": true,
       "gaps": [
         "shape"
-      ]
+      ],
+      "duration": "1:20  0.4 MB"
     },
     {
       "hole": 8,
       "par": 3,
       "yardage": 141,
       "audio": "assets/audio/mental-training/courses/paradise-pointe-posse/h08.mp3",
-      "audio_built": false,
+      "audio_built": true,
       "derived": true,
       "gaps": [
         "shape"
-      ]
+      ],
+      "duration": "1:15  0.4 MB"
     },
     {
       "hole": 9,
       "par": 4,
       "yardage": 368,
       "audio": "assets/audio/mental-training/courses/paradise-pointe-posse/h09.mp3",
-      "audio_built": false,
+      "audio_built": true,
       "derived": true,
       "gaps": [
         "shape"
-      ]
+      ],
+      "duration": "1:21  0.4 MB"
     },
     {
       "hole": 10,
       "par": 4,
       "yardage": 396,
       "audio": "assets/audio/mental-training/courses/paradise-pointe-posse/h10.mp3",
-      "audio_built": false,
+      "audio_built": true,
       "derived": true,
       "gaps": [
         "shape"
-      ]
+      ],
+      "duration": "1:20  0.4 MB"
     },
     {
       "hole": 11,
       "par": 4,
       "yardage": 332,
       "audio": "assets/audio/mental-training/courses/paradise-pointe-posse/h11.mp3",
-      "audio_built": false,
+      "audio_built": true,
       "derived": true,
       "gaps": [
         "shape"
-      ]
+      ],
+      "duration": "1:21  0.4 MB"
     },
     {
       "hole": 12,
       "par": 3,
       "yardage": 195,
       "audio": "assets/audio/mental-training/courses/paradise-pointe-posse/h12.mp3",
-      "audio_built": false,
+      "audio_built": true,
       "derived": true,
       "gaps": [
         "shape"
-      ]
+      ],
+      "duration": "1:11  0.4 MB"
     },
     {
       "hole": 13,
       "par": 4,
       "yardage": 357,
       "audio": "assets/audio/mental-training/courses/paradise-pointe-posse/h13.mp3",
-      "audio_built": false,
+      "audio_built": true,
       "derived": true,
       "gaps": [
         "shape"
-      ]
+      ],
+      "duration": "1:21  0.4 MB"
     },
     {
       "hole": 14,
       "par": 5,
       "yardage": 585,
       "audio": "assets/audio/mental-training/courses/paradise-pointe-posse/h14.mp3",
-      "audio_built": false,
+      "audio_built": true,
       "derived": true,
       "gaps": [
         "shape"
-      ]
+      ],
+      "duration": "1:25  0.4 MB"
     },
     {
       "hole": 15,
       "par": 3,
       "yardage": 177,
       "audio": "assets/audio/mental-training/courses/paradise-pointe-posse/h15.mp3",
-      "audio_built": false,
+      "audio_built": true,
       "derived": true,
       "gaps": [
         "shape"
-      ]
+      ],
+      "duration": "1:14  0.4 MB"
     },
     {
       "hole": 16,
       "par": 4,
       "yardage": 367,
       "audio": "assets/audio/mental-training/courses/paradise-pointe-posse/h16.mp3",
-      "audio_built": false,
+      "audio_built": true,
       "derived": true,
       "gaps": [
         "shape"
-      ]
+      ],
+      "duration": "1:21  0.4 MB"
     },
     {
       "hole": 17,
       "par": 4,
       "yardage": 348,
       "audio": "assets/audio/mental-training/courses/paradise-pointe-posse/h17.mp3",
-      "audio_built": false,
+      "audio_built": true,
       "derived": true,
       "gaps": [
         "shape"
-      ]
+      ],
+      "duration": "1:23  0.4 MB"
     },
     {
       "hole": 18,
       "par": 5,
       "yardage": 560,
       "audio": "assets/audio/mental-training/courses/paradise-pointe-posse/h18.mp3",
-      "audio_built": false,
+      "audio_built": true,
       "derived": true,
       "gaps": [
         "shape"
-      ]
+      ],
+      "duration": "1:23  0.4 MB"
     }
   ]
 }
