@@ -1743,7 +1743,13 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
 
     function sessionsHtml(){
       var h='';
-      if(intro) h+='<div class="mt-intro">'+mdHtml(intro.text,true)+'</div>';
+      /* The intro gets a player too: its MP3 is rendered like any other and was
+         otherwise unreachable. It sits directly in the card's own panel rather
+         than a nested one, so the existing arm() attaches its src when the card
+         opens - no separate arming needed. */
+      if(intro) h+='<div class="mt-intro">'+
+        player(intro.audio,'Audio not loaded. The text below is the whole introduction.')+
+        mdHtml(intro.text,true)+'</div>';
       h+='<div class="mt-nest">'+sessions.map(function(s){
         return row(s.title,s.sub,'OPEN','OPEN','CLOSE')+
           panel(player(s.audio,'Audio not loaded. The script below is the whole session.')+

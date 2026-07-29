@@ -1,6 +1,6 @@
 # Session 1 - The Routine
 
-Run time about 8 minutes. Goal: install one pre-shot routine you will use on every shot in every later session and every real round. Under pressure you do not rise to the occasion; you fall to the level of your routine.
+Goal: install one pre-shot routine you will use on every shot in every later session and every real round. Under pressure you do not rise to the occasion; you fall to the level of your routine.
 
 ## Settle in
 

@@ -1,6 +1,6 @@
 # Session 3 - Wedges Inside 50 Yards
 
-Run time about 10 minutes. Goal: rehearse the exact scoring shots that decide your rounds - clean lies, rough lies, short-sided and long-sided, to front, middle, and back hole locations. This shot family responds to mental reps faster than almost anything else in the game.
+Goal: rehearse the exact scoring shots that decide your rounds - clean lies, rough lies, short-sided and long-sided, to front, middle, and back hole locations. This shot family responds to mental reps faster than almost anything else in the game.
 
 ## The template for every wedge rep
 

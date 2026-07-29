@@ -235,6 +235,24 @@ def build_course(slug: str, do_audio: bool, force: bool) -> tuple[dict, list[str
 # Bake the text into the hub
 # ---------------------------------------------------------------------------
 
+def _run_time(slug: str) -> str:
+    """The row's run time, measured off the rendered MP3 rather than claimed.
+
+    The scripts used to open with a hand-written "Run time about N minutes",
+    which was a placeholder and read 8 to 12 minutes against audio that runs
+    under four - the figure described the exercise, pauses and all, not the
+    track. Measuring the file is the only version that cannot drift: re-render
+    at a different speaking rate and this follows it. No MP3 yet (a text-only
+    build, or before the first render) returns "" and the caller falls back to
+    the goal sentence, so nothing claims a run time it cannot back up.
+    """
+    mp3 = REPO / "assets" / "audio" / "mental-training" / ("%s.mp3" % slug)
+    if not mp3.exists():
+        return ""
+    secs = tts.mp3_duration(mp3.read_bytes())
+    return "Run time %d:%02d" % (int(secs // 60), int(secs % 60))
+
+
 def _sessions() -> list[dict]:
     """The six session scripts, plus the intro, straight from the markdown."""
     out = []
@@ -242,11 +260,13 @@ def _sessions() -> list[dict]:
         text = md.read_text(encoding="utf-8")
         m = re.search(r"^#\s+(.+)$", text, re.M)
         title = m.group(1).strip() if m else md.stem
-        # The lead paragraph opens "Run time about N minutes. Goal: ..." on
-        # every session; the first sentence of it is the row's subtitle.
+        # The row's subtitle is the measured run time. Failing that - no audio
+        # built yet - it is the first sentence of the lead paragraph, which is
+        # the session's goal.
         body = re.sub(r"^#\s+.+$", "", text, count=1, flags=re.M).strip()
         first = body.split("\n\n")[0].replace("\n", " ").strip()
-        sub = first.split(". ")[0].strip(" .") if first else ""
+        sub = _run_time(md.stem) or (first.split(". ")[0].strip(" .")
+                                     if first else "")
         out.append({
             "slug": md.stem,
             "title": title,

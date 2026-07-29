@@ -1,6 +1,6 @@
 # Session 5 - Playing Three Holes
 
-Run time about 12 minutes. Goal: stitch everything together - routine, tee shot, wedge, lag putt, short putt - inside real holes with real strategy. Use three consecutive holes you know well from either course. The strategy rules are conservative target, committed swing: aim away from trouble, favor the fat side of greens, never bring double bogey into play on purpose.
+Goal: stitch everything together - routine, tee shot, wedge, lag putt, short putt - inside real holes with real strategy. Use three consecutive holes you know well from either course. The strategy rules are conservative target, committed swing: aim away from trouble, favor the fat side of greens, never bring double bogey into play on purpose.
 
 ## Hole one - the opener
 
