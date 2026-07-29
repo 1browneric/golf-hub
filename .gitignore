@@ -2,3 +2,7 @@
 # Only the self-contained index.html ships per course.
 course/**/assets.js
 course/**/*.webp
+
+# Python build artifacts from the mental-training scripts.
+__pycache__/
+*.pyc

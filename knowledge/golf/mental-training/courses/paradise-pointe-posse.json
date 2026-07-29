@@ -1,0 +1,205 @@
+{
+  "course": "Paradise Pointe \u00b7 Posse",
+  "tees": "Blue",
+  "source": "osm-course-book output committed at course/paradise-pointe-posse/index.html",
+  "holes": [
+    {
+      "hole": 1,
+      "par": 4,
+      "yardage": 413,
+      "shape": "",
+      "trouble": "bunkers left, long and short of the green",
+      "fat_side": "right side of the green",
+      "ideal_leave": "a mid iron into the right side of the green",
+      "green_notes": "Lidar reads this green nearly flat \u2014 no major slope; trust your eyes on the ground.",
+      "derived": true
+    },
+    {
+      "hole": 2,
+      "par": 4,
+      "yardage": 431,
+      "shape": "",
+      "trouble": "bunkers right and short of the green",
+      "fat_side": "left side of the green",
+      "ideal_leave": "a mid iron into the left side of the green",
+      "green_notes": "Lidar reads this green nearly flat \u2014 no major slope; trust your eyes on the ground.",
+      "derived": true
+    },
+    {
+      "hole": 3,
+      "par": 4,
+      "yardage": 352,
+      "shape": "",
+      "trouble": "bunkers left and right of the green",
+      "fat_side": "middle of the green",
+      "ideal_leave": "a full 58 degree from about 95 yards",
+      "green_notes": "General slope back-to-front, toward the left (~5 ft, from lidar) \u2014 big picture only, not the subtle break.",
+      "derived": true
+    },
+    {
+      "hole": 4,
+      "par": 5,
+      "yardage": 525,
+      "shape": "",
+      "trouble": "",
+      "fat_side": "middle of the green",
+      "ideal_leave": "a full 52 degree from about 114 yards",
+      "green_notes": "Lidar reads this green nearly flat \u2014 no major slope; trust your eyes on the ground.",
+      "derived": true
+    },
+    {
+      "hole": 5,
+      "par": 3,
+      "yardage": 171,
+      "shape": "",
+      "trouble": "bunker right of the green",
+      "fat_side": "left side of the green",
+      "ideal_leave": "the left side of the green",
+      "green_notes": "Lidar reads this green nearly flat \u2014 no major slope; trust your eyes on the ground. False front \u2014 the green sits up; anything short spins off. Carry it to the middle.",
+      "derived": true
+    },
+    {
+      "hole": 6,
+      "par": 5,
+      "yardage": 550,
+      "shape": "",
+      "trouble": "bunker left of the green",
+      "fat_side": "right side of the green",
+      "ideal_leave": "a full 52 degree from about 114 yards",
+      "green_notes": "General slope toward the left (~2 ft, from lidar) \u2014 big picture only, not the subtle break. False front \u2014 the green sits up; anything short spins off. Carry it to the middle.",
+      "derived": true
+    },
+    {
+      "hole": 7,
+      "par": 4,
+      "yardage": 315,
+      "shape": "",
+      "trouble": "bunkers left and right of the green",
+      "fat_side": "middle of the green",
+      "ideal_leave": "a stock 58 degree - do not walk it inside 90 yards",
+      "green_notes": "Lidar reads this green nearly flat \u2014 no major slope; trust your eyes on the ground.",
+      "derived": true
+    },
+    {
+      "hole": 8,
+      "par": 3,
+      "yardage": 141,
+      "shape": "",
+      "trouble": "bunkers left, right and short of the green",
+      "fat_side": "back half of the green",
+      "ideal_leave": "the back half of the green",
+      "green_notes": "General slope back-to-front, toward the right (~2 ft, from lidar) \u2014 big picture only, not the subtle break.",
+      "derived": true
+    },
+    {
+      "hole": 9,
+      "par": 4,
+      "yardage": 368,
+      "shape": "",
+      "trouble": "bunkers left, right and short of the green",
+      "fat_side": "back half of the green",
+      "ideal_leave": "a full 52 degree from about 114 yards",
+      "green_notes": "Lidar reads this green nearly flat \u2014 no major slope; trust your eyes on the ground.",
+      "derived": true
+    },
+    {
+      "hole": 10,
+      "par": 4,
+      "yardage": 396,
+      "shape": "",
+      "trouble": "bunkers long, right and short of the green",
+      "fat_side": "left side of the green",
+      "ideal_leave": "a full pitching wedge from about 138 yards",
+      "green_notes": "Lidar reads this green nearly flat \u2014 no major slope; trust your eyes on the ground.",
+      "derived": true
+    },
+    {
+      "hole": 11,
+      "par": 4,
+      "yardage": 332,
+      "shape": "",
+      "trouble": "bunkers right and short of the green",
+      "fat_side": "left side of the green",
+      "ideal_leave": "a stock 58 degree - do not walk it inside 90 yards",
+      "green_notes": "Lidar reads this green nearly flat \u2014 no major slope; trust your eyes on the ground.",
+      "derived": true
+    },
+    {
+      "hole": 12,
+      "par": 3,
+      "yardage": 195,
+      "shape": "",
+      "trouble": "bunker left of the green",
+      "fat_side": "right side of the green",
+      "ideal_leave": "the right side of the green",
+      "green_notes": "Lidar reads this green nearly flat \u2014 no major slope; trust your eyes on the ground.",
+      "derived": true
+    },
+    {
+      "hole": 13,
+      "par": 4,
+      "yardage": 357,
+      "shape": "",
+      "trouble": "bunkers left, right and short of the green",
+      "fat_side": "back half of the green",
+      "ideal_leave": "a full 56 degree from about 103 yards",
+      "green_notes": "Lidar reads this green nearly flat \u2014 no major slope; trust your eyes on the ground.",
+      "derived": true
+    },
+    {
+      "hole": 14,
+      "par": 5,
+      "yardage": 585,
+      "shape": "",
+      "trouble": "water long-left of the green; bunkers left and short of the green",
+      "fat_side": "right side of the green",
+      "ideal_leave": "a full 52 degree from about 114 yards",
+      "green_notes": "General slope back-to-front, toward the left (~2 ft, from lidar) \u2014 big picture only, not the subtle break.",
+      "derived": true
+    },
+    {
+      "hole": 15,
+      "par": 3,
+      "yardage": 177,
+      "shape": "",
+      "trouble": "water short of the green; bunkers left and short of the green",
+      "fat_side": "back half of the green",
+      "ideal_leave": "the back half of the green",
+      "green_notes": "Lidar reads this green nearly flat \u2014 no major slope; trust your eyes on the ground.",
+      "derived": true
+    },
+    {
+      "hole": 16,
+      "par": 4,
+      "yardage": 367,
+      "shape": "",
+      "trouble": "bunkers left and short of the green",
+      "fat_side": "right side of the green",
+      "ideal_leave": "a full 52 degree from about 114 yards",
+      "green_notes": "Lidar reads this green nearly flat \u2014 no major slope; trust your eyes on the ground.",
+      "derived": true
+    },
+    {
+      "hole": 17,
+      "par": 4,
+      "yardage": 348,
+      "shape": "",
+      "trouble": "bunkers left, right and short of the green",
+      "fat_side": "back half of the green",
+      "ideal_leave": "a full 58 degree from about 95 yards",
+      "green_notes": "General slope back-to-front (~4 ft, from lidar) \u2014 big picture only, not the subtle break.",
+      "derived": true
+    },
+    {
+      "hole": 18,
+      "par": 5,
+      "yardage": 560,
+      "shape": "",
+      "trouble": "bunkers long, right and short of the green",
+      "fat_side": "left side of the green",
+      "ideal_leave": "a full 52 degree from about 114 yards",
+      "green_notes": "General slope back-to-front, toward the left (~3 ft, from lidar) \u2014 big picture only, not the subtle break.",
+      "derived": true
+    }
+  ]
+}

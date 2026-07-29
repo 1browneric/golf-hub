@@ -1,0 +1,206 @@
+{
+  "course": "Paradise Pointe \u00b7 Outlaw",
+  "slug": "paradise-pointe-outlaw",
+  "tees": "Blue",
+  "source": "osm-course-book output committed at course/paradise-pointe-outlaw/index.html",
+  "holes": [
+    {
+      "hole": 1,
+      "par": 4,
+      "yardage": 374,
+      "audio": "assets/audio/mental-training/courses/paradise-pointe-outlaw/h01.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 2,
+      "par": 4,
+      "yardage": 415,
+      "audio": "assets/audio/mental-training/courses/paradise-pointe-outlaw/h02.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 3,
+      "par": 3,
+      "yardage": 159,
+      "audio": "assets/audio/mental-training/courses/paradise-pointe-outlaw/h03.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 4,
+      "par": 4,
+      "yardage": 327,
+      "audio": "assets/audio/mental-training/courses/paradise-pointe-outlaw/h04.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 5,
+      "par": 5,
+      "yardage": 549,
+      "audio": "assets/audio/mental-training/courses/paradise-pointe-outlaw/h05.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 6,
+      "par": 3,
+      "yardage": 161,
+      "audio": "assets/audio/mental-training/courses/paradise-pointe-outlaw/h06.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 7,
+      "par": 4,
+      "yardage": 346,
+      "audio": "assets/audio/mental-training/courses/paradise-pointe-outlaw/h07.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 8,
+      "par": 4,
+      "yardage": 356,
+      "audio": "assets/audio/mental-training/courses/paradise-pointe-outlaw/h08.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 9,
+      "par": 5,
+      "yardage": 518,
+      "audio": "assets/audio/mental-training/courses/paradise-pointe-outlaw/h09.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 10,
+      "par": 3,
+      "yardage": 176,
+      "audio": "assets/audio/mental-training/courses/paradise-pointe-outlaw/h10.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 11,
+      "par": 5,
+      "yardage": 517,
+      "audio": "assets/audio/mental-training/courses/paradise-pointe-outlaw/h11.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 12,
+      "par": 4,
+      "yardage": 354,
+      "audio": "assets/audio/mental-training/courses/paradise-pointe-outlaw/h12.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 13,
+      "par": 4,
+      "yardage": 434,
+      "audio": "assets/audio/mental-training/courses/paradise-pointe-outlaw/h13.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 14,
+      "par": 4,
+      "yardage": 352,
+      "audio": "assets/audio/mental-training/courses/paradise-pointe-outlaw/h14.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 15,
+      "par": 4,
+      "yardage": 402,
+      "audio": "assets/audio/mental-training/courses/paradise-pointe-outlaw/h15.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 16,
+      "par": 3,
+      "yardage": 139,
+      "audio": "assets/audio/mental-training/courses/paradise-pointe-outlaw/h16.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 17,
+      "par": 5,
+      "yardage": 519,
+      "audio": "assets/audio/mental-training/courses/paradise-pointe-outlaw/h17.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    },
+    {
+      "hole": 18,
+      "par": 4,
+      "yardage": 349,
+      "audio": "assets/audio/mental-training/courses/paradise-pointe-outlaw/h18.mp3",
+      "audio_built": false,
+      "derived": true,
+      "gaps": [
+        "shape"
+      ]
+    }
+  ]
+}
