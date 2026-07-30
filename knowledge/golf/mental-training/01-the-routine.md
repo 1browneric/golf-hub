@@ -1,51 +1,105 @@
-# Session 1 - The Routine
+# The Routine
 
-Goal: install one pre-shot routine you will use on every shot in every later session and every real round. Under pressure you do not rise to the occasion; you fall to the level of your routine.
+Lie down, or sit somewhere you can stop holding yourself up. Let your eyes close.
 
-## Settle in
+In, through your nose.
 
-Sit or lie somewhere quiet. Let your eyes close. Take a slow breath in through your nose for four counts. Hold for two. Out through your mouth for six. Feel your shoulders drop away from your ears.
+[PAUSE]
 
-> Pause. Three more breaths at that pace.
+And out, through your mouth. Longer than you took it in.
 
-With each exhale, let the day drain out through your feet. Work shift, drive, phone - all of it sets down. What is left is just you and the golf course.
+[PAUSE]
 
-## The six steps
+Again. In.
 
-Here is your routine. Six steps. You will hear them, then rehearse them.
+[PAUSE]
 
-One - Assess and decide. Behind the ball. Read the lie, the wind, the number. Choose the shot and the club. All thinking happens here and only here.
+Out, longer.
 
-Two - Commit to one target. Not a zone. One spot. A branch, a mower line, an edge of the green. Say it silently: that is my target.
+[PAUSE]
 
-Three - See it. From behind the ball, watch the full flight like a movie: launch, apex, curve, land, release. See the ball finish.
+Once more. In.
 
-Four - Feel it. One rehearsal swing that matches the shot you just saw. Not a stretch - a preview. Feel the tempo you want.
+[PAUSE]
 
-Five - Walk in and go. Step in, set the face to the target, build the stance. One look at the target. Exhale. Swing within four seconds of that last look. No new thoughts allowed inside the ropes of your stance.
+And out.
 
-Six - Accept. Whatever happens, hold your finish, watch it end, and release the shot with one breath. Good or bad, the next shot gets a clean slate.
+[PAUSE — LONG]
 
-## Rehearse it once, slowly
+[BEAT]
 
-Now put yourself on a flat piece of fairway. Perfect lie. Smooth, warm evening air. A 150-yard shot to an open green. Walk the six steps.
+Tonight is the routine, and it is two pieces, not six.
 
-> Pause. Let the scene build.
+Behind the ball, everything is a question. The number, the lie, the wind, the club,
+the side, the picture. You are allowed to change your mind as many times as you like
+back there. That is what back there is for.
 
-Behind the ball. You see the lie - clean, ball sitting up. You pick the club and the shot. Now one target: the center of the green, right at a light pole behind it. Say it. That is my target.
+Over the ball, nothing is a question. There is a target and there is tempo.
 
-Watch the flight. The ball leaves, climbs, hangs at the top, falls softly, one hop, stops. See it again, a little sharper this time.
+Between the two there is one event, and it is always the same event: the last look at
+the target. That look ends the thinking. Not a count, not a stopwatch — the same event
+every time. What holds up under pressure is that the piece is always the same length,
+not that it is short.
 
-> Pause.
+[BEAT]
 
-Rehearsal swing. Feel the smooth tempo, the balanced finish. Now walk in. Face to target. Stance built. One look. Exhale. Swing.
+And one rule that matters more than the rest of it. If a question arrives after the
+last look, you step off. All the way off, back behind the ball, and you start again.
+Stepping off is inside the routine. It is not a failure of it. The swing you make with
+an unanswered question in it is the swing you will remember on the drive home.
 
-Hear the compression of the strike. Feel it in your hands - solid, center of the face. Watch the ball do exactly what you saw. Hold your finish. Accept it. Breathe.
+[BEAT — HOLD]
 
-## Compress it
+Shoal Creek, four. Driver, right of center. The sand is left, so the miss that costs
+you is left, and you play the whole hole from the right side.
 
-Run the whole routine twice more, faster now, at real-round speed. Decide, target, see, feel, walk in, go, accept. Let it start to feel like one motion instead of six steps.
+Behind the ball. All the questions. Then the picture — see the start line, and see it
+finish. One look. Go.
 
-> Pause. Two full reps.
+[PAUSE — REP]
 
-Last breath. This routine is now yours. Every shot in every session that follows runs through it. Open your eyes when you are ready.
+[BEAT]
+
+Outlaw, thirteen. Four hundred and thirty-four, the number two handicap, and the
+longest par four out there. Hit the driver. Everything hard on that hole happens on
+the tee.
+
+Same two pieces. The size of the shot does not change the size of the routine.
+
+[PAUSE — REP]
+
+[BEAT]
+
+Shoal Creek, twelve. Forty-five yards, and the front edge means every one of them
+carries. Land it on the surface or you are chipping back up the slope.
+
+Longest club to shortest, and nothing about the routine moved.
+
+[PAUSE — REP]
+
+[BEAT — HOLD]
+
+Outlaw, eight. Mini driver off that tee, right of center — the sand is short and left.
+
+This time a question arrives late. You are over the ball and something in you says you
+have the wrong club in your hands.
+
+Step off. Back behind the ball. Answer it. Then start the whole thing again from the
+top.
+
+[PAUSE — REP]
+
+[BEAT]
+
+Shoal Creek, six. Fifty-five in, and four feet of fall. Stay under it.
+
+You are tired. It is the end of a long one and the routine feels like effort.
+
+Run it anyway, exactly as long as it was on the first tee.
+
+[PAUSE — REP]
+
+[BEAT — HOLD]
+
+The one thing: everything is a question until the last look, and nothing is a question
+after it.
