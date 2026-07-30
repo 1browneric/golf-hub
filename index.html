@@ -86,6 +86,16 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
 .mt-nest{padding-left:10px;border-left:1px solid rgba(143,160,184,.16);margin-top:8px}
 .mt-intro{font-family:var(--font-body);font-size:12.5px;line-height:1.7;color:var(--steel);padding:12px 2px 4px}
 .mt-intro strong{color:var(--cream);font-weight:600}
+.mtback{display:inline-block;font-family:var(--font-data);font-size:11px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--cream);background:var(--navy);cursor:pointer;
+  border:1px solid rgba(143,160,184,.2);border-radius:11px;padding:9px 14px;margin-top:6px}
+.holenav{display:flex;align-items:center;gap:10px;margin-top:16px}
+.holenav .navbtn{flex:1;padding:13px 0;border-radius:11px;background:var(--navy);color:var(--cream);
+  font-family:var(--font-data);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+  border:1px solid rgba(143,160,184,.2);text-align:center;cursor:pointer}
+.holenav .navbtn.dis{opacity:.4;cursor:default}
+.navnow{flex:none;font-family:var(--font-title);font-weight:700;font-size:17px;color:var(--red);
+  min-width:60px;text-align:center}
 .mt-script{font-family:var(--font-body);font-size:13.5px;line-height:1.75;color:var(--cream);padding:8px 2px 4px}
 .mt-script h3{font-family:var(--font-caps);font-weight:800;font-size:10px;letter-spacing:.14em;
               color:var(--steel);margin:16px 0 7px}
@@ -402,26 +412,31 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
          a course -> a hole. Each level is a real screen with a back row, not a
          panel that grows underneath the thing you tapped. -->
     <section class="screen" data-screen="mental">
+      <div class="mtback" data-go="plan">Back</div>
       <div class="h-title" style="font-size:32px;margin-top:6px">Mental Training</div>
       <div id="mt-home"></div>
     </section>
 
     <section class="screen" data-screen="mt-sessions">
+      <div class="mtback" data-go="mental">Back</div>
       <div class="h-title" style="font-size:32px;margin-top:6px">Sessions</div>
       <div id="mt-sessions-list"></div>
     </section>
 
     <section class="screen" data-screen="mt-courses">
+      <div class="mtback" data-go="mental">Back</div>
       <div class="h-title" style="font-size:32px;margin-top:6px">Course Walkthroughs</div>
       <div id="mt-courses-list"></div>
     </section>
 
     <section class="screen" data-screen="mt-holes">
+      <div class="mtback" data-go="mt-courses">Back</div>
       <div class="h-title" style="font-size:32px;margin-top:6px" id="mt-holes-title"></div>
       <div id="mt-holes-list"></div>
     </section>
 
     <section class="screen" data-screen="mt-script">
+      <div class="mtback" id="mt-script-back">Back</div>
       <div class="h-title" style="font-size:26px;margin-top:6px" id="mt-script-title"></div>
       <div id="mt-script-body"></div>
     </section>
@@ -1752,18 +1767,52 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       return item(c.course,'data-mt="c:'+i+'"');
     }).join('');
 
-    function openScript(md,audio,fallback){
+    /* The round tracker's holeNav(), same shape: prev on the left, where you
+       are in the middle, next on the right, and the ends are a disabled span
+       rather than a missing button so the row never changes width. */
+    function navRow(prev,now,next){
+      function side(spec,arrow){
+        if(!spec) return '<span class="navbtn dis">'+esc(arrow<0?'Start':'End')+'</span>';
+        return '<div class="navbtn" data-mt="'+spec.go+'">'+
+          (arrow<0?'&larr; ':'')+esc(spec.label)+(arrow>0?' &rarr;':'')+'</div>';
+      }
+      return '<div class="holenav">'+side(prev,-1)+
+        '<div class="navnow">'+esc(now)+'</div>'+side(next,1)+'</div>';
+    }
+    /* Where a script sits in its own sequence, so the bottom row can move you
+       through the holes of one course - or the sessions - without going back
+       up to the list every time. */
+    function seq(kind,a,b){
+      var list,now,label;
+      if(kind==='s'){
+        list=SESS; now='';
+        label=function(i){return SESS[i].title;};
+      } else {
+        list=COURSES[a].holes; now=(list[b].hole>0?'No. '+list[b].hole:'Tee');
+        label=function(i){return list[i].hole>0?('No. '+list[i].hole):'Tee';};
+      }
+      var idx=(kind==='s')?a:b;
+      function at(i){
+        if(i<0||i>=list.length) return null;
+        return {label:label(i), go:(kind==='s')?('s:'+i):('h:'+a+':'+i)};
+      }
+      return navRow(at(idx-1),now,at(idx+1));
+    }
+    function openScript(md,audio,fallback,backTo,nav){
       document.getElementById('mt-script-title').textContent=title(md,fallback);
       document.getElementById('mt-script-body').innerHTML=
-        player(audio)+'<div class="mt-script">'+scriptHtml(md)+'</div>';
+        player(audio)+'<div class="mt-script">'+scriptHtml(md)+'</div>'+(nav||'');
+      document.getElementById('mt-script-back').dataset.go=backTo;
       show('mt-script');
+      document.getElementById('scroll').scrollTop=0;
     }
 
     document.addEventListener('click',function(e){
       var t=e.target.closest('[data-mt]'); if(!t) return;
       var bits=t.dataset.mt.split(':'), kind=bits[0], a=+bits[1], b=+bits[2];
       if(kind==='s'){
-        var s=SESS[a]; openScript(s.text,s.audio,s.title); return;
+        var s=SESS[a];
+        openScript(s.text,s.audio,s.title,'mt-sessions',seq('s',a)); return;
       }
       if(kind==='c'){
         var c=COURSES[a];
@@ -1775,7 +1824,8 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       }
       if(kind==='h'){
         var h=COURSES[a].holes[b];
-        openScript(h.text,h.audio,h.hole>0?('Hole '+h.hole):'Before the first tee');
+        openScript(h.text,h.audio,h.hole>0?('Hole '+h.hole):'Before the first tee',
+                   'mt-holes',seq('h',a,b));
       }
     });
   })();
