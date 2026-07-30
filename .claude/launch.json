@@ -1,6 +1,0 @@
-{
-  "version": "0.0.1",
-  "configurations": [
-    { "name": "golf-hub", "runtimeExecutable": "python3", "runtimeArgs": ["-m", "http.server", "8899"], "port": 8899 }
-  ]
-}
