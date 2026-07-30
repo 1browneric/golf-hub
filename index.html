@@ -94,13 +94,6 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
 .mt-script .cue{font-family:var(--font-caps);font-weight:700;font-size:10px;letter-spacing:.1em;color:var(--steel);
                 border-left:2px solid rgba(143,160,184,.45);padding:5px 0 5px 11px;margin:13px 0;line-height:1.6}
 .mt-audio{width:100%;height:36px;margin:10px 0 2px;display:block}
-.mt-card{cursor:pointer;padding:14px 2px 16px;border-bottom:1px solid rgba(143,160,184,.16)}
-.mt-back{font-family:var(--font-caps);font-weight:800;font-size:10px;letter-spacing:.14em;
-  color:var(--steel);cursor:pointer;padding:14px 2px 2px}
-.mt-item{width:100%;text-align:left;display:block;cursor:pointer;padding:14px 2px;
-  border-bottom:1px solid rgba(143,160,184,.16)}
-.mt-item .mt-t{font-family:var(--font-title);font-weight:700;font-size:15px;color:var(--cream);line-height:1.35}
-.mt-item .mt-s{font-family:var(--font-body);font-size:11.5px;color:var(--steel);margin-top:4px;line-height:1.5}
 .mt-note{font-family:var(--font-body);font-size:11.5px;color:var(--steel);padding:9px 2px;line-height:1.6}
 /* module grid */
 .grid{display:grid;grid-template-columns:1fr;gap:12px}
@@ -398,9 +391,8 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
            go looking for is a thing you do not run. The focus cards are a
            readout you glance at; this is the work, so it leads. It is collapsed
            by default, so it costs one row before the numbers start. -->
-      <div class="mt-card" data-go="mental">
+      <div class="card" style="padding:16px 18px;margin-top:12px;cursor:pointer" data-go="mental">
         <div class="h-title" style="font-size:18px">Mental Training</div>
-        <div class="mt-s">Six sessions. Three courses, eighteen holes each.</div>
       </div>
       <div id="plan-list"></div>
     </section>
@@ -410,31 +402,26 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
          a course -> a hole. Each level is a real screen with a back row, not a
          panel that grows underneath the thing you tapped. -->
     <section class="screen" data-screen="mental">
-      <div class="mt-back" data-go="plan">Back</div>
       <div class="h-title" style="font-size:32px;margin-top:6px">Mental Training</div>
       <div id="mt-home"></div>
     </section>
 
     <section class="screen" data-screen="mt-sessions">
-      <div class="mt-back" data-go="mental">Back</div>
       <div class="h-title" style="font-size:32px;margin-top:6px">Sessions</div>
       <div id="mt-sessions-list"></div>
     </section>
 
     <section class="screen" data-screen="mt-courses">
-      <div class="mt-back" data-go="mental">Back</div>
       <div class="h-title" style="font-size:32px;margin-top:6px">Course Walkthroughs</div>
       <div id="mt-courses-list"></div>
     </section>
 
     <section class="screen" data-screen="mt-holes">
-      <div class="mt-back" data-go="mt-courses">Back</div>
       <div class="h-title" style="font-size:32px;margin-top:6px" id="mt-holes-title"></div>
       <div id="mt-holes-list"></div>
     </section>
 
     <section class="screen" data-screen="mt-script">
-      <div class="mt-back" id="mt-script-back">Back</div>
       <div class="h-title" style="font-size:26px;margin-top:6px" id="mt-script-title"></div>
       <div id="mt-script-body"></div>
     </section>
@@ -1738,9 +1725,12 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     function title(md,fallback){
       var m=md.match(/^#\s+(.+)$/m); return m?m[1].trim():fallback;
     }
-    function item(label,sub,attrs){
-      return '<div class="mt-item" '+attrs+'><div class="mt-t">'+esc(label)+'</div>'+
-        (sub?'<div class="mt-s">'+esc(sub)+'</div>':'')+'</div>';
+    /* The hub's box, verbatim: .card, the same padding and margin as the
+       Improvement Plan cards above it, and an 18px .h-title. A row is its
+       label and nothing else - no counts, no yardages, no tee names. */
+    function item(label,attrs){
+      return '<div class="card" style="padding:16px 18px;margin-top:12px;cursor:pointer" '+
+        attrs+'><div class="h-title" style="font-size:18px">'+esc(label)+'</div></div>';
     }
     /* A player appears only when the generator handed us a path, and it only
        hands one over when the MP3's fingerprint matches the script printed
@@ -1751,25 +1741,21 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     }
 
     document.getElementById('mt-home').innerHTML=
-      item('Sessions',SESS.filter(function(s){return !s.intro;}).length+
-        ' to run with your eyes closed','data-go="mt-sessions"')+
-      item('Course Walkthroughs',COURSES.length+' courses','data-go="mt-courses"');
+      item('Sessions','data-go="mt-sessions"')+
+      item('Course Walkthroughs','data-go="mt-courses"');
 
     document.getElementById('mt-sessions-list').innerHTML=SESS.map(function(s,i){
-      return item(s.title,s.sub||'','data-mt="s:'+i+'"');
+      return item(s.title,'data-mt="s:'+i+'"');
     }).join('');
 
     document.getElementById('mt-courses-list').innerHTML=COURSES.map(function(c,i){
-      var holes=c.holes.filter(function(h){return h.hole>0;}).length;
-      return item(c.course,holes+' holes'+(c.tees?', '+c.tees+' Tees':''),'data-mt="c:'+i+'"');
+      return item(c.course,'data-mt="c:'+i+'"');
     }).join('');
 
-    var back=document.getElementById('mt-script-back');
-    function openScript(md,audio,fallback,backTo){
+    function openScript(md,audio,fallback){
       document.getElementById('mt-script-title').textContent=title(md,fallback);
       document.getElementById('mt-script-body').innerHTML=
         player(audio)+'<div class="mt-script">'+scriptHtml(md)+'</div>';
-      back.dataset.go=backTo;
       show('mt-script');
     }
 
@@ -1777,21 +1763,19 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       var t=e.target.closest('[data-mt]'); if(!t) return;
       var bits=t.dataset.mt.split(':'), kind=bits[0], a=+bits[1], b=+bits[2];
       if(kind==='s'){
-        var s=SESS[a]; openScript(s.text,s.audio,s.title,'mt-sessions'); return;
+        var s=SESS[a]; openScript(s.text,s.audio,s.title); return;
       }
       if(kind==='c'){
         var c=COURSES[a];
         document.getElementById('mt-holes-title').textContent=c.course;
         document.getElementById('mt-holes-list').innerHTML=c.holes.map(function(h,j){
-          var label=h.hole>0?('Hole '+h.hole):'Before the first tee';
-          var sub=h.hole>0&&h.par?('Par '+h.par+(h.yardage?', '+h.yardage:'')):'';
-          return item(label,sub,'data-mt="h:'+a+':'+j+'"');
+          return item(h.hole>0?('Hole '+h.hole):'Before the first tee','data-mt="h:'+a+':'+j+'"');
         }).join('');
         show('mt-holes'); return;
       }
       if(kind==='h'){
         var h=COURSES[a].holes[b];
-        openScript(h.text,h.audio,h.hole>0?('Hole '+h.hole):'Before the first tee','mt-holes');
+        openScript(h.text,h.audio,h.hole>0?('Hole '+h.hole):'Before the first tee');
       }
     });
   })();
