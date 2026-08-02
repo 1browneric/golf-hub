@@ -212,6 +212,29 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
 .windbtn{flex:1;padding:8px 4px;border-radius:8px;border:1.5px solid rgba(12,35,64,.2);background:transparent;cursor:pointer;
   font-family:var(--font-data);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#5C6B82}
 .windbtn.on{background:#14315A;border-color:#14315A;color:#fff;font-weight:700}
+/* ---- approach dispersion ----
+   Hub chrome around a yardage-book plot. The card, its labels and the toggle
+   chips are the Hub's own navy / cream / red; the PLOT is drawn in the course
+   book's ink #0F2F45 / navy #1F4E9D / teal #1B7F79 on cream, in Georgia, so it
+   reads as a book diagram rather than a second app screen. */
+.dsprow{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.dspchip{font-family:var(--font-data);font-size:10px;letter-spacing:.06em;padding:7px 10px;border-radius:999px;
+  border:1.5px solid rgba(143,160,184,.35);background:transparent;color:var(--steel);cursor:pointer}
+.dspchip.on{background:var(--cream);border-color:var(--cream);color:var(--navy);font-weight:700}
+.dspchip.scope.on{background:var(--red);border-color:var(--red);color:var(--cream)}
+.dsplbl{font-family:var(--font-caps);font-weight:700;font-size:9px;letter-spacing:.16em;color:var(--steel);margin-top:16px}
+.dspplate{background:var(--cream);border-radius:14px;padding:12px 10px 8px;margin-top:12px}
+.dspaxis{font-family:Georgia,serif;font-size:9.5px;fill:#5C6B82}
+.dspaxis.k{font-size:8.5px;letter-spacing:.14em;fill:#0F2F45}
+.dspref{font-family:Georgia,serif;font-size:8.5px;fill:#1B7F79}
+.dsprange{font-family:var(--font-data);font-size:10px;color:#5C6B82;text-align:center;margin-top:6px;letter-spacing:.04em}
+.dspkey{display:flex;flex-wrap:wrap;gap:8px 12px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(12,35,64,.14)}
+.dspkey span{display:inline-flex;align-items:center;gap:5px;font-family:Georgia,serif;font-size:10.5px;color:#0F2F45}
+.dspkey i{width:9px;height:9px;border-radius:50%;display:inline-block;flex:0 0 auto}
+.dspwarn{font-family:var(--font-body);font-size:11.5px;line-height:1.6;color:var(--cream);
+  background:rgba(178,34,52,.14);border:1px solid rgba(178,34,52,.45);border-radius:10px;padding:9px 11px;margin-top:12px}
+.dspempty{font-family:var(--font-body);font-size:12.5px;line-height:1.7;color:var(--steel);margin-top:14px}
+.dspcount{font-family:var(--font-data);font-size:10px;color:var(--steel);letter-spacing:.1em;margin-top:10px;text-align:center}
 /* weather refresh button */
 .wxbtn{background:none;border:none;padding:3px;cursor:pointer;display:inline-flex;line-height:0}
 .wxbtn svg{width:15px;height:15px;stroke:var(--steel)}
@@ -405,6 +428,10 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
         <div class="h-title" style="font-size:18px">Mental Training</div>
       </div>
       <div id="plan-list"></div>
+      <!-- Approach dispersion. Both scopes live here, in one card: the whole
+           season across every course, and any single course pooled across its
+           18 holes. Fed by the round tracker's capture, never by the sheet. -->
+      <div id="disp-card"></div>
     </section>
 
     <!-- Mental Training: one screen per level, the same as everywhere else on
@@ -1683,6 +1710,558 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
        stale fallback - the page looked fine and was wrong. */
     }).catch(function(e){ console.error('golf hub: live render failed', e); });
   })();
+
+  /* ================= APPROACH DISPERSION =================
+     The shared core, then the two maps.
+
+     The core below is a VERBATIM copy of skills/round-tracker/dispersion.js —
+     the same file the round tracker inlines for capture — so the surface that
+     records a shot and the surface that plots it can never disagree about what
+     a sign, a band or a leave means. Do NOT hand-edit it here: edit the source
+     file and run `python3 scripts/sync_dispersion_module.py`.
+     tests/test_dispersion.py fails if the two copies drift.
+
+     The Hub only READS. It never writes a dispersion record, and it never
+     touches the sheet, the Apps Script or the round record for any of this. */
+  /* DISP-MODULE START */
+  /* Approach dispersion — the shared, pure core.
+   *
+   * Loaded by BOTH surfaces and nowhere else:
+   *   - the round tracker (skills/round-tracker/template.html, inlined by
+   *     skills/osm-course-book/build_tracker.py) — capture;
+   *   - the Golf Hub (design/golf-hub/index.html) — the two maps.
+   * The Hub embeds this file verbatim between the DISP-MODULE markers;
+   * tests/test_dispersion.py fails if the two copies drift.
+   *
+   * Pure functions only: no DOM, no storage, no fetch. Everything that decides a
+   * sign, a band or a distance lives here so the tracker and the Hub can never
+   * disagree about what a logged shot means.
+   *
+   * HARD BOUNDARIES (do not relax):
+   *   - This module never reads or writes the putt-distance field (p1/p2/p3).
+   *     Putting strokes gained depends on exactly one logged number and that
+   *     stays true.
+   *   - Dispersion is its own store, keyed by round date + course + hole. It is
+   *     never part of the round record, buildRoundJSON, the Apps Script payload
+   *     or the Google Sheet.
+   *   - NO BACKFILL. Nothing here estimates, infers or reconstructs a component
+   *     from putt distance or any other proxy. A round logged before these
+   *     fields existed has no dispersion data and never will. Both maps start
+   *     empty and fill going forward. That is intended.
+   */
+
+  var DISP_VERSION = 1;
+
+  /* ---------- capture vocabulary ---------- */
+
+  /* Lie the approach was played FROM. A 40 yard shot from fairway and one from
+     thick rough are different populations, so this is a filter, not a label. */
+  var DISP_LIES = ["Fairway", "Rough", "Sand", "Other"];
+
+  /* Where the ball finished relative to the putting surface. Encoded as dot
+     SHAPE on the map, never as colour. */
+  var DISP_FINISH = ["On green", "Off green"];
+
+  /* The unsigned direction words Eric actually taps. He never types a minus
+     sign; the sign is derived here, once, at import. */
+  var DISP_LONG_DIRS  = ["long", "short"];
+  var DISP_RIGHT_DIRS = ["right", "left"];
+
+  /* ---------- distance bands (yards played from) ----------
+     Toggles, not separate fixed charts. min inclusive, max exclusive, so a
+     shot from exactly 25 yards lands in "25-50" and 50 lands in "50-75". */
+  var DISP_BANDS = [
+    { key: "u25",     label: "Inside 25", min: 0,   max: 25,       rep: 15  },
+    { key: "25-50",   label: "25-50",     min: 25,  max: 50,       rep: 37  },
+    { key: "50-75",   label: "50-75",     min: 50,  max: 75,       rep: 62  },
+    { key: "75-100",  label: "75-100",    min: 75,  max: 100,      rep: 87  },
+    { key: "100-125", label: "100-125",   min: 100, max: 125,      rep: 112 },
+    { key: "125-175", label: "125-175",   min: 125, max: 175,      rep: 150 },
+    { key: "175+",    label: "175+",      min: 175, max: Infinity, rep: 200 }
+  ];
+
+  function dispBandFor(yards) {
+    if (yards == null || !isFinite(yards) || yards < 0) return null;
+    for (var i = 0; i < DISP_BANDS.length; i++) {
+      var b = DISP_BANDS[i];
+      if (yards >= b.min && yards < b.max) return b.key;
+    }
+    return null;
+  }
+
+  function dispBand(key) {
+    for (var i = 0; i < DISP_BANDS.length; i++) {
+      if (DISP_BANDS[i].key === key) return DISP_BANDS[i];
+    }
+    return null;
+  }
+
+  /* The tracker's own Lie list is finer-grained than the four dispersion flags.
+     Folding happens here so the tracker and the Hub agree, and so the block can
+     prefill from the shot Eric already logged instead of asking twice.
+     Deep Rough folds into Rough; Tee and Recovery into Other. */
+  function dispLieFromShotLie(lie) {
+    switch (String(lie || "").trim().toLowerCase()) {
+      case "fairway":    return "Fairway";
+      case "rough":
+      case "deep rough": return "Rough";
+      case "sand":       return "Sand";
+      case "tee":
+      case "recovery":
+      case "other":      return "Other";
+      default:           return null;
+    }
+  }
+
+  /* Which shots get a dispersion block offered without being asked. The three
+     App types are approaches by definition; a par-3 tee shot is one too, and the
+     tracker types it "Drive", so the caller passes par and isFirst. Any other
+     shot can still be opened by hand — this decides the DEFAULT, not the limit. */
+  function dispIsApproach(type, par, isFirst) {
+    if (isFirst && par === 3) return true;
+    return ["Long App (176+)", "Mid App (101-175)", "Short App (100&In)"].indexOf(type) !== -1;
+  }
+
+  /* ---------- the unit he is typing in ----------
+     The two boxes under the Miss chips change unit with where the ball finished:
+     ON THE GREEN he measures in FEET, anywhere else in YARDS. Nobody says "my
+     ball is nine feet into the rough" or "I was six yards past the pin".
+
+     Storage stays in FEET always, so the maps, the green reference and the
+     proximity ramp all speak one unit and never have to ask. The conversion
+     happens once, here, at import — the same place the sign is decided. */
+  var DISP_FT_PER_YD = 3;
+
+  function dispUnit(onGreen) { return onGreen ? "ft" : "yd"; }
+
+  function dispToFeet(value, unit) {
+    if (value === null || value === undefined || value === "") return null;
+    var n = typeof value === "number" ? value : Number(value);
+    if (!isFinite(n)) return null;
+    return unit === "yd" ? n * DISP_FT_PER_YD : n;
+  }
+
+  /* The way back out, for re-opening a saved shot. Storage is feet; the box has
+     to show the number he actually typed, in the unit he typed it in. Without
+     this a shot entered as 20 yards re-opened reading 60 against a "yd" label,
+     and saving it again stored 180 — wrong by 3x, then 9x, silently. */
+  function dispFromFeet(feet, unit) {
+    if (feet === null || feet === undefined || feet === "") return null;
+    var n = typeof feet === "number" ? feet : Number(feet);
+    if (!isFinite(n)) return null;
+    return unit === "yd" ? n / DISP_FT_PER_YD : n;
+  }
+
+  /* Which way it missed, from the Miss chips.
+     The chips are a MULTI-SELECT describing the shape of the shot, so nothing
+     stops both ends of an axis being on at once. When they are, the direction is
+     genuinely ambiguous and this returns "" — which makes the distance
+     unresolvable and puts it in front of him, rather than quietly taking
+     whichever one happened to be tested first. That silent guess once stored a
+     short miss as +60 long. */
+  function dispDirFrom(tags, positiveWord, negativeWord) {
+    var list = tags || [];
+    var cap = function (w) { return w.charAt(0).toUpperCase() + w.slice(1); };
+    var pos = list.indexOf(cap(positiveWord)) !== -1;
+    var neg = list.indexOf(cap(negativeWord)) !== -1;
+    if (pos && neg) return "";          // ambiguous — refuse, do not pick
+    if (pos) return positiveWord;
+    if (neg) return negativeWord;
+    return "";
+  }
+
+  /* ---------- sign derivation ----------
+     The one place a direction word becomes a sign.
+       short -> negative leave_long_ft      long  -> positive
+       left  -> negative leave_right_ft     right -> positive
+     A ZERO component is zero whatever the direction says, and the direction may
+     be blank — pin high is leave_long_ft = 0, and dead on line is
+     leave_right_ft = 0. Zero is a real, complete answer, not a missing one.
+
+     Anything else that cannot be resolved returns null rather than a guess: a
+     non-zero distance with no direction tapped, a negative number (he never
+     types one, so a minus is a bug or a paste, not an intent), or junk. Callers
+     treat null as "not plottable yet" and dispValidate() says why. */
+
+  function dispSignedComponent(ft, dir, negativeWord) {
+    if (ft === null || ft === undefined || ft === "") return null;
+    var n = typeof ft === "number" ? ft : Number(ft);
+    if (!isFinite(n)) return null;
+    if (n < 0) return null;              // unsigned input only — never flip it silently
+    if (n === 0) return 0;               // direction is irrelevant and may be blank
+    if (!dir) return null;               // non-zero needs a side
+    var d = String(dir).trim().toLowerCase();
+    if (d === negativeWord) return -n;
+    return n;
+  }
+
+  function dispSignedLong(ft, dir) {
+    /* dir: "long" | "short" | blank when ft is 0 */
+    if (dir && DISP_LONG_DIRS.indexOf(String(dir).trim().toLowerCase()) === -1) return null;
+    return dispSignedComponent(ft, dir, "short");
+  }
+
+  function dispSignedRight(ft, dir) {
+    /* dir: "right" | "left" | blank when ft is 0 */
+    if (dir && DISP_RIGHT_DIRS.indexOf(String(dir).trim().toLowerCase()) === -1) return null;
+    return dispSignedComponent(ft, dir, "left");
+  }
+
+  /* ---------- the computed leave ----------
+     NEVER logged. Always computed from the two components, so there is exactly
+     one representation of the miss and no second number to drift. */
+  function dispLeaveFt(leaveLongFt, leaveRightFt) {
+    if (leaveLongFt === null || leaveLongFt === undefined) return null;
+    if (leaveRightFt === null || leaveRightFt === undefined) return null;
+    if (!isFinite(leaveLongFt) || !isFinite(leaveRightFt)) return null;
+    return Math.sqrt(leaveLongFt * leaveLongFt + leaveRightFt * leaveRightFt);
+  }
+
+  /* ---------- import ----------
+     Turns one raw capture into the stored record. This is "import" in the sense
+     the spec means it: the moment unsigned taps become signed fields. Both
+     leave fields are optional in storage so a round logged without dispersion
+     stays valid — a record missing them simply never reaches a map. */
+  function dispDerive(input) {
+    input = input || {};
+    /* `unit` is what the boxes were showing when he typed: "ft" on the green,
+       "yd" anywhere else. Convert first, then take the sign, so the stored
+       fields are always feet no matter which way he entered them. */
+    var unit = input.unit === "yd" ? "yd" : "ft";
+    var lng = dispSignedLong(dispToFeet(input.long_ft, unit), input.long_dir);
+    var rgt = dispSignedRight(dispToFeet(input.right_ft, unit), input.right_dir);
+    var yards = input.played_from_yds;
+    var y = (yards === null || yards === undefined || yards === "") ? null : Number(yards);
+    if (y !== null && (!isFinite(y) || y < 0)) y = null;
+    var rec = {
+      v: DISP_VERSION,
+      played_from_yds: y,
+      lie: DISP_LIES.indexOf(input.lie) !== -1 ? input.lie : null,
+      finish: DISP_FINISH.indexOf(input.finish) !== -1 ? input.finish : null,
+      /* provenance: which unit the boxes were showing. The stored leaves are
+         always feet, but knowing he typed yards is what makes a wrong-looking
+         dot debuggable later instead of a mystery. */
+      entered_unit: unit
+    };
+    /* Optional by design — omitted entirely rather than written as null, so an
+       older record and a partial one are the same shape. */
+    if (lng !== null) rec.leave_long_ft = lng;
+    if (rgt !== null) rec.leave_right_ft = rgt;
+    return rec;
+  }
+
+  /* What is still missing before this capture can be plotted. Returns [] when
+     the record is complete. The UI shows these; nothing is inferred. */
+  function dispValidate(input) {
+    input = input || {};
+    var errs = [];
+    /* Name the unit he is actually typing in, so an alert never tells him
+       "in feet" while the box above it says yards. */
+    var u = input.unit === "yd" ? "yards" : "feet";
+    var hasLong = !(input.long_ft === null || input.long_ft === undefined || input.long_ft === "");
+    var hasRight = !(input.right_ft === null || input.right_ft === undefined || input.right_ft === "");
+    if (!hasLong) errs.push("Short/long distance in " + u);
+    else if (dispSignedLong(input.long_ft, input.long_dir) === null) {
+      errs.push(Number(input.long_ft) > 0 ? "the SHORT or LONG chip" : "a valid short/long distance");
+    }
+    if (!hasRight) errs.push("Left/right distance in " + u);
+    else if (dispSignedRight(input.right_ft, input.right_dir) === null) {
+      errs.push(Number(input.right_ft) > 0 ? "the LEFT or RIGHT chip" : "a valid left/right distance");
+    }
+    if (DISP_LIES.indexOf(input.lie) === -1) errs.push("Lie");
+    if (DISP_FINISH.indexOf(input.finish) === -1) errs.push("On or off green");
+    var y = Number(input.played_from_yds);
+    if (input.played_from_yds === null || input.played_from_yds === undefined ||
+        input.played_from_yds === "" || !isFinite(y) || y < 0) {
+      errs.push("Distance played from, in yards");
+    }
+    return errs;
+  }
+
+  /* A stored record is plottable only when BOTH components survived derivation.
+     No half-shots on the map. */
+  function dispIsPlottable(rec) {
+    return !!rec &&
+      typeof rec.leave_long_ft === "number" && isFinite(rec.leave_long_ft) &&
+      typeof rec.leave_right_ft === "number" && isFinite(rec.leave_right_ft) &&
+      typeof rec.played_from_yds === "number" && isFinite(rec.played_from_yds);
+  }
+
+  /* ---------- the store key ----------
+     Round date + course + hole, exactly as the spec requires, so the dispersion
+     store stands on its own and never has to be joined through the round record.
+     Shot index disambiguates two approaches on one hole. */
+  function dispKey(date, course, hole) {
+    return [String(date || ""), String(course || ""), String(hole == null ? "" : hole)].join("|");
+  }
+
+  /* ---------- proximity ramp ----------
+     Blue to orange, never red to green. Every band carries its own text label so
+     the map reads without colour at all. */
+  var DISP_PROXIMITY = [
+    { key: "p0",  label: "Inside 5 ft",  min: 0,  max: 5,        color: "#1F4E9D" },
+    { key: "p5",  label: "5-15 ft",      min: 5,  max: 15,       color: "#3E7CC4" },
+    { key: "p15", label: "15-30 ft",     min: 15, max: 30,       color: "#7FA9D8" },
+    { key: "p30", label: "30-60 ft",     min: 30, max: 60,       color: "#E0A35A" },
+    { key: "p60", label: "Over 60 ft",   min: 60, max: Infinity, color: "#C2701B" }
+  ];
+
+  function dispProximity(leaveFt) {
+    if (leaveFt == null || !isFinite(leaveFt) || leaveFt < 0) return null;
+    for (var i = 0; i < DISP_PROXIMITY.length; i++) {
+      var p = DISP_PROXIMITY[i];
+      if (leaveFt >= p.min && leaveFt < p.max) return p;
+    }
+    return null;
+  }
+
+  /* ---------- median green reference ----------
+     A REFERENCE SHAPE, not a boundary. Semi-axes in feet of a median green,
+     from this constant for now. The Overpass green polygons baked for the GPS
+     view are the intended replacement — a later change computes these from the
+     real per-course shapes rather than one national-ish median. */
+  var DISP_GREEN_REF = { semi_long_ft: 45, semi_right_ft: 33 };
+
+  /* ---------- axis auto-scale ----------
+     The axis follows the dots that are actually switched on, symmetric about the
+     pin so the centre stays the centre, with headroom past the widest one.
+
+     It deliberately does NOT floor on the green reference. Flooring there meant a
+     set of wedge shots inside 10 ft still drew on a +/-60 ft axis and collapsed
+     into the middle — exactly the squashing the band toggles exist to prevent.
+     The green ellipse simply runs past the frame when he is well inside it,
+     which is itself the right reading. DISP_AXIS_MIN only stops a card of
+     tap-ins zooming to nothing. Returns feet. */
+  var DISP_AXIS_MIN = 15;
+
+  function dispAxisRange(records) {
+    var maxAbs = 0;
+    (records || []).forEach(function (r) {
+      if (!dispIsPlottable(r)) return;
+      maxAbs = Math.max(maxAbs, Math.abs(r.leave_long_ft), Math.abs(r.leave_right_ft));
+    });
+    var span = Math.max(maxAbs * 1.15, DISP_AXIS_MIN);
+    /* round up to a readable tick so the printed range is a number he can hold */
+    var step = span <= 30 ? 5 : span <= 60 ? 10 : span <= 150 ? 25 : 50;
+    return Math.ceil(span / step) * step;
+  }
+
+  /* ---------- wide-selection warning ----------
+     Long shots squash the wedge dots into the centre. Warn when the switched-on
+     bands span a wide range of distances played from — measured as the ratio of
+     the longest to the shortest representative yardage in the selection. */
+  var DISP_SPAN_RATIO = 3;
+
+  function dispSpanWarning(bandKeys) {
+    var reps = (bandKeys || []).map(dispBand).filter(Boolean).map(function (b) { return b.rep; });
+    if (reps.length < 2) return null;
+    var lo = Math.min.apply(null, reps), hi = Math.max.apply(null, reps);
+    if (hi / lo < DISP_SPAN_RATIO) return null;
+    return "Wide selection: " + Math.round(hi / lo) + "x span from the shortest band to the " +
+           "longest. The long shots will squash the wedge dots into the centre — " +
+           "switch bands off to read them.";
+  }
+
+  /* ---------- selection ---------- */
+  function dispSelect(records, bandKeys, lies) {
+    return (records || []).filter(function (r) {
+      if (!dispIsPlottable(r)) return false;
+      if (bandKeys && bandKeys.length) {
+        if (bandKeys.indexOf(dispBandFor(r.played_from_yds)) === -1) return false;
+      }
+      if (lies && lies.length) {
+        if (lies.indexOf(r.lie) === -1) return false;
+      }
+      return true;
+    });
+  }
+
+  if (typeof module !== "undefined" && module.exports) {
+    module.exports = {
+      DISP_VERSION: DISP_VERSION, DISP_LIES: DISP_LIES, DISP_FINISH: DISP_FINISH,
+      DISP_BANDS: DISP_BANDS, DISP_PROXIMITY: DISP_PROXIMITY,
+      DISP_GREEN_REF: DISP_GREEN_REF, DISP_SPAN_RATIO: DISP_SPAN_RATIO,
+      DISP_FT_PER_YD: DISP_FT_PER_YD, dispUnit: dispUnit, dispToFeet: dispToFeet,
+      dispFromFeet: dispFromFeet, dispDirFrom: dispDirFrom,
+      DISP_AXIS_MIN: DISP_AXIS_MIN,
+      dispBandFor: dispBandFor, dispBand: dispBand,
+      dispLieFromShotLie: dispLieFromShotLie, dispIsApproach: dispIsApproach,
+      dispSignedComponent: dispSignedComponent,
+      dispSignedLong: dispSignedLong, dispSignedRight: dispSignedRight,
+      dispLeaveFt: dispLeaveFt, dispDerive: dispDerive, dispValidate: dispValidate,
+      dispIsPlottable: dispIsPlottable, dispKey: dispKey,
+      dispProximity: dispProximity, dispAxisRange: dispAxisRange,
+      dispSpanWarning: dispSpanWarning, dispSelect: dispSelect
+    };
+  }
+  /* DISP-MODULE END */
+
+  /* The store the round tracker writes. Same GitHub Pages origin, so
+     localStorage is shared between the Hub and every course page under it —
+     which is exactly how the maps get their data with no server and no sheet
+     column. Per-device by consequence: nothing syncs this between his phone
+     and his iPad. */
+  var DISP_STORE_KEY='gh_dispersion_v1';
+  function dispReadStore(){
+    try{
+      var raw=JSON.parse(localStorage.getItem(DISP_STORE_KEY));
+      return raw&&Array.isArray(raw.shots)?raw.shots:[];
+    }catch(e){ return []; }
+  }
+
+  var DISPV={ scope:'all', bands:DISP_BANDS.map(function(b){return b.key;}),
+              lies:DISP_LIES.slice() };
+  function dspEsc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  /* The plot. Dots on a plane: leave_long_ft up the vertical axis,
+     leave_right_ft across the horizontal, the PIN at the centre. Oriented to
+     the shot line rather than the compass, which is what lets all 18 holes —
+     and every course — pool onto one picture.
+
+     Both axes use ONE range and a square viewBox, so a foot left is the same
+     length on screen as a foot long. An asymmetric plot would make his misses
+     look like a shape they are not. */
+  function dispPlot(recs){
+    var R=dispAxisRange(recs);                 // feet, symmetric, auto-scaled
+    var S=300, C=S/2, pad=26, half=C-pad;      // viewBox units
+    var fx=function(ft){ return C+(ft/R)*half; };          // right positive
+    var fy=function(ft){ return C-(ft/R)*half; };          // long positive = up
+    var g=[];
+    /* Median green reference, behind everything. Sized from a config constant
+       in the shared core; a later change computes it from real green polygons.
+       Labelled as a reference so it is never read as a real boundary. */
+    g.push('<ellipse cx="'+C+'" cy="'+C+'" rx="'+((DISP_GREEN_REF.semi_right_ft/R)*half).toFixed(1)+
+           '" ry="'+((DISP_GREEN_REF.semi_long_ft/R)*half).toFixed(1)+
+           '" fill="rgba(27,127,121,.10)" stroke="#1B7F79" stroke-width="1" stroke-dasharray="4 3"/>');
+    /* axes through the pin */
+    g.push('<line x1="'+pad+'" y1="'+C+'" x2="'+(S-pad)+'" y2="'+C+'" stroke="#0F2F45" stroke-width=".8" opacity=".45"/>');
+    g.push('<line x1="'+C+'" y1="'+pad+'" x2="'+C+'" y2="'+(S-pad)+'" stroke="#0F2F45" stroke-width=".8" opacity=".45"/>');
+    /* half-range ticks, so the scale is readable without counting */
+    [R/2,R].forEach(function(v){
+      [[fx(v),C],[fx(-v),C],[C,fy(v)],[C,fy(-v)]].forEach(function(p){
+        g.push('<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="1.4" fill="#0F2F45" opacity=".38"/>');
+      });
+      g.push('<text class="dspaxis" x="'+fx(v).toFixed(1)+'" y="'+(C+12)+'" text-anchor="middle">'+Math.round(v)+'</text>');
+      g.push('<text class="dspaxis" x="'+(C+5)+'" y="'+(fy(v)+3).toFixed(1)+'">'+Math.round(v)+'</text>');
+    });
+    /* direction words, in his own vocabulary */
+    g.push('<text class="dspaxis k" x="'+C+'" y="'+(pad-9)+'" text-anchor="middle">LONG</text>');
+    g.push('<text class="dspaxis k" x="'+C+'" y="'+(S-pad+16)+'" text-anchor="middle">SHORT</text>');
+    g.push('<text class="dspaxis k" x="'+(S-pad+4)+'" y="'+C+'" text-anchor="end" dy="-7">RIGHT</text>');
+    g.push('<text class="dspaxis k" x="'+(pad-4)+'" y="'+C+'" text-anchor="start" dy="-7">LEFT</text>');
+    /* the pin */
+    g.push('<circle cx="'+C+'" cy="'+C+'" r="2.6" fill="#0F2F45"/>');
+    /* the shots. COLOUR is proximity, on a blue-to-orange ramp with a text
+       legend under the plot — never red versus green. SHAPE, not colour,
+       separates a ball that finished on the green from one that did not:
+       filled circle on, hollow diamond off. */
+    recs.forEach(function(r){
+      var x=fx(r.leave_right_ft), y=fy(r.leave_long_ft);
+      var p=dispProximity(dispLeaveFt(r.leave_long_ft,r.leave_right_ft));
+      var col=p?p.color:'#0F2F45';
+      if(r.finish==='Off green'){
+        g.push('<path d="M'+x.toFixed(1)+' '+(y-4.6).toFixed(1)+'l4.6 4.6-4.6 4.6-4.6-4.6z" fill="none" stroke="'+col+'" stroke-width="1.7"/>');
+      }else{
+        g.push('<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="3.5" fill="'+col+'" fill-opacity=".85"/>');
+      }
+    });
+    return { svg:'<svg viewBox="0 0 '+S+' '+S+'" style="width:100%;height:auto;display:block">'+g.join('')+'</svg>',
+             range:R };
+  }
+
+  function renderDispersion(){
+    var host=document.getElementById('disp-card');
+    if(!host) return;
+    var all=dispReadStore();
+    /* Course chips are built from what has actually been logged, so a course
+       with no dispersion never offers an empty scope. */
+    var courses=[];
+    all.forEach(function(r){ if(r.course&&courses.indexOf(r.course)===-1) courses.push(r.course); });
+    courses.sort();
+    if(DISPV.scope!=='all'&&courses.indexOf(DISPV.scope)===-1) DISPV.scope='all';
+
+    var scoped=DISPV.scope==='all'?all:all.filter(function(r){return r.course===DISPV.scope;});
+    var recs=dispSelect(scoped,DISPV.bands,DISPV.lies);
+    var chip=function(cls,on,val,label){
+      return '<button class="dspchip '+cls+(on?' on':'')+'" data-dsp'+cls+'="'+dspEsc(val)+'">'+dspEsc(label)+'</button>';
+    };
+    var head='<div class="card" style="padding:18px;margin-top:12px">'+
+      '<div class="h-title" style="font-size:18px">Approach Dispersion</div>';
+
+    /* Nothing logged at all. This is the correct, intended state on day one —
+       say so plainly rather than leaving an empty frame that reads as broken.
+       Nothing is backfilled from rounds logged before capture existed. */
+    if(!all.length){
+      host.innerHTML=head+
+        '<div class="dspempty">No approach dispersion logged yet. It fills as you log approaches '+
+        'on the course tracker &mdash; rounds played before this existed are not estimated or filled in.</div></div>';
+      return;
+    }
+
+    var plot=dispPlot(recs);
+    var warn=dispSpanWarning(DISPV.bands);
+    var counts={};
+    recs.forEach(function(r){
+      var p=dispProximity(dispLeaveFt(r.leave_long_ft,r.leave_right_ft));
+      if(p) counts[p.key]=(counts[p.key]||0)+1;
+    });
+    var onN=recs.filter(function(r){return r.finish==='On green';}).length;
+
+    host.innerHTML=head+
+      '<div class="dsplbl">SCOPE</div>'+
+      '<div class="dsprow">'+chip('scope',DISPV.scope==='all','all','All courses')+
+        courses.map(function(c){return chip('scope',DISPV.scope===c,c,c);}).join('')+'</div>'+
+      '<div class="dsplbl">PLAYED FROM (YD)</div>'+
+      '<div class="dsprow">'+DISP_BANDS.map(function(b){
+        return chip('band',DISPV.bands.indexOf(b.key)!==-1,b.key,b.label);}).join('')+'</div>'+
+      '<div class="dsplbl">LIE</div>'+
+      '<div class="dsprow">'+DISP_LIES.map(function(l){
+        return chip('lie',DISPV.lies.indexOf(l)!==-1,l,l);}).join('')+'</div>'+
+      (warn?'<div class="dspwarn">'+dspEsc(warn)+'</div>':'')+
+      '<div class="dspplate">'+plot.svg+
+        '<div class="dsprange">Axis &plusmn;'+plot.range+' ft on both sides of the pin</div>'+
+        '<div class="dspkey">'+
+          DISP_PROXIMITY.map(function(p){
+            return '<span><i style="background:'+p.color+'"></i>'+p.label+
+              (counts[p.key]?' ('+counts[p.key]+')':'')+'</span>';}).join('')+
+        '</div>'+
+        '<div class="dspkey">'+
+          '<span><i style="background:#0F2F45"></i>Filled circle &mdash; finished on the green</span>'+
+          '<span><i style="border:1.6px solid #0F2F45;border-radius:0;transform:rotate(45deg)"></i>Open diamond &mdash; finished off the green</span>'+
+        '</div>'+
+        /* The green shape is a REFERENCE, and it says so here rather than on
+           the plot, where a label pinned to the ellipse fell off the frame the
+           moment the axis zoomed in on a set of wedge shots. */
+        '<div class="dspkey"><span><i style="background:rgba(27,127,121,.15);border:1.4px dashed #1B7F79"></i>'+
+          'Dashed ellipse &mdash; a median green at '+(DISP_GREEN_REF.semi_long_ft*2)+' ft deep by '+
+          (DISP_GREEN_REF.semi_right_ft*2)+' ft wide. A size reference, not this course\'s real green.</span></div>'+
+      '</div>'+
+      '<div class="dspcount">'+recs.length+(recs.length===1?' SHOT':' SHOTS')+
+        ' &middot; '+onN+' ON THE GREEN'+
+        (recs.length!==scoped.length?' &middot; '+(scoped.length-recs.length)+' HIDDEN BY FILTERS':'')+'</div>'+
+    '</div>';
+
+    host.querySelectorAll('[data-dspscope]').forEach(function(b){
+      b.onclick=function(){ DISPV.scope=b.getAttribute('data-dspscope'); renderDispersion(); };
+    });
+    /* Toggles, not radio buttons — but never all-off, which would just be an
+       empty plot with no way to read why. */
+    host.querySelectorAll('[data-dspband]').forEach(function(b){
+      b.onclick=function(){
+        var k=b.getAttribute('data-dspband'), i=DISPV.bands.indexOf(k);
+        if(i===-1) DISPV.bands.push(k); else if(DISPV.bands.length>1) DISPV.bands.splice(i,1);
+        renderDispersion();
+      };
+    });
+    host.querySelectorAll('[data-dsplie]').forEach(function(b){
+      b.onclick=function(){
+        var k=b.getAttribute('data-dsplie'), i=DISPV.lies.indexOf(k);
+        if(i===-1) DISPV.lies.push(k); else if(DISPV.lies.length>1) DISPV.lies.splice(i,1);
+        renderDispersion();
+      };
+    });
+  }
+  renderDispersion();
 
   document.getElementById('club-list').innerHTML=CLUBS.map(function(c){
     return '<div class="crow"><span style="flex:2;font-weight:600;font-size:14px;color:#fff">'+c.name+(c.spec?' <span style="font-weight:500;font-size:10px;color:var(--steel)">'+c.spec+'</span>':'')+'</span>'+
