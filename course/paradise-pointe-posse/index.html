@@ -162,9 +162,6 @@ input,textarea,select{font-family:inherit}
   font-family:var(--mono);font-size:11px;color:#16243A;text-align:center}
 .gpssuggest button{margin-top:8px;width:100%;padding:12px;border-radius:10px;background:#0C2340;
   color:var(--cream);font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:700}
-.gpsnote{font-family:var(--mono);font-size:10.5px;line-height:1.7;color:#8FA0B8;
-  text-align:center;padding:14px 10px 0}
-.gpsnote b{color:var(--cream)}
 .gpswait{padding:34px 18px;text-align:center;font-family:var(--mono);font-size:12px;
   line-height:1.8;color:#5C6B82}
 .gpsflag{padding:11px 14px;border-top:1px solid rgba(12,35,64,.12);
@@ -1969,9 +1966,7 @@ function viewGPS(){
       <div class="gpswait">${gpsErr
         ? "No position yet &mdash; " + esc(gpsErr) + ".<br>Allow location for this site, then come back."
         : "Finding you&hellip;<br>Allow location if your phone asks."}</div>
-    </div>
-    <div class="gpsnote">Yardages come from green outlines baked into this page.<br>
-      It works with no signal.</div>`;
+    </div>`;
   }
 
   const d = h ? gpsGreenDistances(gpsPos.lat, gpsPos.lon, h.green) : null;
@@ -1999,9 +1994,7 @@ function viewGPS(){
       <span><b>${esc(GPS_PACK.name)}</b></span>
     </div>
     ${flag}${suggest}
-  </div>
-  <div class="gpsnote">Front is the near edge and back is the far edge, both measured from where
-    you are standing. Middle is the centre of the green.</div>`;
+  </div>`;
 }
 
 
