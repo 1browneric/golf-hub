@@ -134,6 +134,41 @@ input,textarea,select{font-family:inherit}
    how far, in feet. They reuse .edrow / .edfield / .edlbl unchanged, so the
    editor stays one thing rather than growing a second styled region. */
 .dspmiss{margin-top:10px}
+/* ---- Caddie GPS (rangefinder card) ----
+   Tracker chrome: the same cream card, navy ink and mono numerals as every
+   other card on the page. Nothing here encodes meaning as red versus green. */
+.gpscard{background:var(--cream);color:#16243A;border-radius:16px;overflow:hidden;
+  box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.gpshead{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:14px 12px 12px;border-bottom:1px dashed rgba(12,35,64,.25)}
+.gpsarrow{width:46px;height:46px;flex:0 0 auto;border-radius:50%;border:1.5px solid rgba(12,35,64,.3);
+  font-family:var(--mono);font-size:20px;line-height:1;color:#0C2340;background:transparent}
+.gpsarrow[disabled]{opacity:.28}
+.gpshole{flex:1;text-align:center}
+.gpshole .n{font-family:var(--serif);font-size:34px;line-height:1;color:#0C2340}
+.gpshole .p{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#5C6B82;margin-top:3px}
+.gpsnums{display:flex;align-items:center;justify-content:center;gap:6px;padding:22px 10px 6px}
+.gpsn{flex:1;text-align:center}
+.gpsn .k{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#5C6B82}
+.gpsn .v{font-family:var(--mono);font-weight:700;font-size:34px;line-height:1;color:#16243A;margin-top:6px}
+.gpsn.mid .v{font-size:74px;line-height:.92;color:#0C2340}
+.gpsn.mid .k{font-size:11px;color:#0C2340;font-weight:700}
+.gpsunit{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;
+  color:#5C6B82;text-align:center;padding:2px 0 14px}
+.gpsmeta{display:flex;justify-content:space-between;gap:10px;padding:11px 14px;
+  border-top:1px solid rgba(12,35,64,.12);font-family:var(--mono);font-size:10.5px;color:#5C6B82}
+.gpsmeta b{color:#0C2340;font-weight:700}
+.gpssuggest{margin:0;padding:12px 14px;border-top:1px solid rgba(12,35,64,.12);
+  font-family:var(--mono);font-size:11px;color:#16243A;text-align:center}
+.gpssuggest button{margin-top:8px;width:100%;padding:12px;border-radius:10px;background:#0C2340;
+  color:var(--cream);font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:700}
+.gpsnote{font-family:var(--mono);font-size:10.5px;line-height:1.7;color:#8FA0B8;
+  text-align:center;padding:14px 10px 0}
+.gpsnote b{color:var(--cream)}
+.gpswait{padding:34px 18px;text-align:center;font-family:var(--mono);font-size:12px;
+  line-height:1.8;color:#5C6B82}
+.gpsflag{padding:11px 14px;border-top:1px solid rgba(12,35,64,.12);
+  font-family:var(--mono);font-size:10.5px;line-height:1.6;color:#8F1B2A;text-align:center}
 /* per-hole tee override */
 .teeovrow{display:flex;gap:6px;padding:10px 14px;border-bottom:1px solid rgba(12,35,64,.12)}
 .teechip{flex:1;font-family:var(--mono);font-size:10px;letter-spacing:.08em;padding:8px 4px;
@@ -407,6 +442,9 @@ input,textarea,select{font-family:inherit}
   <nav class="tabs" role="tablist">
     <button class="tab on" data-tab="hole" role="tab">Hole</button>
     <button class="tab" data-tab="overview" role="tab">Overview</button>
+    <!-- GPS is NOT a tab. The card renders inside the hole card, above the
+         hole changer (Eric, 2026-08-02). This marker is emptied at build
+         time. --><!--GPS-TAB-->
   </nav>
   <main class="main" id="main"></main>
   <div class="savestat" id="savestat" role="status">Loading</div>
@@ -963,6 +1001,7 @@ if (typeof module !== "undefined" && module.exports) {
   };
 }
 </script>
+
 <script type="module">
 /* ================= CONFIG — edit for each new round =================
    1. Masthead HTML above: course name, city, date.
@@ -987,7 +1026,7 @@ const SHEET_TOKEN = "hb-golf-2026";
 const SAVE_ALERT = "hb-golf-save-fail-4d9a2c17";
 const LS_KEY = "rt_charleston_national_v1";
 
-const ROUND = { date:"2026-07-31", course:"Charleston National Golf Club", par:72 };
+const ROUND = { date:"2026-08-01", course:"Charleston National Golf Club", par:72 };
 const EMAIL = "1brown.eric@gmail.com";
 const TEES = ["black","blue","white"];   // Blue = the anchor (all book distances)
 const HOLES = [
@@ -1737,6 +1776,141 @@ function scoreClass(g, par){
   return g<par ? "birdie" : g>par ? "over" : "";
 }
 
+/* ================= Caddie GPS =================
+   A READ-ONLY view. It never writes a round, never touches the Apps Script and
+   never touches the sheet — it only reads GPS_PACK, which build_tracker.py
+   inlines from skills/osm-course-book/gps/<slug>.json.
+
+   Fully offline: the green polygons are baked into this page, so no network
+   call happens on the course. The only external input is the device's own
+   position. GPS_PACK is null in the template and for any course without a
+   baked pack; the tab is not rendered at all in that case. */
+var GPS_PACK = null;   /* __GPS_PACK__ replaced at build time */
+let gpsPos = null;     // {lat, lon, acc} from watchPosition
+let gpsErr = null;
+let gpsWatchId = null;
+let gpsWakeLock = null;
+
+function gpsHoleData(n){
+  if (!GPS_PACK) return null;
+  return GPS_PACK.holes.find(h => h.hole === n) || null;
+}
+
+async function gpsAcquireWakeLock(){
+  /* Keep the screen alive while he is walking with the card open. Wrapped
+     because Screen Wake Lock is unsupported on some browsers and rejects
+     outright when the document is hidden — neither is an error worth showing. */
+  try {
+    if ("wakeLock" in navigator && !gpsWakeLock){
+      gpsWakeLock = await navigator.wakeLock.request("screen");
+      gpsWakeLock.addEventListener("release", () => { gpsWakeLock = null; });
+    }
+  } catch(e){ gpsWakeLock = null; }
+}
+function gpsReleaseWakeLock(){
+  try { if (gpsWakeLock) gpsWakeLock.release(); } catch(e){}
+  gpsWakeLock = null;
+}
+/* A wake lock is dropped whenever the page is hidden — a lock screen, an app
+   switch, a phone call. Re-acquire when it comes back, or the screen starts
+   sleeping again halfway round. */
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && gpsWanted()){
+    gpsAcquireWakeLock();
+    gpsStartWatch();
+  } else if (document.visibilityState !== "visible"){
+    gpsWakeLock = null;              // the browser already released it
+  }
+});
+
+/* The GPS card lives in the hole card, so it is wanted whenever the hole tab
+   is showing and this course has a baked pack. */
+function gpsWanted(){ return !!GPS_PACK && tab === "hole"; }
+
+function gpsSyncWatch(){
+  if (gpsWanted()){ gpsStartWatch(); gpsAcquireWakeLock(); }
+  else { gpsStopWatch(); gpsReleaseWakeLock(); }
+}
+
+function gpsStartWatch(){
+  if (!GPS_PACK || gpsWatchId !== null || !navigator.geolocation) return;
+  gpsWatchId = navigator.geolocation.watchPosition(
+    p => {
+      gpsErr = null;
+      gpsPos = { lat: p.coords.latitude, lon: p.coords.longitude, acc: p.coords.accuracy };
+      if (gpsWanted()) render();
+    },
+    e => {
+      gpsErr = e && e.message ? e.message : "position unavailable";
+      if (gpsWanted()) render();
+    },
+    { enableHighAccuracy: true, maximumAge: 2000, timeout: 20000 }
+  );
+}
+function gpsStopWatch(){
+  /* Stop the moment he leaves the tab. A high-accuracy watch left running is a
+     battery drain for a card nobody is looking at. */
+  if (gpsWatchId !== null && navigator.geolocation){
+    try { navigator.geolocation.clearWatch(gpsWatchId); } catch(e){}
+  }
+  gpsWatchId = null;
+}
+
+/* The GPS card lives INSIDE the hole card, at the bottom of it and directly
+   above the hole changer (Eric, 2026-08-02: "i dont like the GPS on the top as
+   a tab. i want it on the HOLE or CLUB Section at like the bottom of that but
+   above the hole changer").
+
+   So it carries NO hole/par header and NO arrows of its own. The hole card
+   above already says which hole this is, and the hole changer immediately
+   below is the one control that moves holes -- two sets of hole arrows a
+   thumb apart is exactly the duplicate control he has objected to before.
+   Returns "" for a course with no baked pack, so nothing renders rather than
+   a card that cannot answer. */
+function viewGPS(){
+  if (!GPS_PACK) return "";
+  const h = gpsHoleData(hole);
+
+  if (!gpsPos){
+    return `<div class="gpscard">
+      <div class="gpswait">${gpsErr
+        ? "No position yet &mdash; " + esc(gpsErr) + ".<br>Allow location for this site, then come back."
+        : "Finding you&hellip;<br>Allow location if your phone asks."}</div>
+    </div>
+    <div class="gpsnote">Yardages come from green outlines baked into this page.<br>
+      It works with no signal.</div>`;
+  }
+
+  const d = h ? gpsGreenDistances(gpsPos.lat, gpsPos.lon, h.green) : null;
+  const near = gpsNearestHole(gpsPos.lat, gpsPos.lon, GPS_PACK.holes);
+  /* SUGGEST ONLY. The card never advances itself: walking past the next tee,
+     or a GPS wobble, must not move the hole out from under him. */
+  const suggest = (near && near.hole !== hole)
+    ? `<div class="gpssuggest">Nearest green is <b>${near.hole}</b>, ${gpsYds(near.yards)} yd away.
+         <button data-act="gpsjump" data-h="${near.hole}">Switch to ${near.hole}</button></div>`
+    : "";
+  const flag = (h && h.green && h.green.flagged)
+    ? `<div class="gpsflag">This hole has no mapped green. The numbers come from the end of the
+         hole line, so treat them as approximate.</div>`
+    : "";
+
+  return `<div class="gpscard">
+    <div class="gpsnums">
+      <div class="gpsn"><div class="k">Front</div><div class="v">${d ? gpsYds(d.front) : "&ndash;"}</div></div>
+      <div class="gpsn mid"><div class="k">Middle</div><div class="v">${d ? gpsYds(d.middle) : "&ndash;"}</div></div>
+      <div class="gpsn"><div class="k">Back</div><div class="v">${d ? gpsYds(d.back) : "&ndash;"}</div></div>
+    </div>
+    <div class="gpsunit">Yards</div>
+    <div class="gpsmeta">
+      <span>${esc(gpsAccuracyLabel(gpsPos.acc))}</span>
+      <span><b>${esc(GPS_PACK.name)}</b></span>
+    </div>
+    ${flag}${suggest}
+  </div>
+  <div class="gpsnote">Front is the near edge and back is the far edge, both measured from where
+    you are standing. Middle is the centre of the green.</div>`;
+}
+
 
 /* ---------- live course weather (Open-Meteo, keyed to the course) ---------- */
 const WXD = { temp:"&mdash;", cond:"Loading weather&hellip;", feels:"&mdash;", wind:"&mdash;", hum:"&mdash;" };
@@ -2069,6 +2243,7 @@ function viewHole(){
     </div>
     <div class="bookbody">${bookBody()}</div>
   </section>
+  ${viewGPS()}
   ${holeNav("mid", h)}
   <section class="caddy">
     <div class="caddyhead">Caddie</div>
@@ -2541,6 +2716,7 @@ function bind(){
         dispShiftAfterDelete(hole, i);
         setShots(hole, arr);
       }
+      else if (act==="gpsjump"){ hole = +el.dataset.h; render(); }
       else if (act==="edsave"){
         const d = editing.draft;
         d.club = $("#ed-club").value || null;
@@ -2698,7 +2874,14 @@ function bind(){
 const numOrNull = s => { const v = String(s).trim(); if (v==="") return null; const n = Math.round(+v); return Number.isFinite(n) ? Math.max(0, Math.min(700, n)) : null; };
 
 document.querySelectorAll(".tab").forEach(b => {
-  b.addEventListener("click", () => { tab=b.dataset.tab; bookZoom=false; editing=null; render(); });
+  b.addEventListener("click", () => {
+    tab=b.dataset.tab; bookZoom=false; editing=null;
+    /* The GPS card now sits in the hole card, so the watch and the wake lock
+       follow the HOLE tab rather than a tab of their own. A course with no
+       baked pack never starts either. */
+    gpsSyncWatch();
+    render();
+  });
 });
 
 /* ---------- boot ---------- */
@@ -2709,6 +2892,7 @@ for (let hn = 1; hn <= 18; hn++){
 }
 const firstOpen = HOLES.find(h => F(h.n).score == null);
 hole = firstOpen ? firstOpen.n : 18;
+gpsSyncWatch();
 render();
 
 (async () => {

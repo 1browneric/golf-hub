@@ -442,9 +442,9 @@ input,textarea,select{font-family:inherit}
   <nav class="tabs" role="tablist">
     <button class="tab on" data-tab="hole" role="tab">Hole</button>
     <button class="tab" data-tab="overview" role="tab">Overview</button>
-    <!-- GPS is added here at build time, and only for a course that has a
-         baked pack (skills/osm-course-book/gps/<slug>.json). A course with no
-         pack never shows a tab it cannot answer. --><button class="tab" data-tab="gps" role="tab">GPS</button>
+    <!-- GPS is NOT a tab. The card renders inside the hole card, above the
+         hole changer (Eric, 2026-08-02). This marker is emptied at build
+         time. -->
   </nav>
   <main class="main" id="main"></main>
   <div class="savestat" id="savestat" role="status">Loading</div>
@@ -1119,7 +1119,7 @@ const SHEET_TOKEN = "hb-golf-2026";
 const SAVE_ALERT = "hb-golf-save-fail-4d9a2c17";
 const LS_KEY = "rt_paradise_pointe_outlaw_v1";
 
-const ROUND = { date:"2026-07-31", course:"Paradise Pointe \u00b7 Outlaw", par:72 };
+const ROUND = { date:"2026-08-01", course:"Paradise Pointe \u00b7 Outlaw", par:72 };
 const EMAIL = "1brown.eric@gmail.com";
 const TEES = ["black","blue","white"];   // Blue = the anchor (all book distances)
 const HOLES = [
@@ -1908,7 +1908,7 @@ function gpsReleaseWakeLock(){
    switch, a phone call. Re-acquire when it comes back, or the screen starts
    sleeping again halfway round. */
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible" && tab === "gps"){
+  if (document.visibilityState === "visible" && gpsWanted()){
     gpsAcquireWakeLock();
     gpsStartWatch();
   } else if (document.visibilityState !== "visible"){
@@ -1916,17 +1916,26 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 
+/* The GPS card lives in the hole card, so it is wanted whenever the hole tab
+   is showing and this course has a baked pack. */
+function gpsWanted(){ return !!GPS_PACK && tab === "hole"; }
+
+function gpsSyncWatch(){
+  if (gpsWanted()){ gpsStartWatch(); gpsAcquireWakeLock(); }
+  else { gpsStopWatch(); gpsReleaseWakeLock(); }
+}
+
 function gpsStartWatch(){
   if (!GPS_PACK || gpsWatchId !== null || !navigator.geolocation) return;
   gpsWatchId = navigator.geolocation.watchPosition(
     p => {
       gpsErr = null;
       gpsPos = { lat: p.coords.latitude, lon: p.coords.longitude, acc: p.coords.accuracy };
-      if (tab === "gps") render();
+      if (gpsWanted()) render();
     },
     e => {
       gpsErr = e && e.message ? e.message : "position unavailable";
-      if (tab === "gps") render();
+      if (gpsWanted()) render();
     },
     { enableHighAccuracy: true, maximumAge: 2000, timeout: 20000 }
   );
@@ -1940,19 +1949,23 @@ function gpsStopWatch(){
   gpsWatchId = null;
 }
 
+/* The GPS card lives INSIDE the hole card, at the bottom of it and directly
+   above the hole changer (Eric, 2026-08-02: "i dont like the GPS on the top as
+   a tab. i want it on the HOLE or CLUB Section at like the bottom of that but
+   above the hole changer").
+
+   So it carries NO hole/par header and NO arrows of its own. The hole card
+   above already says which hole this is, and the hole changer immediately
+   below is the one control that moves holes -- two sets of hole arrows a
+   thumb apart is exactly the duplicate control he has objected to before.
+   Returns "" for a course with no baked pack, so nothing renders rather than
+   a card that cannot answer. */
 function viewGPS(){
-  if (!GPS_PACK) return `<div class="gpscard"><div class="gpswait">No GPS pack for this course.</div></div>`;
+  if (!GPS_PACK) return "";
   const h = gpsHoleData(hole);
-  const par = h ? h.par : (HOLES[hole-1] || {}).par;
-  const head = `<div class="gpshead">
-      <button class="gpsarrow" data-act="gpsprev"${hole<=1?" disabled":""}>&lsaquo;</button>
-      <div class="gpshole"><div class="n">${hole}</div>
-        <div class="p">Par ${par}${h && h.length_yds ? " &middot; " + h.length_yds + " yd" : ""}</div></div>
-      <button class="gpsarrow" data-act="gpsnext"${hole>=18?" disabled":""}>&rsaquo;</button>
-    </div>`;
 
   if (!gpsPos){
-    return `<div class="gpscard">${head}
+    return `<div class="gpscard">
       <div class="gpswait">${gpsErr
         ? "No position yet &mdash; " + esc(gpsErr) + ".<br>Allow location for this site, then come back."
         : "Finding you&hellip;<br>Allow location if your phone asks."}</div>
@@ -1974,7 +1987,7 @@ function viewGPS(){
          hole line, so treat them as approximate.</div>`
     : "";
 
-  return `<div class="gpscard">${head}
+  return `<div class="gpscard">
     <div class="gpsnums">
       <div class="gpsn"><div class="k">Front</div><div class="v">${d ? gpsYds(d.front) : "&ndash;"}</div></div>
       <div class="gpsn mid"><div class="k">Middle</div><div class="v">${d ? gpsYds(d.middle) : "&ndash;"}</div></div>
@@ -2015,7 +2028,7 @@ dEl.addEventListener("change", () => { if(dEl.value){ ROUND.date = dEl.value; lo
 function render(){
   document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on", b.dataset.tab===tab));
   const main = $("#main");
-  main.innerHTML = tab==="hole" ? viewHole() : tab==="gps" ? viewGPS() : viewOverview();
+  main.innerHTML = tab==="hole" ? viewHole() : viewOverview();
   const zoomEl = $("#zoomroot");
   if (zoomEl) zoomEl.remove();
   if (bookZoom && tab==="hole"){
@@ -2323,6 +2336,7 @@ function viewHole(){
     </div>
     <div class="bookbody">${bookBody()}</div>
   </section>
+  ${viewGPS()}
   ${holeNav("mid", h)}
   <section class="caddy">
     <div class="caddyhead">Caddie</div>
@@ -2795,8 +2809,6 @@ function bind(){
         dispShiftAfterDelete(hole, i);
         setShots(hole, arr);
       }
-      else if (act==="gpsprev"){ if (hole > 1){ hole--; render(); } }
-      else if (act==="gpsnext"){ if (hole < 18){ hole++; render(); } }
       else if (act==="gpsjump"){ hole = +el.dataset.h; render(); }
       else if (act==="edsave"){
         const d = editing.draft;
@@ -2957,10 +2969,10 @@ const numOrNull = s => { const v = String(s).trim(); if (v==="") return null; co
 document.querySelectorAll(".tab").forEach(b => {
   b.addEventListener("click", () => {
     tab=b.dataset.tab; bookZoom=false; editing=null;
-    /* GPS only runs while its tab is open: the watch and the wake lock both
-       start on entry and stop on the way out. */
-    if (tab === "gps"){ gpsStartWatch(); gpsAcquireWakeLock(); }
-    else { gpsStopWatch(); gpsReleaseWakeLock(); }
+    /* The GPS card now sits in the hole card, so the watch and the wake lock
+       follow the HOLE tab rather than a tab of their own. A course with no
+       baked pack never starts either. */
+    gpsSyncWatch();
     render();
   });
 });
@@ -2973,6 +2985,7 @@ for (let hn = 1; hn <= 18; hn++){
 }
 const firstOpen = HOLES.find(h => F(h.n).score == null);
 hole = firstOpen ? firstOpen.n : 18;
+gpsSyncWatch();
 render();
 
 (async () => {
