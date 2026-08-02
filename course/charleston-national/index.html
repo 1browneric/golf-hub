@@ -1473,7 +1473,8 @@ function buildRoundJSON(){
       fir: h.par === 3 ? null : effFir(h),
       gir: effGir(h),
       penalty: f.pen || 0,
-      notes: f.note || ""
+      notes: f.note || "",
+      ...dispForHole(h.n)
     };
   });
   const yardage = HOLES.reduce((a,h)=>a+holeYds(h),0);  // per-hole effective tees
@@ -2000,6 +2001,35 @@ function dispUpsert(hn, idx, rec){
   if (at === -1) all.push(row); else all[at] = row;
   return dispSaveAll(all);
 }
+/* The hole's leave, for the ROUND PAYLOAD (Eric, 2026-08-02: "Yes will need
+   that for the future. starting with my round tomorrow").
+
+   This deliberately REVERSES the 2026-07-31 decision to keep dispersion out of
+   the round record. That design made the capture per-device and per-browser:
+   clear the site data and the numbers are gone, and they never reach the sheet
+   where every other stat he owns lives. He asked for Hole Log columns, so the
+   two signed leaves now travel with the round.
+
+   ONLY these two fields cross over, and only as EXTRA keys. Nothing existing in
+   the payload changes shape or value, so an Apps Script that predates the new
+   columns simply ignores them and writes exactly what it wrote before.
+
+   A hole can hold more than one capture. The LAST one (highest shot index) is
+   the approach that actually determined the leave, so that is the one that
+   travels. Returns {} when the hole has no capture, which keeps the key absent
+   rather than null -- an un-captured hole and an older round look identical. */
+function dispForHole(hn){
+  const recs = dispLoadAll()
+    .filter(r => r.hole === hn && r.date === ROUND.date && r.course === ROUND.course)
+    .sort((a, b) => (a.shot_idx || 0) - (b.shot_idx || 0));
+  const r = recs[recs.length - 1];
+  if (!r) return {};
+  const out = {};
+  if (typeof r.leave_long_ft === "number") out.leave_long_ft = r.leave_long_ft;
+  if (typeof r.leave_right_ft === "number") out.leave_right_ft = r.leave_right_ft;
+  return out;
+}
+
 /* Deleting shot i drops its record and slides every later shot on that hole
    down one, so the ids keep matching the shots they describe. Without this a
    deleted shot would leave its dot attached to whatever shot inherited the
