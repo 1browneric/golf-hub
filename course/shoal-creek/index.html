@@ -128,12 +128,12 @@ input,textarea,select{font-family:inherit}
   flex:1 1 auto;text-align:center;white-space:nowrap}
 .edtag.on{background:#0C2340;border-color:#0C2340;color:#F4EFE4;font-weight:600}
 .edhint{font-family:var(--mono);font-size:10px;color:#8792A4;margin-top:7px;text-align:center;letter-spacing:.04em}
-.edactions{display:flex;gap:8px;margin-top:12px}
-.edsave{flex:1;padding:12px;border-radius:10px;background:#0C2340;color:#F4EFE4;
-  font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;font-weight:700}
-.edcancel{flex:none;padding:12px 16px;border-radius:10px;border:1px solid rgba(12,35,64,.3);color:#5C6B82;
-  font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
 
+/* approach dispersion — TWO NUMBER BOXES UNDER THE MISS CHIPS, and nothing
+   else. The chip above already says which way it missed, so the box only says
+   how far, in feet. They reuse .edrow / .edfield / .edlbl unchanged, so the
+   editor stays one thing rather than growing a second styled region. */
+.dspmiss{margin-top:10px}
 /* per-hole tee override */
 .teeovrow{display:flex;gap:6px;padding:10px 14px;border-bottom:1px solid rgba(12,35,64,.12)}
 .teechip{flex:1;font-family:var(--mono);font-size:10px;letter-spacing:.08em;padding:8px 4px;
@@ -417,46 +417,6 @@ const BOOK = {"1":{"hole":"data:image/webp;base64,UklGRgbcAABXRUJQVlA4IPrbAACQyQ
 const COURSE = {"name":"Shoal Creek Golf Course","city":"Kansas City, Missouri","lat":39.2528,"lon":-94.47882};
 </script>
 <script>
-/* Each group is a list of ROWS. Rows are explicit rather than left to flex
-   wrapping, which fills line one greedily and put Pull beside Toe instead of
-   beside Push. Line one of Strike is contact, line two is shape. */
-const ACC_GROUPS = [
-  ["Strike", [["Good","Fat","Thin","Heel","Toe"],
-              ["Pull","Push","Hook","Slice"]]],
-  ["Miss",   [["Left","Right","Short","Long"]]],
-  ["Finish", [["Fairway","Rough","Deep Rough","Green"],
-              ["Sand","Water","OB","Unplayable"]]]
-];
-/* A Finish tag names the lie the next shot is played from, so saving a shot
-   prefills it and Eric never types the same fact twice. Green/Water/OB/
-   Unplayable are deliberately absent: the green means putting, and a penalty
-   drop can be anywhere. */
-const ACC_LIE = {Fairway:"Fairway", Rough:"Rough", "Deep Rough":"Deep Rough",
-                 Sand:"Sand"};
-function accLie(v){
-  const t = accTags(v).find(x => x in ACC_LIE);
-  return t ? ACC_LIE[t] : null;
-}
-const ACCS  = ACC_GROUPS.reduce((a,g) => a.concat(...g[1]), []);
-const BAD_ACC = new Set(["Water","OB","Unplayable"]);
-
-/* Parse a stored Result into its tag list; unknown words are dropped so a
-   hand-edited value can never break a round. */
-function accTags(v){
-  if (!v) return [];
-  const out = [];
-  String(v).split(/[,/]/).forEach(p => {
-    const want = p.trim().toLowerCase();
-    ACCS.forEach(t => { if (t.toLowerCase() === want && !out.includes(t)) out.push(t); });
-  });
-  return out;
-}
-function accIsBad(v){ return accTags(v).some(t => BAD_ACC.has(t)); }
-/* Keep the stored order canonical so two identical shots compare equal. */
-function accJoin(tags){
-  return ACCS.filter(t => tags.includes(t)).join(", ") || null;
-}
-
 /* Generated from skills/round-tracker/pull_round.py — do not hand-edit. */
 var EXPECTED = {"10": [null, 2.18, 2.34, 2.43, 3.45], "20": [null, 2.4, 2.59, 2.53, 3.51], "30": [null, 2.52, 2.7, 2.66, 3.57], "40": [null, 2.6, 2.78, 2.82, 3.71], "50": [null, 2.66, 2.87, 2.92, 3.79], "60": [null, 2.7, 2.91, 3.15, 3.83], "70": [null, 2.72, 2.93, 3.21, 3.84], "80": [null, 2.75, 2.96, 3.24, 3.84], "90": [null, 2.77, 2.99, 3.24, 3.82], "100": [2.92, 2.8, 3.02, 3.23, 3.8], "120": [2.99, 2.85, 3.08, 3.21, 3.78], "140": [2.97, 2.91, 3.15, 3.22, 3.8], "160": [2.99, 2.98, 3.23, 3.28, 3.81], "180": [3.05, 3.08, 3.31, 3.4, 3.82], "200": [3.12, 3.19, 3.42, 3.55, 3.87], "220": [3.17, 3.32, 3.53, 3.7, 3.92], "240": [3.25, 3.45, 3.64, 3.84, 3.97], "260": [3.45, 3.58, 3.74, 3.93, 4.03], "280": [3.65, 3.69, 3.83, 4.0, 4.1], "300": [3.71, 3.78, 3.9, 4.04, 4.2], "320": [3.79, 3.84, 3.95, 4.12, 4.31], "340": [3.86, 3.88, 4.02, 4.26, 4.44], "360": [3.92, 3.95, 4.11, 4.41, 4.56], "380": [3.96, 4.03, 4.21, 4.55, 4.66], "400": [3.99, 4.11, 4.3, 4.69, 4.75], "420": [4.02, 4.19, 4.4, 4.83, 4.84], "440": [4.08, 4.27, 4.49, 4.97, 4.94], "460": [4.17, 4.34, 4.58, 5.11, 5.03], "480": [4.28, 4.42, 4.68, 5.25, 5.13], "500": [4.41, 4.5, 4.77, 5.4, 5.22], "520": [4.54, 4.58, 4.87, 5.54, 5.32], "540": [4.65, 4.66, 4.96, 5.68, 5.41], "560": [4.74, 4.74, 5.06, 5.82, 5.51], "580": [4.79, 4.82, 5.15, 5.96, 5.6], "600": [4.82, 4.89, 5.25, 6.1, 5.7]};
 var LIE_COL = {"Tee": 0, "Fairway": 1, "Rough": 2, "Deep Rough": 2, "Other": 2, "Sand": 3, "Recovery": 4};
@@ -471,6 +431,32 @@ var SCALE = {"scratch": 0.0, "5hcp": 0.28, "9hcp": 0.5};
    a phone produces the same numbers the VM would. Verified differentially —
    see scripts/verify_sg_port.py. */
 var SG_KEYS = ["driver","p176","p101","p100","putting","ball_strike"];
+
+/* The tracker's "Result" field is a multi-select: a shot carries any number of
+   these tags, stored comma-separated ("Fat, Left, Sand"). Rounds logged before
+   2026-07-24 hold a single value and 05/26 uses the slash form
+   "OB/Unplayable"; both parse into the same tag set. Mirrors acc_tags() /
+   is_penalty() in pull_round.py. */
+var ACC_TAGS = ["Good","Fat","Thin","Heel","Toe","Pull","Push","Hook","Slice",
+                "Left","Right","Short","Long","Fairway","Rough","Deep Rough",
+                "Green","Sand","Water","OB","Unplayable"];
+var PENALTY_TAGS = ["OB","Water","Unplayable"];
+
+function sgAccTags(value){
+  if (!value) return [];
+  var out = [];
+  String(value).split(/[,/]/).forEach(function(part){
+    var want = part.trim().toLowerCase();
+    ACC_TAGS.forEach(function(tag){
+      if (tag.toLowerCase() === want && out.indexOf(tag) === -1) out.push(tag);
+    });
+  });
+  return out;
+}
+
+function sgIsPenalty(value){
+  return sgAccTags(value).some(function(t){ return PENALTY_TAGS.indexOf(t) !== -1; });
+}
 
 /* Python's round() is correctly-rounded decimal with ties-to-even. The naive
    JS idiom Math.round(x*1000)/1000 disagrees on ~0.5% of holes because the
@@ -558,7 +544,7 @@ function holeSG(hole, baseline){
     var da = (s.dist_after === undefined) ? null : s.dist_after;
     if (db === null) continue;
     var start = sgEStrokes(db, s.lie || "Rough", baseline);
-    var penal = accIsBad(s.acc);
+    var penal = sgIsPenalty(s.acc);
     var nxt = (i + 1 < shots.length) ? shots[i+1] : null;
     var fin;
     if (nxt !== null && nxt.dist_before !== null && nxt.dist_before !== undefined){
@@ -571,8 +557,8 @@ function holeSG(hole, baseline){
     } else if (penal){
       /* Ball gone with nothing logged after it: the replay is from the same
          spot, so finish equals start and the two strokes charged below make
-         this exactly -2.00. A flat -1.00 here (the old behaviour) dropped the
-         wasted shot and broke the identity — 2026-07-24. */
+         this exactly -2.00. Charging a flat -1.00 here (the old behaviour)
+         dropped the wasted shot and broke the identity. */
       fin = start;
     } else {
       /* finish putt valued on the SCRATCH table for every baseline: the shot
@@ -605,6 +591,378 @@ function roundSG(holes, baseline){
   return tot;
 }
 </script>
+<script>
+/* Approach dispersion — the shared, pure core.
+ *
+ * Loaded by BOTH surfaces and nowhere else:
+ *   - the round tracker (skills/round-tracker/template.html, inlined by
+ *     skills/osm-course-book/build_tracker.py) — capture;
+ *   - the Golf Hub (design/golf-hub/index.html) — the two maps.
+ * The Hub embeds this file verbatim between the DISP-MODULE markers;
+ * tests/test_dispersion.py fails if the two copies drift.
+ *
+ * Pure functions only: no DOM, no storage, no fetch. Everything that decides a
+ * sign, a band or a distance lives here so the tracker and the Hub can never
+ * disagree about what a logged shot means.
+ *
+ * HARD BOUNDARIES (do not relax):
+ *   - This module never reads or writes the putt-distance field (p1/p2/p3).
+ *     Putting strokes gained depends on exactly one logged number and that
+ *     stays true.
+ *   - Dispersion is its own store, keyed by round date + course + hole. It is
+ *     never part of the round record, buildRoundJSON, the Apps Script payload
+ *     or the Google Sheet.
+ *   - NO BACKFILL. Nothing here estimates, infers or reconstructs a component
+ *     from putt distance or any other proxy. A round logged before these
+ *     fields existed has no dispersion data and never will. Both maps start
+ *     empty and fill going forward. That is intended.
+ */
+
+var DISP_VERSION = 1;
+
+/* ---------- capture vocabulary ---------- */
+
+/* Lie the approach was played FROM. A 40 yard shot from fairway and one from
+   thick rough are different populations, so this is a filter, not a label. */
+var DISP_LIES = ["Fairway", "Rough", "Sand", "Other"];
+
+/* Where the ball finished relative to the putting surface. Encoded as dot
+   SHAPE on the map, never as colour. */
+var DISP_FINISH = ["On green", "Off green"];
+
+/* The unsigned direction words Eric actually taps. He never types a minus
+   sign; the sign is derived here, once, at import. */
+var DISP_LONG_DIRS  = ["long", "short"];
+var DISP_RIGHT_DIRS = ["right", "left"];
+
+/* ---------- distance bands (yards played from) ----------
+   Toggles, not separate fixed charts. min inclusive, max exclusive, so a
+   shot from exactly 25 yards lands in "25-50" and 50 lands in "50-75". */
+var DISP_BANDS = [
+  { key: "u25",     label: "Inside 25", min: 0,   max: 25,       rep: 15  },
+  { key: "25-50",   label: "25-50",     min: 25,  max: 50,       rep: 37  },
+  { key: "50-75",   label: "50-75",     min: 50,  max: 75,       rep: 62  },
+  { key: "75-100",  label: "75-100",    min: 75,  max: 100,      rep: 87  },
+  { key: "100-125", label: "100-125",   min: 100, max: 125,      rep: 112 },
+  { key: "125-175", label: "125-175",   min: 125, max: 175,      rep: 150 },
+  { key: "175+",    label: "175+",      min: 175, max: Infinity, rep: 200 }
+];
+
+function dispBandFor(yards) {
+  if (yards == null || !isFinite(yards) || yards < 0) return null;
+  for (var i = 0; i < DISP_BANDS.length; i++) {
+    var b = DISP_BANDS[i];
+    if (yards >= b.min && yards < b.max) return b.key;
+  }
+  return null;
+}
+
+function dispBand(key) {
+  for (var i = 0; i < DISP_BANDS.length; i++) {
+    if (DISP_BANDS[i].key === key) return DISP_BANDS[i];
+  }
+  return null;
+}
+
+/* The tracker's own Lie list is finer-grained than the four dispersion flags.
+   Folding happens here so the tracker and the Hub agree, and so the block can
+   prefill from the shot Eric already logged instead of asking twice.
+   Deep Rough folds into Rough; Tee and Recovery into Other. */
+function dispLieFromShotLie(lie) {
+  switch (String(lie || "").trim().toLowerCase()) {
+    case "fairway":    return "Fairway";
+    case "rough":
+    case "deep rough": return "Rough";
+    case "sand":       return "Sand";
+    case "tee":
+    case "recovery":
+    case "other":      return "Other";
+    default:           return null;
+  }
+}
+
+/* Which shots get a dispersion block offered without being asked. The three
+   App types are approaches by definition; a par-3 tee shot is one too, and the
+   tracker types it "Drive", so the caller passes par and isFirst. Any other
+   shot can still be opened by hand — this decides the DEFAULT, not the limit. */
+function dispIsApproach(type, par, isFirst) {
+  if (isFirst && par === 3) return true;
+  return ["Long App (176+)", "Mid App (101-175)", "Short App (100&In)"].indexOf(type) !== -1;
+}
+
+/* ---------- the unit he is typing in ----------
+   The two boxes under the Miss chips change unit with where the ball finished:
+   ON THE GREEN he measures in FEET, anywhere else in YARDS. Nobody says "my
+   ball is nine feet into the rough" or "I was six yards past the pin".
+
+   Storage stays in FEET always, so the maps, the green reference and the
+   proximity ramp all speak one unit and never have to ask. The conversion
+   happens once, here, at import — the same place the sign is decided. */
+var DISP_FT_PER_YD = 3;
+
+function dispUnit(onGreen) { return onGreen ? "ft" : "yd"; }
+
+function dispToFeet(value, unit) {
+  if (value === null || value === undefined || value === "") return null;
+  var n = typeof value === "number" ? value : Number(value);
+  if (!isFinite(n)) return null;
+  return unit === "yd" ? n * DISP_FT_PER_YD : n;
+}
+
+/* The way back out, for re-opening a saved shot. Storage is feet; the box has
+   to show the number he actually typed, in the unit he typed it in. Without
+   this a shot entered as 20 yards re-opened reading 60 against a "yd" label,
+   and saving it again stored 180 — wrong by 3x, then 9x, silently. */
+function dispFromFeet(feet, unit) {
+  if (feet === null || feet === undefined || feet === "") return null;
+  var n = typeof feet === "number" ? feet : Number(feet);
+  if (!isFinite(n)) return null;
+  return unit === "yd" ? n / DISP_FT_PER_YD : n;
+}
+
+/* Which way it missed, from the Miss chips.
+   The chips are a MULTI-SELECT describing the shape of the shot, so nothing
+   stops both ends of an axis being on at once. When they are, the direction is
+   genuinely ambiguous and this returns "" — which makes the distance
+   unresolvable and puts it in front of him, rather than quietly taking
+   whichever one happened to be tested first. That silent guess once stored a
+   short miss as +60 long. */
+function dispDirFrom(tags, positiveWord, negativeWord) {
+  var list = tags || [];
+  var cap = function (w) { return w.charAt(0).toUpperCase() + w.slice(1); };
+  var pos = list.indexOf(cap(positiveWord)) !== -1;
+  var neg = list.indexOf(cap(negativeWord)) !== -1;
+  if (pos && neg) return "";          // ambiguous — refuse, do not pick
+  if (pos) return positiveWord;
+  if (neg) return negativeWord;
+  return "";
+}
+
+/* ---------- sign derivation ----------
+   The one place a direction word becomes a sign.
+     short -> negative leave_long_ft      long  -> positive
+     left  -> negative leave_right_ft     right -> positive
+   A ZERO component is zero whatever the direction says, and the direction may
+   be blank — pin high is leave_long_ft = 0, and dead on line is
+   leave_right_ft = 0. Zero is a real, complete answer, not a missing one.
+
+   Anything else that cannot be resolved returns null rather than a guess: a
+   non-zero distance with no direction tapped, a negative number (he never
+   types one, so a minus is a bug or a paste, not an intent), or junk. Callers
+   treat null as "not plottable yet" and dispValidate() says why. */
+
+function dispSignedComponent(ft, dir, negativeWord) {
+  if (ft === null || ft === undefined || ft === "") return null;
+  var n = typeof ft === "number" ? ft : Number(ft);
+  if (!isFinite(n)) return null;
+  if (n < 0) return null;              // unsigned input only — never flip it silently
+  if (n === 0) return 0;               // direction is irrelevant and may be blank
+  if (!dir) return null;               // non-zero needs a side
+  var d = String(dir).trim().toLowerCase();
+  if (d === negativeWord) return -n;
+  return n;
+}
+
+function dispSignedLong(ft, dir) {
+  /* dir: "long" | "short" | blank when ft is 0 */
+  if (dir && DISP_LONG_DIRS.indexOf(String(dir).trim().toLowerCase()) === -1) return null;
+  return dispSignedComponent(ft, dir, "short");
+}
+
+function dispSignedRight(ft, dir) {
+  /* dir: "right" | "left" | blank when ft is 0 */
+  if (dir && DISP_RIGHT_DIRS.indexOf(String(dir).trim().toLowerCase()) === -1) return null;
+  return dispSignedComponent(ft, dir, "left");
+}
+
+/* ---------- the computed leave ----------
+   NEVER logged. Always computed from the two components, so there is exactly
+   one representation of the miss and no second number to drift. */
+function dispLeaveFt(leaveLongFt, leaveRightFt) {
+  if (leaveLongFt === null || leaveLongFt === undefined) return null;
+  if (leaveRightFt === null || leaveRightFt === undefined) return null;
+  if (!isFinite(leaveLongFt) || !isFinite(leaveRightFt)) return null;
+  return Math.sqrt(leaveLongFt * leaveLongFt + leaveRightFt * leaveRightFt);
+}
+
+/* ---------- import ----------
+   Turns one raw capture into the stored record. This is "import" in the sense
+   the spec means it: the moment unsigned taps become signed fields. Both
+   leave fields are optional in storage so a round logged without dispersion
+   stays valid — a record missing them simply never reaches a map. */
+function dispDerive(input) {
+  input = input || {};
+  /* `unit` is what the boxes were showing when he typed: "ft" on the green,
+     "yd" anywhere else. Convert first, then take the sign, so the stored
+     fields are always feet no matter which way he entered them. */
+  var unit = input.unit === "yd" ? "yd" : "ft";
+  var lng = dispSignedLong(dispToFeet(input.long_ft, unit), input.long_dir);
+  var rgt = dispSignedRight(dispToFeet(input.right_ft, unit), input.right_dir);
+  var yards = input.played_from_yds;
+  var y = (yards === null || yards === undefined || yards === "") ? null : Number(yards);
+  if (y !== null && (!isFinite(y) || y < 0)) y = null;
+  var rec = {
+    v: DISP_VERSION,
+    played_from_yds: y,
+    lie: DISP_LIES.indexOf(input.lie) !== -1 ? input.lie : null,
+    finish: DISP_FINISH.indexOf(input.finish) !== -1 ? input.finish : null,
+    /* provenance: which unit the boxes were showing. The stored leaves are
+       always feet, but knowing he typed yards is what makes a wrong-looking
+       dot debuggable later instead of a mystery. */
+    entered_unit: unit
+  };
+  /* Optional by design — omitted entirely rather than written as null, so an
+     older record and a partial one are the same shape. */
+  if (lng !== null) rec.leave_long_ft = lng;
+  if (rgt !== null) rec.leave_right_ft = rgt;
+  return rec;
+}
+
+/* What is still missing before this capture can be plotted. Returns [] when
+   the record is complete. The UI shows these; nothing is inferred. */
+function dispValidate(input) {
+  input = input || {};
+  var errs = [];
+  /* Name the unit he is actually typing in, so an alert never tells him
+     "in feet" while the box above it says yards. */
+  var u = input.unit === "yd" ? "yards" : "feet";
+  var hasLong = !(input.long_ft === null || input.long_ft === undefined || input.long_ft === "");
+  var hasRight = !(input.right_ft === null || input.right_ft === undefined || input.right_ft === "");
+  if (!hasLong) errs.push("Short/long distance in " + u);
+  else if (dispSignedLong(input.long_ft, input.long_dir) === null) {
+    errs.push(Number(input.long_ft) > 0 ? "the SHORT or LONG chip" : "a valid short/long distance");
+  }
+  if (!hasRight) errs.push("Left/right distance in " + u);
+  else if (dispSignedRight(input.right_ft, input.right_dir) === null) {
+    errs.push(Number(input.right_ft) > 0 ? "the LEFT or RIGHT chip" : "a valid left/right distance");
+  }
+  if (DISP_LIES.indexOf(input.lie) === -1) errs.push("Lie");
+  if (DISP_FINISH.indexOf(input.finish) === -1) errs.push("On or off green");
+  var y = Number(input.played_from_yds);
+  if (input.played_from_yds === null || input.played_from_yds === undefined ||
+      input.played_from_yds === "" || !isFinite(y) || y < 0) {
+    errs.push("Distance played from, in yards");
+  }
+  return errs;
+}
+
+/* A stored record is plottable only when BOTH components survived derivation.
+   No half-shots on the map. */
+function dispIsPlottable(rec) {
+  return !!rec &&
+    typeof rec.leave_long_ft === "number" && isFinite(rec.leave_long_ft) &&
+    typeof rec.leave_right_ft === "number" && isFinite(rec.leave_right_ft) &&
+    typeof rec.played_from_yds === "number" && isFinite(rec.played_from_yds);
+}
+
+/* ---------- the store key ----------
+   Round date + course + hole, exactly as the spec requires, so the dispersion
+   store stands on its own and never has to be joined through the round record.
+   Shot index disambiguates two approaches on one hole. */
+function dispKey(date, course, hole) {
+  return [String(date || ""), String(course || ""), String(hole == null ? "" : hole)].join("|");
+}
+
+/* ---------- proximity ramp ----------
+   Blue to orange, never red to green. Every band carries its own text label so
+   the map reads without colour at all. */
+var DISP_PROXIMITY = [
+  { key: "p0",  label: "Inside 5 ft",  min: 0,  max: 5,        color: "#1F4E9D" },
+  { key: "p5",  label: "5-15 ft",      min: 5,  max: 15,       color: "#3E7CC4" },
+  { key: "p15", label: "15-30 ft",     min: 15, max: 30,       color: "#7FA9D8" },
+  { key: "p30", label: "30-60 ft",     min: 30, max: 60,       color: "#E0A35A" },
+  { key: "p60", label: "Over 60 ft",   min: 60, max: Infinity, color: "#C2701B" }
+];
+
+function dispProximity(leaveFt) {
+  if (leaveFt == null || !isFinite(leaveFt) || leaveFt < 0) return null;
+  for (var i = 0; i < DISP_PROXIMITY.length; i++) {
+    var p = DISP_PROXIMITY[i];
+    if (leaveFt >= p.min && leaveFt < p.max) return p;
+  }
+  return null;
+}
+
+/* ---------- median green reference ----------
+   A REFERENCE SHAPE, not a boundary. Semi-axes in feet of a median green,
+   from this constant for now. The Overpass green polygons baked for the GPS
+   view are the intended replacement — a later change computes these from the
+   real per-course shapes rather than one national-ish median. */
+var DISP_GREEN_REF = { semi_long_ft: 45, semi_right_ft: 33 };
+
+/* ---------- axis auto-scale ----------
+   The axis follows the dots that are actually switched on, symmetric about the
+   pin so the centre stays the centre, with headroom past the widest one.
+
+   It deliberately does NOT floor on the green reference. Flooring there meant a
+   set of wedge shots inside 10 ft still drew on a +/-60 ft axis and collapsed
+   into the middle — exactly the squashing the band toggles exist to prevent.
+   The green ellipse simply runs past the frame when he is well inside it,
+   which is itself the right reading. DISP_AXIS_MIN only stops a card of
+   tap-ins zooming to nothing. Returns feet. */
+var DISP_AXIS_MIN = 15;
+
+function dispAxisRange(records) {
+  var maxAbs = 0;
+  (records || []).forEach(function (r) {
+    if (!dispIsPlottable(r)) return;
+    maxAbs = Math.max(maxAbs, Math.abs(r.leave_long_ft), Math.abs(r.leave_right_ft));
+  });
+  var span = Math.max(maxAbs * 1.15, DISP_AXIS_MIN);
+  /* round up to a readable tick so the printed range is a number he can hold */
+  var step = span <= 30 ? 5 : span <= 60 ? 10 : span <= 150 ? 25 : 50;
+  return Math.ceil(span / step) * step;
+}
+
+/* ---------- wide-selection warning ----------
+   Long shots squash the wedge dots into the centre. Warn when the switched-on
+   bands span a wide range of distances played from — measured as the ratio of
+   the longest to the shortest representative yardage in the selection. */
+var DISP_SPAN_RATIO = 3;
+
+function dispSpanWarning(bandKeys) {
+  var reps = (bandKeys || []).map(dispBand).filter(Boolean).map(function (b) { return b.rep; });
+  if (reps.length < 2) return null;
+  var lo = Math.min.apply(null, reps), hi = Math.max.apply(null, reps);
+  if (hi / lo < DISP_SPAN_RATIO) return null;
+  return "Wide selection: " + Math.round(hi / lo) + "x span from the shortest band to the " +
+         "longest. The long shots will squash the wedge dots into the centre — " +
+         "switch bands off to read them.";
+}
+
+/* ---------- selection ---------- */
+function dispSelect(records, bandKeys, lies) {
+  return (records || []).filter(function (r) {
+    if (!dispIsPlottable(r)) return false;
+    if (bandKeys && bandKeys.length) {
+      if (bandKeys.indexOf(dispBandFor(r.played_from_yds)) === -1) return false;
+    }
+    if (lies && lies.length) {
+      if (lies.indexOf(r.lie) === -1) return false;
+    }
+    return true;
+  });
+}
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = {
+    DISP_VERSION: DISP_VERSION, DISP_LIES: DISP_LIES, DISP_FINISH: DISP_FINISH,
+    DISP_BANDS: DISP_BANDS, DISP_PROXIMITY: DISP_PROXIMITY,
+    DISP_GREEN_REF: DISP_GREEN_REF, DISP_SPAN_RATIO: DISP_SPAN_RATIO,
+    DISP_FT_PER_YD: DISP_FT_PER_YD, dispUnit: dispUnit, dispToFeet: dispToFeet,
+    dispFromFeet: dispFromFeet, dispDirFrom: dispDirFrom,
+    DISP_AXIS_MIN: DISP_AXIS_MIN,
+    dispBandFor: dispBandFor, dispBand: dispBand,
+    dispLieFromShotLie: dispLieFromShotLie, dispIsApproach: dispIsApproach,
+    dispSignedComponent: dispSignedComponent,
+    dispSignedLong: dispSignedLong, dispSignedRight: dispSignedRight,
+    dispLeaveFt: dispLeaveFt, dispDerive: dispDerive, dispValidate: dispValidate,
+    dispIsPlottable: dispIsPlottable, dispKey: dispKey,
+    dispProximity: dispProximity, dispAxisRange: dispAxisRange,
+    dispSpanWarning: dispSpanWarning, dispSelect: dispSelect
+  };
+}
+</script>
 <script type="module">
 /* ================= CONFIG — edit for each new round =================
    1. Masthead HTML above: course name, city, date.
@@ -619,18 +977,17 @@ const TOPIC = "rt-shoal-creek-95059bc06b";
 // Shared channel Pencil Wedge watches: on save we post the round-done marker
 // here WITH this page's URL, so the worker knows which course was played and
 // pulls the round from THIS page's channel. One worker, any number of courses.
-/* Outdoor Golf 2026 intake. The page posts the finished round here on Save and
-   the sheet's doPost stages it and runs the existing applySG fan-out. This is
-   the writer; nothing on the VM writes to the sheet any more. */
+const DISPATCH = "rt-hub-dispatch-9f2c7a41b3";
+/* The sheet is the round's destination; the course page is the only writer.
+   Missing from this template until 2026-07-29 - every generated tracker
+   saved to the channel and clipboard only and never reached the sheet,
+   which is why Lake Shawnee came out unable to log a round. */
 const SHEET_HOOK = "https://script.google.com/macros/s/AKfycbzdjnlvHfSpAbEE0LkUG-lJ7kE3BB5ENzikMY5EYSkr3Oa_cjF1kkx3SfzEjwkicFgX/exec";
 const SHEET_TOKEN = "hb-golf-2026";
-/* Eric hears about a save ONLY when it fails to reach the sheet. A silent
-   pipeline means it worked. */
 const SAVE_ALERT = "hb-golf-save-fail-4d9a2c17";
-const DISPATCH = "rt-hub-dispatch-9f2c7a41b3";
 const LS_KEY = "rt_shoal_creek_v1";
 
-const ROUND = { date:"2026-07-21", course:"Shoal Creek Golf Course", par:71 };
+const ROUND = { date:"2026-07-31", course:"Shoal Creek Golf Course", par:71 };
 const EMAIL = "1brown.eric@gmail.com";
 const TEES = ["black","blue","white"];   // Blue = the anchor (all book distances)
 const HOLES = [
@@ -796,7 +1153,45 @@ const TYPES = ["Drive","Long App (176+)","Mid App (101-175)","Short App (100&In)
    the stored value is a flat list. Rounds logged before this change hold a
    single value and 05/26 uses the slash form "OB/Unplayable"; accTags() reads
    all three. Mirrors ACC_TAGS in skills/round-tracker/pull_round.py. */
+/* Each group is a list of ROWS. Rows are explicit rather than left to flex
+   wrapping, which fills line one greedily and put Pull beside Toe instead of
+   beside Push. Line one of Strike is contact, line two is shape. */
+const ACC_GROUPS = [
+  ["Strike", [["Good","Fat","Thin","Heel","Toe"],
+              ["Pull","Push","Hook","Slice"]]],
+  ["Miss",   [["Left","Right","Short","Long"]]],
+  ["Finish", [["Fairway","Rough","Deep Rough","Green"],
+              ["Sand","Water","OB","Unplayable"]]]
+];
+/* A Finish tag names the lie the next shot is played from, so saving a shot
+   prefills it and Eric never types the same fact twice. Green/Water/OB/
+   Unplayable are deliberately absent: the green means putting, and a penalty
+   drop can be anywhere. */
+const ACC_LIE = {Fairway:"Fairway", Rough:"Rough", "Deep Rough":"Deep Rough",
+                 Sand:"Sand"};
+function accLie(v){
+  const t = accTags(v).find(x => x in ACC_LIE);
+  return t ? ACC_LIE[t] : null;
+}
+const ACCS  = ACC_GROUPS.reduce((a,g) => a.concat(...g[1]), []);
+const BAD_ACC = new Set(["Water","OB","Unplayable"]);
 
+/* Parse a stored Result into its tag list; unknown words are dropped so a
+   hand-edited value can never break a round. */
+function accTags(v){
+  if (!v) return [];
+  const out = [];
+  String(v).split(/[,/]/).forEach(p => {
+    const want = p.trim().toLowerCase();
+    ACCS.forEach(t => { if (t.toLowerCase() === want && !out.includes(t)) out.push(t); });
+  });
+  return out;
+}
+function accIsBad(v){ return accTags(v).some(t => BAD_ACC.has(t)); }
+/* Keep the stored order canonical so two identical shots compare equal. */
+function accJoin(tags){
+  return ACCS.filter(t => tags.includes(t)).join(", ") || null;
+}
 
 /* ---- per-hole tour-caddy intel (read off the Par The Course books) ----
    tee = the Par The Course recommended play + any warning; avoid = where the strokes are;
@@ -1254,7 +1649,7 @@ function clubFor(dist){
   return best;
 }
 const fmtClub = c => `${c} ${CADDY[c].c[0]} (${CADDY[c].c[1]})`;
-const PREV = {"1":[{"date":"Jun 7","score":"5","rel":"+1","putts":"2","shots":[{"club":"mini driver","db":"398","da":"195"},{"club":"5H","db":"195","da":""}]},{"date":"May 26","score":"6","rel":"+2","putts":"2","shots":[{"club":"Driver","db":"330","da":"142"},{"club":"PW","db":"142","da":""}]}],"2":[{"date":"Jun 7","score":"6","rel":"+2","putts":"3","shots":[{"club":"mini driver","db":"354","da":"158"},{"club":"9i","db":"158","da":"30"},{"club":"56","db":"30","da":""}]},{"date":"May 26","score":"5","rel":"+1","putts":"2","shots":[{"club":"7W","db":"320","da":"105"},{"club":"56","db":"105","da":"67"},{"club":"58","db":"67","da":""}]}],"3":[{"date":"Jun 7","score":"3","rel":"0","putts":"1","shots":[{"club":"9i","db":"168","da":"20"},{"club":"56","db":"20","da":""}]},{"date":"May 26","score":"3","rel":"0","putts":"2","shots":[{"club":"PW","db":"134","da":""}]}],"4":[{"date":"Jun 7","score":"6","rel":"+2","putts":"2","shots":[{"club":"driver","db":"384","da":"178"},{"club":"7i","db":"178","da":"30"},{"club":"56","db":"30","da":""}]},{"date":"May 26","score":"4","rel":"0","putts":"2","shots":[{"club":"MD","db":"355","da":"96"},{"club":"58","db":"96","da":""}]}],"5":[{"date":"Jun 7","score":"3","rel":"0","putts":"2","shots":[{"club":"8i","db":"178","da":""}]},{"date":"May 26","score":"3","rel":"0","putts":"2","shots":[{"club":"9I","db":"154","da":""}]}],"6":[{"date":"Jun 7","score":"4","rel":"0","putts":"2","shots":[{"club":"mini driver","db":"364","da":"134"},{"club":"PW","db":"134","da":""}]},{"date":"May 26","score":"4","rel":"0","putts":"2","shots":[{"club":"MD","db":"308","da":"44"},{"club":"44","db":"44","da":""}]}],"7":[{"date":"Jun 7","score":"5","rel":"0","putts":"2","shots":[{"club":"driver","db":"545","da":"320"},{"club":"7 wood","db":"320","da":"94"},{"club":"56","db":"94","da":""}]},{"date":"May 26","score":"6","rel":"+1","putts":"3","shots":[{"club":"Driver","db":"515","da":"249"},{"club":"7W","db":"249","da":"36"},{"club":"58","db":"36","da":""}]}],"8":[{"date":"Jun 7","score":"5","rel":"+1","putts":"3","shots":[{"club":"driver","db":"398","da":"124"},{"club":"48","db":"124","da":""}]},{"date":"May 26","score":"6","rel":"+2","putts":"2","shots":[{"club":"MD","db":"375","da":"144"},{"club":"PW","db":"144","da":"18"},{"club":"58","db":"18","da":"15"},{"club":"58","db":"15","da":""}]}],"9":[{"date":"Jun 7","score":"5","rel":"0","putts":"2","shots":[{"club":"driver","db":"478","da":"240"},{"club":"7i","db":"240","da":"120"},{"club":"52","db":"120","da":""}]},{"date":"May 26","score":"5","rel":"0","putts":"2","shots":[{"club":"Driver","db":"478","da":"190"},{"club":"7I","db":"190","da":"30"},{"club":"58","db":"30","da":""}]}],"10":[{"date":"Jun 7","score":"5","rel":"+1","putts":"3","shots":[{"club":"driver","db":"388","da":"110"},{"club":"52","db":"110","da":""}]}],"11":[{"date":"Jun 7","score":"3","rel":"0","putts":"2","shots":[{"club":"4i","db":"201","da":""}]}],"12":[{"date":"Jun 7","score":"6","rel":"+2","putts":"2","shots":[{"club":"4i","db":"360","da":"260"},{"club":"5H","db":"260","da":"45"},{"club":"56","db":"45","da":""}]}],"13":[{"date":"Jun 7","score":"4","rel":"-1","putts":"1","shots":[{"club":"driver","db":"492","da":"240"},{"club":"7 wood","db":"240","da":"35"},{"club":"58","db":"35","da":""}]}],"14":[{"date":"Jun 7","score":"5","rel":"+1","putts":"2","shots":[{"club":"7 wood","db":"387","da":"201"},{"club":"5H","db":"201","da":"18"},{"club":"56","db":"18","da":""}]}],"15":[{"date":"Jun 7","score":"4","rel":"0","putts":"2","shots":[{"club":"driver","db":"387","da":"172"},{"club":"8i","db":"172","da":""}]}],"16":[{"date":"Jun 7","score":"6","rel":"+2","putts":"2","shots":[{"club":"driver","db":"369","da":"174"},{"club":"7i","db":"174","da":""}]}],"17":[{"date":"Jun 7","score":"4","rel":"+1","putts":"2","shots":[{"club":"8i","db":"157","da":"40"},{"club":"56","db":"40","da":""}]}],"18":[{"date":"Jun 7","score":"5","rel":"+1","putts":"2","shots":[{"club":"driver","db":"429","da":"201"},{"club":"5H","db":"201","da":"14"},{"club":"56","db":"14","da":""}]}]};
+const PREV = {"1":[{"date":"Jul 26","score":"6","rel":"+2","putts":"2","shots":[{"club":"Mini Driver","db":"398","da":""},{"club":"5H","db":"250","da":"80"},{"club":"58","db":"80","da":""}]},{"date":"Jul 21","score":"5","rel":"+1","putts":"2","shots":[{"club":"D","db":"325","da":"65"},{"club":"56","db":"65","da":"32"},{"club":"56","db":"32","da":""}]},{"date":"Jun 7","score":"5","rel":"+1","putts":"2","shots":[{"club":"mini driver","db":"398","da":"195"},{"club":"5H","db":"195","da":""}]},{"date":"May 26","score":"6","rel":"+2","putts":"2","shots":[{"club":"Driver","db":"330","da":""},{"club":"Driver","db":"330","da":"142"},{"club":"PW","db":"142","da":""}]}],"2":[{"date":"Jul 26","score":"6","rel":"+2","putts":"2","shots":[{"club":"Mini Driver","db":"398","da":""},{"club":"8i","db":"186","da":"55"},{"club":"58","db":"55","da":""}]},{"date":"Jul 21","score":"4","rel":"E","putts":"2","shots":[{"club":"Mini Driver","db":"364","da":"110"},{"club":"52","db":"110","da":""}]},{"date":"Jun 7","score":"6","rel":"+2","putts":"3","shots":[{"club":"mini driver","db":"354","da":"158"},{"club":"9i","db":"158","da":"30"},{"club":"56","db":"30","da":""}]},{"date":"May 26","score":"5","rel":"+1","putts":"2","shots":[{"club":"7W","db":"320","da":"105"},{"club":"56","db":"105","da":"67"},{"club":"58","db":"67","da":""}]}],"3":[{"date":"Jul 26","score":"5","rel":"+2","putts":"2","shots":[{"club":"9i","db":"150","da":"25"},{"club":"58","db":"20","da":"45"},{"club":"56","db":"45","da":""}]},{"date":"Jul 21","score":"3","rel":"E","putts":"2","shots":[{"club":"9i","db":"168","da":""}]},{"date":"Jun 7","score":"3","rel":"E","putts":"1","shots":[{"club":"9i","db":"168","da":"20"},{"club":"56","db":"20","da":""}]},{"date":"May 26","score":"3","rel":"E","putts":"2","shots":[{"club":"PW","db":"134","da":""}]}],"4":[{"date":"Jul 26","score":"7","rel":"+3","putts":"3","shots":[{"club":"Mini Driver","db":"385","da":""},{"club":"7i","db":"185","da":"85"},{"club":"58","db":"85","da":""}]},{"date":"Jul 21","score":"5","rel":"+1","putts":"3","shots":[{"club":"Mini Driver","db":"385","da":"107"},{"club":"56","db":"107","da":""}]},{"date":"Jun 7","score":"6","rel":"+2","putts":"2","shots":[{"club":"driver","db":"384","da":"178"},{"club":"7i","db":"178","da":"30"},{"club":"56","db":"30","da":""}]},{"date":"May 26","score":"4","rel":"E","putts":"2","shots":[{"club":"MD","db":"355","da":"96"},{"club":"58","db":"96","da":""}]}],"5":[{"date":"Jul 26","score":"5","rel":"+2","putts":"3","shots":[{"club":"6i","db":"187","da":"15"},{"club":"56","db":"15","da":""}]},{"date":"Jul 21","score":"5","rel":"+2","putts":"3","shots":[{"club":"7i","db":"190","da":"50"},{"club":"56","db":"50","da":""}]},{"date":"Jun 7","score":"3","rel":"E","putts":"2","shots":[{"club":"8i","db":"178","da":""}]},{"date":"May 26","score":"3","rel":"E","putts":"2","shots":[{"club":"9I","db":"154","da":""}]}],"6":[{"date":"Jul 26","score":"5","rel":"+1","putts":"2","shots":[{"club":"7w","db":"330","da":"177"},{"club":"7i","db":"177","da":"20"},{"club":"56","db":"20","da":""}]},{"date":"Jul 21","score":"4","rel":"E","putts":"2","shots":[{"club":"7w","db":"330","da":"129"},{"club":"48","db":"129","da":""}]},{"date":"Jun 7","score":"4","rel":"E","putts":"2","shots":[{"club":"mini driver","db":"364","da":"134"},{"club":"PW","db":"134","da":""}]},{"date":"May 26","score":"4","rel":"E","putts":"2","shots":[{"club":"MD","db":"308","da":"44"},{"club":"44","db":"44","da":""}]}],"7":[{"date":"Jul 26","score":"4","rel":"-1","putts":"1","shots":[{"club":"Mini Driver","db":"563","da":"300"},{"club":"7w","db":"300","da":"98"},{"club":"58","db":"98","da":""}]},{"date":"Jul 21","score":"5","rel":"E","putts":"2","shots":[{"club":"Mini Driver","db":"543","da":"284"},{"club":"7w","db":"284","da":"66"},{"club":"58","db":"66","da":""}]},{"date":"Jun 7","score":"5","rel":"E","putts":"2","shots":[{"club":"driver","db":"545","da":"320"},{"club":"7 wood","db":"320","da":"94"},{"club":"56","db":"94","da":""}]},{"date":"May 26","score":"6","rel":"+1","putts":"3","shots":[{"club":"Driver","db":"515","da":"249"},{"club":"7W","db":"249","da":"36"},{"club":"58","db":"36","da":""}]}],"8":[{"date":"Jul 26","score":"5","rel":"+1","putts":"2","shots":[{"club":"7w","db":"387","da":"160"},{"club":"8i","db":"160","da":"80"},{"club":"58","db":"80","da":""}]},{"date":"Jul 21","score":"4","rel":"E","putts":"2","shots":[{"club":"7w","db":"387","da":"179"},{"club":"8i","db":"179","da":""}]},{"date":"Jun 7","score":"5","rel":"+1","putts":"3","shots":[{"club":"driver","db":"398","da":"124"},{"club":"48","db":"124","da":""}]},{"date":"May 26","score":"6","rel":"+2","putts":"2","shots":[{"club":"MD","db":"375","da":"144"},{"club":"PW","db":"144","da":"18"},{"club":"58","db":"18","da":"15"},{"club":"58","db":"15","da":""}]}],"9":[{"date":"Jul 26","score":"5","rel":"0","putts":"1","shots":[{"club":"Mini Driver","db":"546","da":""},{"club":"Mini Driver","db":"546","da":"275"},{"club":"5H","db":"275","da":"75"},{"club":"58","db":"75","da":""}]},{"date":"Jul 21","score":"5","rel":"E","putts":"2","shots":[{"club":"Mini Driver","db":"494","da":"199"},{"club":"5H","db":"199","da":"34"},{"club":"56","db":"34","da":""}]},{"date":"Jun 7","score":"5","rel":"E","putts":"2","shots":[{"club":"driver","db":"478","da":"240"},{"club":"7i","db":"240","da":"120"},{"club":"52","db":"120","da":""}]},{"date":"May 26","score":"5","rel":"E","putts":"2","shots":[{"club":"Driver","db":"478","da":"190"},{"club":"7I","db":"190","da":"30"},{"club":"58","db":"30","da":""}]}],"10":[{"date":"Jul 26","score":"4","rel":"0","putts":"1","shots":[{"club":"Mini Driver","db":"362","da":"200"},{"club":"5H","db":"200","da":"20"},{"club":"58","db":"20","da":""}]},{"date":"Jun 7","score":"5","rel":"+1","putts":"3","shots":[{"club":"driver","db":"388","da":"110"},{"club":"52","db":"110","da":""}]}],"11":[{"date":"Jul 26","score":"4","rel":"+1","putts":"3","shots":[{"club":"9i","db":"160","da":""}]},{"date":"Jun 7","score":"3","rel":"E","putts":"2","shots":[{"club":"4i","db":"201","da":""}]}],"12":[{"date":"Jul 26","score":"4","rel":"0","putts":"2","shots":[{"club":"5H","db":"320","da":"143"},{"club":"PW","db":"143","da":""}]},{"date":"Jun 7","score":"6","rel":"+2","putts":"2","shots":[{"club":"4i","db":"360","da":"260"},{"club":"5H","db":"260","da":"45"},{"club":"56","db":"45","da":""}]}],"13":[{"date":"Jul 26","score":"6","rel":"+1","putts":"2","shots":[{"club":"Mini Driver","db":"488","da":""},{"club":"7w","db":"325","da":"75"},{"club":"58","db":"75","da":""}]},{"date":"Jun 7","score":"4","rel":"-1","putts":"1","shots":[{"club":"driver","db":"492","da":"240"},{"club":"7 wood","db":"240","da":"35"},{"club":"58","db":"35","da":""}]}],"14":[{"date":"Jul 26","score":"4","rel":"0","putts":"2","shots":[{"club":"5H","db":"355","da":"176"},{"club":"7i","db":"176","da":""}]},{"date":"Jun 7","score":"5","rel":"+1","putts":"2","shots":[{"club":"7 wood","db":"387","da":"201"},{"club":"5H","db":"201","da":"18"},{"club":"56","db":"18","da":""}]}],"15":[{"date":"Jul 26","score":"4","rel":"0","putts":"2","shots":[{"club":"Mini Driver","db":"387","da":"120"},{"club":"52","db":"120","da":""}]},{"date":"Jun 7","score":"4","rel":"E","putts":"2","shots":[{"club":"driver","db":"387","da":"172"},{"club":"8i","db":"172","da":""}]}],"16":[{"date":"Jul 26","score":"5","rel":"+1","putts":"2","shots":[{"club":"D","db":"318","da":"112"},{"club":"52","db":"112","da":"25"},{"club":"56","db":"25","da":""}]},{"date":"Jun 7","score":"6","rel":"+2","putts":"2","shots":[{"club":"driver","db":"369","da":""},{"club":"driver","db":"369","da":"174"},{"club":"7i","db":"174","da":""}]}],"17":[{"date":"Jul 26","score":"4","rel":"+1","putts":"3","shots":[{"club":"8i","db":"158","da":""}]},{"date":"Jun 7","score":"4","rel":"+1","putts":"2","shots":[{"club":"8i","db":"157","da":"40"},{"club":"56","db":"40","da":""}]}],"18":[{"date":"Jul 26","score":"5","rel":"+1","putts":"2","shots":[{"club":"Mini Driver","db":"365","da":"275"},{"club":"7w","db":"275","da":"20"},{"club":"56","db":"20","da":""}]},{"date":"Jun 7","score":"5","rel":"+1","putts":"2","shots":[{"club":"driver","db":"429","da":"201"},{"club":"5H","db":"201","da":"14"},{"club":"56","db":"14","da":""}]}]};
 function prevShots(s){ const to = s.da==="" ? "G" : s.da; return `${s.club} ${s.db}&rarr;${to}`; }
 function renderPrev(list){
   if (!list || !list.length) return `<div class="stratrow muted">No logged rounds on this hole yet.</div>`;
@@ -1359,23 +1754,9 @@ fetch("https://api.open-meteo.com/v1/forecast?latitude="+COURSE.lat+"&longitude=
 /* editable round date (masthead) — persists locally, feeds the export */
 const DK = LS_KEY + "_date";
 const dEl = document.getElementById("rdate");
-/* Round date. Two bugs lived here until 2026-07-24, both of which put the
-   WRONG DATE on a real round:
-   1. new Date().toISOString() is UTC. After 7pm Central it has already rolled
-      over, so an evening round defaulted to TOMORROW. Same UTC-vs-local trap
-      that made the sheet write land a day early. Build the date from the local
-      getFullYear/getMonth/getDate instead, exactly as any-course does.
-   2. The stored value was honoured forever, so every later round on this course
-      silently reused the date of the last one. Now a hand-set date is honoured
-      only for the day it was set; any other day starts at today. */
-const todayLocal = () => { const d = new Date(), p = n => String(n).padStart(2,"0");
-  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; };
-let dSaved = null;
-try { dSaved = JSON.parse(localStorage.getItem(DK) || "null"); } catch(e){}
-dEl.value = (dSaved && dSaved.setOn === todayLocal() && dSaved.date) ? dSaved.date : todayLocal();
+dEl.value = localStorage.getItem(DK) || new Date().toISOString().slice(0,10);
 ROUND.date = dEl.value;
-dEl.addEventListener("change", () => { if(dEl.value){ ROUND.date = dEl.value;
-  localStorage.setItem(DK, JSON.stringify({ date: dEl.value, setOn: todayLocal() })); } });
+dEl.addEventListener("change", () => { if(dEl.value){ ROUND.date = dEl.value; localStorage.setItem(DK, dEl.value); } });
 
 function render(){
   document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on", b.dataset.tab===tab));
@@ -1401,10 +1782,162 @@ function shotLine(s){
   return `<b>${esc(s.club)}</b> &middot; ${esc(s.lie)} &middot; ${dist} &middot; <span class="${accCls}">${esc(s.acc)}</span>`;
 }
 
+/* ================= approach dispersion — its own store =================
+   Keyed by round date + course + hole, plus the shot index so two approaches
+   on one hole stay distinct.
+
+   Deliberately NOT in `state.cells`. Cells ARE the round record: they seed the
+   ntfy channel, clearRound wipes them, and buildRoundJSON reads them. Keeping
+   dispersion outside them is what guarantees it can never reach the round
+   record, the Apps Script or the Google Sheet, and that a round logged with no
+   dispersion saves byte-identically to before this feature existed.
+
+   The store is origin-scoped localStorage, and the Golf Hub is on the same
+   origin, so the maps read it with no server and no sheet column. The trade is
+   that it is per-device: nothing syncs it between his phone and his iPad, and
+   clearing site data clears it. Round data is untouched either way.
+
+   NO BACKFILL. Only a capture Eric actually taps writes a record. Nothing here
+   reads putt distance, leave, or any other field to reconstruct a component
+   for a round logged before these fields existed. Those rounds have no
+   dispersion data and never will — the maps start empty and fill going
+   forward, by design. */
+const DISP_STORE_KEY = "gh_dispersion_v1";
+
+function dispLoadAll(){
+  try {
+    const raw = JSON.parse(localStorage.getItem(DISP_STORE_KEY));
+    return raw && Array.isArray(raw.shots) ? raw.shots : [];
+  } catch(e){ return []; }
+}
+function dispSaveAll(shotsArr){
+  try {
+    localStorage.setItem(DISP_STORE_KEY, JSON.stringify({ v: DISP_VERSION, shots: shotsArr }));
+    return true;
+  } catch(e){ return false; }
+}
+const dispRowId = (hn, idx) => dispKey(ROUND.date, ROUND.course, hn) + "|" + idx;
+function dispGet(hn, idx){
+  const id = dispRowId(hn, idx);
+  return dispLoadAll().find(r => r.id === id) || null;
+}
+/* Upsert on the same id, so re-editing a shot corrects its record rather than
+   stacking a second dot on the map. */
+function dispUpsert(hn, idx, rec){
+  const all = dispLoadAll();
+  const id = dispRowId(hn, idx);
+  const row = Object.assign({
+    id, date: ROUND.date, course: ROUND.course, hole: hn, shot_idx: idx, t: Date.now()
+  }, rec);
+  const at = all.findIndex(r => r.id === id);
+  if (at === -1) all.push(row); else all[at] = row;
+  return dispSaveAll(all);
+}
+/* Deleting shot i drops its record and slides every later shot on that hole
+   down one, so the ids keep matching the shots they describe. Without this a
+   deleted shot would leave its dot attached to whatever shot inherited the
+   index. */
+function dispShiftAfterDelete(hn, idx){
+  const prefix = dispKey(ROUND.date, ROUND.course, hn) + "|";
+  const all = dispLoadAll().filter(r => r.id !== prefix + idx);
+  all.forEach(r => {
+    if (r.hole === hn && r.date === ROUND.date && r.course === ROUND.course &&
+        typeof r.shot_idx === "number" && r.shot_idx > idx){
+      r.shot_idx -= 1;
+      r.id = prefix + r.shot_idx;
+    }
+  });
+  dispSaveAll(all);
+}
+
+/* The editor's dispersion inputs live on `editing.disp`, never on
+   `editing.draft` — draft is spread into the shot object, and nothing from
+   here may ride along into it. */
+function dispDraftFor(idx){
+  const saved = idx === -1 ? null : dispGet(hole, idx);
+  if (!saved) return {};
+  /* Re-open a saved record in the same unsigned terms he typed it in. The sign
+     is a storage detail; he never sees one and never types one. */
+  /* Storage is feet. Show him the number he TYPED, in the unit he typed it
+     in — otherwise a 20 yard miss re-opens reading 60 against a "yd" label,
+     and saving it again stores 180. */
+  const u = saved.entered_unit === "yd" ? "yd" : "ft";
+  const lf = saved.leave_long_ft, rf = saved.leave_right_ft;
+  return {
+    long_ft:  lf == null ? "" : dispFromFeet(Math.abs(lf), u),
+    long_dir: lf == null || lf === 0 ? "" : (lf < 0 ? "short" : "long"),
+    right_ft: rf == null ? "" : dispFromFeet(Math.abs(rf), u),
+    right_dir: rf == null || rf === 0 ? "" : (rf < 0 ? "left" : "right"),
+    lie: saved.lie, finish: saved.finish,
+    played_from_yds: saved.played_from_yds == null ? "" : saved.played_from_yds,
+    _saved: true
+  };
+}
+
+/* What he typed, over what the shot ALREADY SAYS.
+   `editing.disp` holds only the two distances he types. Everything else is
+   read off the shot he is logging right now, because it is all already on the
+   screen and he should never enter the same fact twice:
+
+     direction  <- the Miss chips (Left / Right / Short / Long)
+     lie        <- the shot's own Lie select, folded to the four flags
+     finished   <- no finish distance means it finished on the green
+     played from<- the shot's own Start (yd)
+
+   Nothing is inferred for the two distances themselves. Those are his. */
+function dispEffective(d){
+  const v = editing.disp || {};
+  const tags = accTags(d.acc);
+  /* ON THE GREEN he measures in FEET, anywhere else in YARDS — the Green chip
+     in Finish is what says which. Until he taps a Finish chip the boxes read
+     feet, because an approach that reaches the green is the ordinary case and
+     the label flips the instant he says otherwise. The unit is resolved again
+     at save, so a number typed before the chip was tapped still stores with
+     the unit he ended on. */
+  const onGreen = tags.includes("Green") ||
+    (!tags.some(t => ["Fairway","Rough","Deep Rough","Sand","Water","OB","Unplayable"].includes(t)));
+  return {
+    long_ft:  v.long_ft  === undefined ? "" : v.long_ft,
+    right_ft: v.right_ft === undefined ? "" : v.right_ft,
+    long_dir:  dispDirFrom(tags, "long", "short"),
+    right_dir: dispDirFrom(tags, "right", "left"),
+    unit: dispUnit(onGreen),
+    lie: dispLieFromShotLie(d.lie),
+    finish: onGreen ? "On green" : "Off green",
+    played_from_yds: d.db == null ? "" : d.db
+  };
+}
+
+/* The capture, in full: two number boxes under the Miss chips.
+   The chip above says which way it missed, so the box only has to say how far.
+   Feet, unsigned, exactly as he would say it out loud. Blank means he is not
+   logging dispersion for this shot, and 0 is a real answer - 0 long is pin
+   high, 0 right is dead on line, and neither needs a chip. */
+function dispMissFields(d){
+  const v = dispEffective(d);
+  const u = v.unit === "yd" ? "yd" : "ft";
+  return `<div class="edrow dspmiss">
+    <div class="edfield"><div class="edlbl">Short / long (${u})</div>
+      <input type="number" inputmode="numeric" min="0" id="dsp-long"
+        value="${esc(String(v.long_ft ?? ""))}"></div>
+    <div class="edfield"><div class="edlbl">Left / right (${u})</div>
+      <input type="number" inputmode="numeric" min="0" id="dsp-right"
+        value="${esc(String(v.right_ft ?? ""))}"></div>
+  </div>`;
+}
+
 function shotEditor(){
   const d = editing.draft;
   const isFirst = editing.idx === -1 ? SH(hole).length === 0 : editing.idx === 0;
   const autoType = suggestType(isFirst, d.db);
+  /* The two typed distances load once per editing session, not once per
+     render — the editor re-renders on every sync event and must not throw away
+     what he has half-typed. There is nothing to open or close: the boxes live
+     under the Miss chips and are always there. */
+  if (!editing._dispInit){
+    editing._dispInit = true;
+    editing.disp = dispDraftFor(editing.idx);
+  }
   const sel = (id, opts, cur, blankLabel) => `<select id="${id}">
     <option value=""${cur==null?" selected":""}>${blankLabel}</option>
     ${opts.map(o => `<option value="${esc(o)}"${o===cur?" selected":""}>${esc(o)}</option>`).join("")}
@@ -1429,6 +1962,7 @@ function shotEditor(){
         <div class="edlbl">${label}</div>
         ${rows.map(tags => `<div class="edtagrow">${tags.map(t => `<button type="button" class="edtag${
           accTags(d.acc).includes(t) ? " on" : ""}" data-tag="${esc(t)}">${esc(t)}</button>`).join("")}</div>`).join("")}
+        ${label === "Miss" ? dispMissFields(d) : ""}
       </div>`).join("")}
     </div>
     <div class="edactions">
@@ -2004,6 +2538,7 @@ function bind(){
       else if (act==="delshot"){
         const i = +el.dataset.i;
         const arr = SH(hole).slice(); arr.splice(i,1);
+        dispShiftAfterDelete(hole, i);
         setShots(hole, arr);
       }
       else if (act==="edsave"){
@@ -2019,9 +2554,31 @@ function bind(){
         if (!d.club || !d.lie || !d.acc || d.db == null){
           alert("Need club, lie, result and a start distance."); return;
         }
+        /* Dispersion is read and written HERE, off `editing.disp`, and never
+           off `d`. `d` is spread into the shot object below and from there
+           into buildRoundJSON and the sheet; nothing from the dispersion block
+           may ride along. */
+        const dv = dispEffective(d);
+        const dTyped = String(dv.long_ft) !== "" || String(dv.right_ft) !== "";
+        if (dTyped){
+          const derrs = dispValidate(dv);
+          if (derrs.length){
+            /* He started a capture — say what is missing rather than dropping
+               it silently or storing half a shot. The shot itself is not saved
+               yet, so nothing he typed is lost. */
+            alert("Approach dispersion needs: " + derrs.join(", ") +
+                  ".\n\nFill it in, or clear the two boxes under Miss to save the "
+                  + "shot without it.");
+            return;
+          }
+        }
         const arr = SH(hole).slice();
         const wasNew = editing.idx === -1;
         if (wasNew) arr.push({...d}); else arr[editing.idx] = {...d};
+        /* Store against the index this shot now occupies. Separate store,
+           separate key — the round record above is already final. */
+        const dIdx = wasNew ? arr.length - 1 : editing.idx;
+        if (dTyped) dispUpsert(hole, dIdx, dispDerive(dv));
         /* chain: if a new shot didn't finish on the green, auto-open the next
            one prefilled from this finish — no second "Add shot" tap */
         if (wasNew && d.da != null){
@@ -2049,12 +2606,24 @@ function bind(){
       b.classList.toggle("on");
       editing.draft.acc = accJoin(Array.from(
         document.querySelectorAll(".edtag.on"), x => x.dataset.tag));
+      /* The Finish chips decide the unit of the two Miss boxes — Green means
+         feet, anything else means yards. Relabel in place rather than
+         re-rendering: a full render on every tag tap would rebuild the editor
+         under his thumb, and only these two words actually change. */
+      const lbls = document.querySelectorAll(".dspmiss .edlbl");
+      if (lbls.length === 2){
+        const u = dispEffective(editing.draft).unit === "yd" ? "yd" : "ft";
+        lbls[0].textContent = `Short / long (${u})`;
+        lbls[1].textContent = `Left / right (${u})`;
+      }
     };
   });
   const edSync = { "ed-club":"club", "ed-lie":"lie", "ed-type":"type" };
   for (const [id, key] of Object.entries(edSync)){
     const el = document.getElementById(id);
-    if (el) el.onchange = () => { editing.draft[key] = el.value || null; };
+    if (el) el.onchange = () => {
+      editing.draft[key] = el.value || null;
+    };
   }
   for (const [id, key] of [["ed-db","db"],["ed-da","da"]]){
     const el = document.getElementById(id);
@@ -2068,6 +2637,15 @@ function bind(){
         if (opt) opt.textContent = t ? `Auto: ${t}` : "Auto";
       }
     };
+  }
+  /* the two Miss distances — the only dispersion inputs, and they write to
+     editing.disp and nowhere else */
+  for (const [id, key] of [["dsp-long","long_ft"],["dsp-right","right_ft"]]){
+    const el = document.getElementById(id);
+    if (!el) continue;
+    /* keep the value on every keystroke so a sync re-render cannot eat it */
+    el.oninput  = () => { editing.disp = editing.disp || {}; editing.disp[key] = el.value; };
+    el.onchange = () => { editing.disp = editing.disp || {}; editing.disp[key] = el.value; };
   }
   document.querySelectorAll("[data-teeov]").forEach(el => {
     el.onclick = () => { setCell(`tee.${hole}`, el.dataset.teeov); render(); };
