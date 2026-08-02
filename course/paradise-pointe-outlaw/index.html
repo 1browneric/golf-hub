@@ -1915,7 +1915,7 @@ document.addEventListener("visibilitychange", () => {
 
 /* The GPS card lives in the hole card, so it is wanted whenever the hole tab
    is showing and this course has a baked pack. */
-function gpsWanted(){ return !!GPS_PACK && tab === "hole"; }
+function gpsWanted(){ return !!GPS_PACK && tab === "hole" && bookView === "gps"; }
 
 function gpsSyncWatch(){
   if (gpsWanted()){ gpsStartWatch(); gpsAcquireWakeLock(); }
@@ -2322,6 +2322,7 @@ function viewHole(){
   <section class="book">
     <div class="bookbar">
       <button class="bookseg ${bookView==="hole"?"on":""}" data-view="hole">Hole</button>
+      ${GPS_PACK ? `<button class="bookseg ${bookView==="gps"?"on":""}" data-view="gps">GPS</button>` : ""}
       <button class="bookseg ${bookView==="club"?"on":""}" data-view="club">Club</button>
       <button class="bookseg ${bookView==="strat"?"on":""}" data-view="strat">Strategy</button>
       <button class="bookseg ${bookView==="green"?"on":""}" data-view="green">Green${pinBadge}</button>
@@ -2329,7 +2330,6 @@ function viewHole(){
     </div>
     <div class="bookbody">${bookBody()}</div>
   </section>
-  ${viewGPS()}
   ${holeNav("mid", h)}
   <section class="caddy">
     <div class="caddyhead">Caddie</div>
@@ -2580,6 +2580,10 @@ function grabPuttInputs(){
 }
 
 function bookBody(){
+  /* GPS is a segment of the course book, sitting next to Hole (Eric,
+     2026-08-02). It is checked BEFORE the BOOK[hole] guard because the
+     rangefinder does not depend on a hole having a book page. */
+  if (bookView === "gps") return GPS_PACK ? viewGPS() : "";
   const meta = BOOK[hole];
   if (!meta) return "";
   if (bookView === "strat"){
@@ -2913,7 +2917,7 @@ function bind(){
     el.onclick = () => { setCell(`tee.${hole}`, el.dataset.teeov); render(); };
   });
   document.querySelectorAll("[data-view]").forEach(el => {
-    el.onclick = () => { bookView = el.dataset.view; render(); };
+    el.onclick = () => { bookView = el.dataset.view; gpsSyncWatch(); render(); };
   });
   document.querySelectorAll("[data-cad]").forEach(el => {
     el.onclick = () => { grabCaddyInputs(); grabPuttInputs(); caddyTab = el.dataset.cad; render(); };
