@@ -1619,10 +1619,11 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       'Putting':  bits([puttAvg==null?'':'Averaging '+puttAvg.toFixed(1)+' putts.',
                         H&&H.onePuttPer!=null?'One-putts '+H.onePuttPer.toFixed(1)+' a round ('+H.onePuttTotal+' total).':'',
                         H&&H.threePuttPer!=null?'Three-putts '+H.threePuttPer.toFixed(1)+' a round ('+H.threePuttTotal+' total).':'',
-                        H&&H.firstPuttAvg!=null?'First putt averages '+ftTenth(H.firstPuttAvg)+' feet.':'',
-                        H&&H.fpGir!=null?'First putt on GIR holes averages '+ftTenth(H.fpGir)+' feet.':'',
-                        H&&H.fpNon!=null?'First putt on non-GIR holes averages '+ftTenth(H.fpNon)+' feet.':'',
-                        H&&H.p2Avg!=null?'Second putt averages '+ftTenth(H.p2Avg)+' feet.':''])
+                        H&&H.firstPuttAvg!=null?'First putt averages '+ftTenth(H.firstPuttAvg)+' feet.':''])
+                        /* the GIR / non-GIR / second-putt season lines are
+                           GONE (Eric, 2026-08-02): the charts below carry
+                           those figures as xx (xx). Only the blended
+                           all-holes average keeps a line - no chart shows it. */
     };
 
     /* The miss and strike bars belong INSIDE the category they describe, not
@@ -1833,7 +1834,6 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
           '<span class="mono" style="font-weight:600;font-size:14px;color:'+(rollup[1]>=0?'var(--green-pos)':'#E06070')+'">'+(rollup[1]>=0?'+':'')+rollup[1].toFixed(2)+'</span></div>'+
         '<div class="mono" style="font-size:12px;color:var(--steel);margin-top:6px;opacity:.9;line-height:1.8">'+
           bits([H&&H.firHoles?'Fairways '+rate(H.firHit,H.firHoles)+'.':'',
-                H&&H.girCompD?'Greens in regulation '+rate(H.girCompN,H.girCompD)+'.':'',
                 PAT&&PAT.appDir.length?'Approach miss '+PAT.appDir[0][0].toLowerCase()+' '+rate(PAT.appDir[0][1],PAT.appDir.reduce(function(a,r){return a+r[1];},0))+'.':''])+
         '</div>'+
         girChart()+
