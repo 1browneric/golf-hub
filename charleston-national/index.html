@@ -640,18 +640,25 @@ function puttCount(hn){
 }
 /* FIR/GIR auto-derived from the shots; a tap on the chip cycles
    auto -> Y -> N -> auto (manual override stored in f.fir/f.gir). */
+/* FIR belongs to the tee shot itself: a penalty result is a miss, and shot 2's
+   lie is only trustworthy when no penalty intervened (a drop that lands in the
+   fairway is not a fairway hit). This page's Result field is the old single
+   value, so a penalty/Sand result is the only tee-shot finish evidence. */
 function autoFir(h){
   if (h.par === 3) return null;
   const sh = SH(h.n);
-  if (sh.length >= 2) return sh[1].lie === "Fairway" ? "Y" : "N";
-  if (sh[0] && BAD_ACC.has(sh[0].acc)) return "N";
+  if (!sh.length) return null;
+  if (BAD_ACC.has(sh[0].acc) || sh[0].acc === "Sand") return "N";
+  if ((F(h.n).pen || 0) === 0 && sh.length >= 2)
+    return sh[1].lie === "Fairway" ? "Y" : "N";
   return null;
 }
 function autoGir(h){
-  const sh = SH(h.n);
-  const idx = sh.findIndex(s => s.da == null);   // first shot that finished on the green
-  if (idx < 0) return null;
-  return (idx + 1) <= (h.par - 2) ? "Y" : "N";
+  /* (score - putts) <= par - 2. Penalty strokes are already in the score. */
+  const score = F(h.n).score;
+  const putts = puttCount(h.n);
+  if (score == null || putts == null) return null;
+  return (score - putts) <= (h.par - 2) ? "Y" : "N";
 }
 const effFir = h => { const v = F(h.n).fir; return v ? v : autoFir(h); };
 const effGir = h => { const v = F(h.n).gir; return v ? v : autoGir(h); };
