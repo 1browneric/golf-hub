@@ -2358,7 +2358,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
   }
 
   var DISPV={ scope:'all', bands:DISP_BANDS.map(function(b){return b.key;}),
-              lies:DISP_LIES.slice() };
+              lies:DISP_LIES.slice(), open:false };
   function dspEsc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
   /* The plot. Dots on a plane: leave_long_ft up the vertical axis,
@@ -2433,8 +2433,9 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     var chip=function(cls,on,val,label){
       return '<button class="dspchip '+cls+(on?' on':'')+'" data-dsp'+cls+'="'+dspEsc(val)+'">'+dspEsc(label)+'</button>';
     };
-    var head='<div class="card" style="padding:18px;margin-top:12px">'+
-      '<div class="h-title" style="font-size:18px">Approach Dispersion</div>';
+    var head='<div class="card" data-pexpand style="padding:18px;margin-top:12px;cursor:pointer">'+
+      '<div class="h-title" style="font-size:18px">Approach Dispersion</div>'+
+      '<div class="pdetail"'+(DISPV.open?'':' hidden')+'>';
 
     /* Nothing logged at all. This is the correct, intended state on day one —
        say so plainly rather than leaving an empty frame that reads as broken.
@@ -2442,7 +2443,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     if(!all.length){
       host.innerHTML=head+
         '<div class="dspempty">No approach dispersion logged yet. It fills as you log approaches '+
-        'on the course tracker &mdash; rounds played before this existed are not estimated or filled in.</div></div>';
+        'on the course tracker &mdash; rounds played before this existed are not estimated or filled in.</div></div></div>';
       return;
     }
 
@@ -2487,7 +2488,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       '<div class="dspcount">'+recs.length+(recs.length===1?' SHOT':' SHOTS')+
         ' &middot; '+onN+' ON THE GREEN'+
         (recs.length!==scoped.length?' &middot; '+(scoped.length-recs.length)+' HIDDEN BY FILTERS':'')+'</div>'+
-    '</div>';
+    '</div></div>';
 
     host.querySelectorAll('[data-dspscope]').forEach(function(b){
       b.onclick=function(){ DISPV.scope=b.getAttribute('data-dspscope'); renderDispersion(); };
@@ -2732,9 +2733,14 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     /* Improvement card fold - same tap interaction as the round cards.
        Content is prebuilt, so the toggle is just the hidden bit. */
     var pc=e.target.closest('[data-pexpand]');
-    if(pc){
+    if(pc && !e.target.closest('.pdetail')){
       var pb=pc.querySelector('.pdetail');
-      if(pb) pb.hidden=!pb.hidden;
+      if(pb){
+        pb.hidden=!pb.hidden;
+        /* the dispersion card re-renders itself on filter taps, so its fold
+           state must live in DISPV and be re-emitted by the markup */
+        if(pc.parentNode&&pc.parentNode.id==='disp-card') DISPV.open=!pb.hidden;
+      }
       return;
     }
     /* Round expansion. Checked BEFORE the data-go router: a hub preview card
