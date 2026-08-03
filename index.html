@@ -218,6 +218,13 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
    book's ink #0F2F45 / navy #1F4E9D / teal #1B7F79 on cream, in Georgia, so it
    reads as a book diagram rather than a second app screen. */
 .dsprow{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+/* Bands and lies fill the card width in equal columns (Eric, 2026-08-03:
+   "make sure they are spaced equal" / "lie is spaced equally across the
+   width") — a grid, so wrapped rows align into columns instead of ragged
+   flex lines. Bands are 8 pills in two rows of four; lies are one row of
+   four. Scope stays flex: its chip count varies by what's logged. */
+.dsprow.grid4{display:grid;grid-template-columns:repeat(4,1fr)}
+.dsprow.grid4 .dspchip{padding-left:0;padding-right:0;text-align:center}
 .dspchip{font-family:var(--font-data);font-size:10px;letter-spacing:.06em;padding:7px 10px;border-radius:999px;
   border:1.5px solid rgba(143,160,184,.35);background:transparent;color:var(--steel);cursor:pointer}
 .dspchip.on{background:var(--cream);border-color:var(--cream);color:var(--navy);font-weight:700}
@@ -228,7 +235,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
 .dspaxis.k{font-size:8.5px;letter-spacing:.14em;fill:#0F2F45}
 .dspref{font-family:Georgia,serif;font-size:8.5px;fill:#1B7F79}
 .dsprange{font-family:var(--font-data);font-size:10px;color:#5C6B82;text-align:center;margin-top:6px;letter-spacing:.04em}
-.dspkey{display:flex;flex-wrap:wrap;gap:8px 12px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(12,35,64,.14)}
+.dspkey{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 14px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(12,35,64,.14)}
 .dspkey span{display:inline-flex;align-items:center;gap:5px;font-family:Georgia,serif;font-size:10.5px;color:#0F2F45}
 .dspkey i{width:9px;height:9px;border-radius:50%;display:inline-block;flex:0 0 auto}
 .dspwarn{font-family:var(--font-body);font-size:11.5px;line-height:1.6;color:var(--cream);
@@ -2037,7 +2044,8 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     { key: "75-100",  label: "75-100",    min: 75,  max: 100,      rep: 87  },
     { key: "100-125", label: "100-125",   min: 100, max: 125,      rep: 112 },
     { key: "125-175", label: "125-175",   min: 125, max: 175,      rep: 150 },
-    { key: "175+",    label: "175+",      min: 175, max: Infinity, rep: 200 }
+    { key: "175-200", label: "175-200",   min: 175, max: 200,      rep: 187 },
+    { key: "200+",    label: "200+",      min: 200, max: Infinity, rep: 215 }
   ];
 
   function dispBandFor(yards) {
@@ -2275,12 +2283,12 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     return null;
   }
 
-  /* ---------- median green reference ----------
-     A REFERENCE SHAPE, not a boundary. Semi-axes in feet of a median green,
-     from this constant for now. The Overpass green polygons baked for the GPS
-     view are the intended replacement — a later change computes these from the
-     real per-course shapes rather than one national-ish median. */
-  var DISP_GREEN_REF = { semi_long_ft: 45, semi_right_ft: 33 };
+  /* ---------- reference ring ----------
+     A REFERENCE SHAPE, not a boundary. A 21 ft circle around the pin — Eric's
+     pick (2026-08-03, replacing the 90x66 ft median-green ellipse: "make it
+     more of a circle and being at 21ft"). Equal semi-axes ARE the circle;
+     nothing else changes shape when these two numbers agree. */
+  var DISP_GREEN_REF = { semi_long_ft: 21, semi_right_ft: 21 };
 
   /* ---------- axis auto-scale ----------
      The axis follows the dots that are actually switched on, symmetric about the
@@ -2442,18 +2450,15 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     /* the pin */
     g.push('<circle cx="'+C+'" cy="'+C+'" r="2.6" fill="#0F2F45"/>');
     /* the shots. COLOUR is proximity, on a blue-to-orange ramp with a text
-       legend under the plot — never red versus green. SHAPE, not colour,
-       separates a ball that finished on the green from one that did not:
-       filled circle on, hollow diamond off. */
+       legend under the plot — never red versus green. One shape for every
+       dot: sheet-derived records carry no on/off-green flag, and Eric removed
+       the diamond key (2026-08-03), so a shape split would be encoding
+       nothing. */
     recs.forEach(function(r){
       var x=fx(r.leave_right_ft), y=fy(r.leave_long_ft);
       var p=dispProximity(dispLeaveFt(r.leave_long_ft,r.leave_right_ft));
       var col=p?p.color:'#0F2F45';
-      if(r.finish==='Off green'){
-        g.push('<path d="M'+x.toFixed(1)+' '+(y-4.6).toFixed(1)+'l4.6 4.6-4.6 4.6-4.6-4.6z" fill="none" stroke="'+col+'" stroke-width="1.7"/>');
-      }else{
-        g.push('<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="3.5" fill="'+col+'" fill-opacity=".85"/>');
-      }
+      g.push('<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="3.5" fill="'+col+'" fill-opacity=".85"/>');
     });
     return { svg:'<svg viewBox="0 0 '+S+' '+S+'" style="width:100%;height:auto;display:block">'+g.join('')+'</svg>',
              range:R };
@@ -2490,45 +2495,35 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     }
 
     var plot=dispPlot(recs);
-    var warn=dispSpanWarning(DISPV.bands);
     var counts={};
     recs.forEach(function(r){
       var p=dispProximity(dispLeaveFt(r.leave_long_ft,r.leave_right_ft));
       if(p) counts[p.key]=(counts[p.key]||0)+1;
     });
-    var onN=recs.filter(function(r){return r.finish==='On green';}).length;
 
     host.innerHTML=head+
       '<div class="dsplbl">SCOPE</div>'+
       '<div class="dsprow">'+chip('scope',DISPV.scope==='all','all','All courses')+
         courses.map(function(c){return chip('scope',DISPV.scope===c,c,c);}).join('')+'</div>'+
       '<div class="dsplbl">PLAYED FROM (YD)</div>'+
-      '<div class="dsprow">'+DISP_BANDS.map(function(b){
+      '<div class="dsprow grid4">'+DISP_BANDS.map(function(b){
         return chip('band',DISPV.bands.indexOf(b.key)!==-1,b.key,b.label);}).join('')+'</div>'+
       '<div class="dsplbl">LIE</div>'+
-      '<div class="dsprow">'+DISP_LIES.map(function(l){
+      '<div class="dsprow grid4">'+DISP_LIES.map(function(l){
         return chip('lie',DISPV.lies.indexOf(l)!==-1,l,l);}).join('')+'</div>'+
-      (warn?'<div class="dspwarn">'+dspEsc(warn)+'</div>':'')+
       '<div class="dspplate">'+plot.svg+
-        '<div class="dsprange">Axis &plusmn;'+plot.range+' ft on both sides of the pin</div>'+
         '<div class="dspkey">'+
           DISP_PROXIMITY.map(function(p){
             return '<span><i style="background:'+p.color+'"></i>'+p.label+
               (counts[p.key]?' ('+counts[p.key]+')':'')+'</span>';}).join('')+
         '</div>'+
-        '<div class="dspkey">'+
-          '<span><i style="background:#0F2F45"></i>Filled circle &mdash; finished on the green</span>'+
-          '<span><i style="border:1.6px solid #0F2F45;border-radius:0;transform:rotate(45deg)"></i>Open diamond &mdash; finished off the green</span>'+
-        '</div>'+
-        /* The green shape is a REFERENCE, and it says so here rather than on
-           the plot, where a label pinned to the ellipse fell off the frame the
+        /* The ring is a REFERENCE, and it says so here rather than on the
+           plot, where a label pinned to the shape fell off the frame the
            moment the axis zoomed in on a set of wedge shots. */
         '<div class="dspkey"><span><i style="background:rgba(27,127,121,.15);border:1.4px dashed #1B7F79"></i>'+
-          'Dashed ellipse &mdash; a median green at '+(DISP_GREEN_REF.semi_long_ft*2)+' ft deep by '+
-          (DISP_GREEN_REF.semi_right_ft*2)+' ft wide. A size reference, not this course\'s real green.</span></div>'+
+          'Dashed circle &mdash; '+DISP_GREEN_REF.semi_long_ft+' ft around the pin</span></div>'+
       '</div>'+
       '<div class="dspcount">'+recs.length+(recs.length===1?' SHOT':' SHOTS')+
-        ' &middot; '+onN+' ON THE GREEN'+
         (recs.length!==scoped.length?' &middot; '+(scoped.length-recs.length)+' HIDDEN BY FILTERS':'')+'</div>'+
     '</div></div>';
 

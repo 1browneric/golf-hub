@@ -690,7 +690,8 @@ var DISP_BANDS = [
   { key: "75-100",  label: "75-100",    min: 75,  max: 100,      rep: 87  },
   { key: "100-125", label: "100-125",   min: 100, max: 125,      rep: 112 },
   { key: "125-175", label: "125-175",   min: 125, max: 175,      rep: 150 },
-  { key: "175+",    label: "175+",      min: 175, max: Infinity, rep: 200 }
+  { key: "175-200", label: "175-200",   min: 175, max: 200,      rep: 187 },
+  { key: "200+",    label: "200+",      min: 200, max: Infinity, rep: 215 }
 ];
 
 function dispBandFor(yards) {
@@ -928,12 +929,12 @@ function dispProximity(leaveFt) {
   return null;
 }
 
-/* ---------- median green reference ----------
-   A REFERENCE SHAPE, not a boundary. Semi-axes in feet of a median green,
-   from this constant for now. The Overpass green polygons baked for the GPS
-   view are the intended replacement — a later change computes these from the
-   real per-course shapes rather than one national-ish median. */
-var DISP_GREEN_REF = { semi_long_ft: 45, semi_right_ft: 33 };
+/* ---------- reference ring ----------
+   A REFERENCE SHAPE, not a boundary. A 21 ft circle around the pin — Eric's
+   pick (2026-08-03, replacing the 90x66 ft median-green ellipse: "make it
+   more of a circle and being at 21ft"). Equal semi-axes ARE the circle;
+   nothing else changes shape when these two numbers agree. */
+var DISP_GREEN_REF = { semi_long_ft: 21, semi_right_ft: 21 };
 
 /* ---------- axis auto-scale ----------
    The axis follows the dots that are actually switched on, symmetric about the
