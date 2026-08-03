@@ -1372,6 +1372,13 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       var v=sel.map(function(h){return h.p1;}).filter(function(x){return x!=null;});
       return v.length? v.reduce(function(a,b){return a+b;},0)/v.length : null;
     };
+    /* Mean second-putt distance - the LEAVE after the first putt. A holed
+       first putt leaves nothing to measure, so it simply is not in the set;
+       never counted as zero. */
+    var p2Avg=function(sel){
+      var v=sel.map(function(h){return h.p2;}).filter(function(x){return x!=null;});
+      return v.length? v.reduce(function(a,b){return a+b;},0)/v.length : null;
+    };
     return {
       rounds:nRounds,
       scramblePct: missed.length? saved.length/missed.length : null,
@@ -1397,8 +1404,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       /* Speed control, the way Sherman measures it: not "how many putts" but
          "how often did the first putt finish inside three feet". Only holes
          that actually took a second putt can answer it. */
-      leaveN: holes.filter(function(h){return h.putts>=2&&h.p2!=null&&h.p2<=3;}).length,
-      leaveD: holes.filter(function(h){return h.putts>=2&&h.p2!=null;}).length,
+      p2Avg: p2Avg(holes),
       firstPuttAvg: (function(){
         var v=holes.map(function(h){return h.p1;}).filter(function(x){return x!=null;});
         return v.length? v.reduce(function(a,b){return a+b;},0)/v.length : null;
@@ -1426,8 +1432,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
                   non:fpAvg(g.hs.filter(function(h){return !computedGir(h);})),
                   all:fpAvg(g.hs),
                   girN:g.hs.filter(computedGir).length,
-                  in3N:g.hs.filter(function(h){return h.putts>=2&&h.p2!=null&&h.p2<=3;}).length,
-                  in3D:g.hs.filter(function(h){return h.putts>=2&&h.p2!=null;}).length};
+                  leave:p2Avg(g.hs)};
         }).reverse();
       })()
     };
@@ -1607,7 +1612,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
                         H&&H.firstPuttAvg!=null?'First putt averages '+ftTenth(H.firstPuttAvg)+' feet.':'',
                         H&&H.fpGir!=null?'First putt on GIR holes averages '+ftTenth(H.fpGir)+' feet.':'',
                         H&&H.fpNon!=null?'First putt on non-GIR holes averages '+ftTenth(H.fpNon)+' feet.':'',
-                        H&&H.leaveD?'First putt left inside 3 feet '+rate(H.leaveN,H.leaveD)+'.':''])
+                        H&&H.p2Avg!=null?'Second putt averages '+ftTenth(H.p2Avg)+' feet.':''])
     };
 
     /* The miss and strike bars belong INSIDE the category they describe, not
@@ -1701,29 +1706,32 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       return groupLabel('FIRST PUTT DISTANCE &middot; FEET')+chWrap(s,BASE+20)+
              chLegend([[CH_CREAM,'GIR HOLES'],[CH_RED,'NON-GIR HOLES']]);
     };
-    var speedChart=function(){
+    var leaveChart=function(){
+      /* Where the second putts are - the average LEAVE after the first putt,
+         per round (Eric's ask, 2026-08-02, replacing the inside-3-feet
+         chart he never liked). Lower is better. Not normalized by first-putt
+         length; the distance chart directly above carries that context. */
       if(chron.length<2) return '';
       var pts=[];
-      chron.forEach(function(r,i){ if(r.in3D) pts.push({x:chX(i),p:r.in3N/r.in3D,r:r}); });
+      chron.forEach(function(r,i){ if(r.leave!=null) pts.push({x:chX(i),v:r.leave,r:r}); });
       if(pts.length<2) return '';
+      var MAXV=Math.max(9,Math.ceil(Math.max.apply(null,pts.map(function(q){return q.v;}))/3)*3);
       var BASE=120,TOP=16;
-      var yOf=function(p){return BASE-p*(BASE-TOP);};
-      var sn=0,sd=0;
-      chron.forEach(function(r){ sn+=r.in3N; sd+=r.in3D; });
-      var s=chGrid([.25,.5,.75],yOf,function(g){return Math.round(g*100)+'%';});
-      if(sd) s+='<line x1="'+(CH_X0-6)+'" y1="'+yOf(sn/sd).toFixed(1)+'" x2="'+(CH_W-6)+'" y2="'+yOf(sn/sd).toFixed(1)+
+      var yOf=function(v){return BASE-v/MAXV*(BASE-TOP);};
+      var s=chGrid([MAXV/3,2*MAXV/3,MAXV],yOf,function(g){return Math.round(g);});
+      if(H&&H.p2Avg!=null) s+='<line x1="'+(CH_X0-6)+'" y1="'+yOf(H.p2Avg).toFixed(1)+'" x2="'+(CH_W-6)+'" y2="'+yOf(H.p2Avg).toFixed(1)+
                 '" stroke="'+CH_STEEL+'" stroke-width="1" stroke-dasharray="4 3" opacity=".6"/>';
-      s+='<polyline points="'+pts.map(function(q){return q.x.toFixed(1)+','+yOf(q.p).toFixed(1);}).join(' ')+
+      s+='<polyline points="'+pts.map(function(q){return q.x.toFixed(1)+','+yOf(q.v).toFixed(1);}).join(' ')+
          '" fill="none" stroke="'+CH_CREAM+'" stroke-width="2"/>';
       var maxI=0;
-      pts.forEach(function(q,i){ if(q.p>pts[maxI].p) maxI=i; });
+      pts.forEach(function(q,i){ if(q.v>pts[maxI].v) maxI=i; });
       pts.forEach(function(q,i){
-        s+='<circle cx="'+q.x.toFixed(1)+'" cy="'+yOf(q.p).toFixed(1)+'" r="4" fill="'+CH_CREAM+'" stroke="'+CH_NAVY+'" stroke-width="2"/>';
+        s+='<circle cx="'+q.x.toFixed(1)+'" cy="'+yOf(q.v).toFixed(1)+'" r="4" fill="'+CH_CREAM+'" stroke="'+CH_NAVY+'" stroke-width="2"/>';
         if(i===0||i===pts.length-1||i===maxI)
-          s+=chTxt(q.x,yOf(q.p)-9,q.r.in3N+' of '+q.r.in3D,CH_CREAM);
+          s+=chTxt(q.x,yOf(q.v)-9,ftTenth(q.v),CH_CREAM);
       });
-      s+=chDates(BASE+14);
-      return groupLabel('FIRST PUTT INSIDE 3 FEET &middot; DASH IS SEASON')+chWrap(s,BASE+20);
+      s+=chBase(BASE)+chDates(BASE+14);
+      return groupLabel('SECOND PUTT DISTANCE &middot; FEET &middot; DASH IS SEASON')+chWrap(s,BASE+20);
     };
     var girChart=function(){
       if(chron.length<2) return '';
@@ -1751,7 +1759,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
          stored glyph. */
       if(name==='Putting'){
         if(!chron.length) return '';
-        return fpDistChart()+speedChart();
+        return fpDistChart()+leaveChart();
       }
       if(name==='Ball Striking'){
         return (PAT&&PAT.strikeAll.length
