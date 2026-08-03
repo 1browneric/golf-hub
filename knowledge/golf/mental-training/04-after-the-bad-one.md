@@ -1,6 +1,8 @@
 # After the Bad One
 
-Lie down, or sit somewhere you can stop holding yourself up. Let your eyes close.
+Start with the breath, wherever this finds you — walking, warming up, on a run, or
+somewhere quiet. If your eyes can close, let them. If you are moving, keep them open
+and soft. The breath works the same either way.
 
 In, through your nose.
 
@@ -28,7 +30,7 @@ And out.
 
 [BEAT]
 
-Tonight is the bad shot — not how to avoid it, because you cannot, but what happens
+This session is the bad shot — not how to avoid it, because you cannot, but what happens
 in the ninety seconds after it, because that is where its real cost is decided.
 
 Golf punishes carrying. The game gives you a bad shot and then hands you five
@@ -78,7 +80,7 @@ drains, and the feeling drains faster while it runs.
 
 [BEAT — HOLD]
 
-Now rehearse it, on a real one. Eyes closed. Bring back a shot from a recent round
+Now rehearse it, on a real one. Bring back a shot from a recent round
 that actually cost you — the one you carried. Put yourself there, just after impact.
 
 [PAUSE — LONG]

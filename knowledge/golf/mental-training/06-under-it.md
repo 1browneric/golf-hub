@@ -1,6 +1,8 @@
 # Under It
 
-Lie down, or sit somewhere you can stop holding yourself up. Let your eyes close.
+Start with the breath, wherever this finds you — walking, warming up, on a run, or
+somewhere quiet. If your eyes can close, let them. If you are moving, keep them open
+and soft. The breath works the same either way.
 
 In, through your nose.
 
@@ -28,7 +30,7 @@ And out.
 
 [BEAT]
 
-Tonight is pressure, and we start by retiring a goal you may still be carrying: you
+This session is pressure, and we start by retiring a goal you may still be carrying: you
 are not going to make pressure go away, and you should stop spending swings trying.
 Pressure is not a malfunction. It is the price of caring about the outcome, and you
 would not want the version of yourself that does not pay it.
@@ -69,9 +71,9 @@ precisely why you built it in Session 1 and kept it the same length all year —
 that when the moment gets big, there is one structure on the course that has not
 changed size.
 
-Third: know where confidence actually comes from tonight, not from your last three
-holes. Results are noisy — too noisy to build on. Preparation is not. The plan for
-every hole already exists and was made on a calm evening. Your routine is rehearsed.
+Third: know where confidence actually comes from — not from your last three holes.
+Results are noisy — too noisy to build on. Preparation is not. The plan for every
+hole already exists, made ahead of time with a clear head. Your routine is rehearsed.
 Your reset is rehearsed. Pressure does not get a vote on any of that. Trust built on
 process survives a bad bounce; trust built on a hot streak dies with it.
 
@@ -82,7 +84,7 @@ tools. This shot, this target, this tempo.
 
 [BEAT — HOLD]
 
-Now build it. Eyes closed. Put yourself late in a round that matters, and let the
+Now build it. Put yourself late in a round that matters, and let the
 number into your head — you know exactly where you stand, and it is close. Feel the
 clock try to speed up.
 

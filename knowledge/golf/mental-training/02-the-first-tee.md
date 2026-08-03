@@ -1,6 +1,8 @@
 # The First Tee
 
-Lie down, or sit somewhere you can stop holding yourself up. Let your eyes close.
+Start with the breath, wherever this finds you — walking, warming up, on a run, or
+somewhere quiet. If your eyes can close, let them. If you are moving, keep them open
+and soft. The breath works the same either way.
 
 In, through your nose.
 
@@ -28,7 +30,7 @@ And out.
 
 [BEAT]
 
-Tonight is the first tee, and the first thing to get right is the diagnosis. What you
+This session is the first tee, and the first thing to get right is the diagnosis. What you
 feel standing there — heart rate up, hands cold and a little quick, breath sitting
 high in the chest, the urge to just get it over with — has a name, and the name is
 not fear. It is arousal. Your sympathetic nervous system is doing exactly what it was
@@ -68,10 +70,10 @@ widest state of the day, and it deserves exactly that much weight.
 
 [BEAT — HOLD]
 
-Now build the state on purpose. Eyes closed. Put yourself on a first tee you know.
+Now build the state on purpose. Put yourself on a first tee you know.
 People behind you, a group waiting. Let the body actually respond — heart a little
-quick, hands a little cold. Do not push it away. You need it here, because tonight
-you are training the regulation, not the swing.
+quick, hands a little cold. Do not push it away. You need it here, because what you
+are training is the regulation, not the swing.
 
 [PAUSE — LONG]
 

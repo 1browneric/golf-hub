@@ -56,3 +56,8 @@ Script conventions (both consumers):
 - Flow as a listener experiences it: settle, name the pattern, explain the
   mechanism, give the tool, rehearse it, one closing line. No "Goal:" preambles,
   no document structure read aloud.
+- Context-free, always (Eric, 2026-08-03): no time-of-day words ("tonight",
+  "evening", "the night before") and no posture commands ("lie down"). He may be
+  walking, on a run, warming up, or driving. Openers are posture-neutral, eyes
+  closed is optional and never commanded, and nothing anchors a session to a
+  time of day.

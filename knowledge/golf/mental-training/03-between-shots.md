@@ -1,6 +1,8 @@
 # Between Shots
 
-Lie down, or sit somewhere you can stop holding yourself up. Let your eyes close.
+Start with the breath, wherever this finds you — walking, warming up, on a run, or
+somewhere quiet. If your eyes can close, let them. If you are moving, keep them open
+and soft. The breath works the same either way.
 
 In, through your nose.
 
@@ -28,7 +30,7 @@ And out.
 
 [BEAT]
 
-Tonight is the part of golf nobody trains, which happens to be most of golf.
+This session is the part of golf nobody trains, which happens to be most of golf.
 
 A round runs four hours. Add up the time your club is actually moving and it is
 under two minutes. Golf is unique this way — slow, self-paced, no opponent forcing
@@ -77,7 +79,7 @@ staying focused. The skill is the clean switch.
 
 [BEAT — HOLD]
 
-Now train the reset, because it only works if it is practiced. Eyes closed. Bring up
+Now train the reset, because it only works if it is practiced. Bring up
 a shot from a recent round that stung — one you caught yourself replaying. Let the
 replay actually start. Feel the pull inward.
 

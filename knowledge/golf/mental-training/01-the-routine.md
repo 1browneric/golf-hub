@@ -1,6 +1,8 @@
 # The Routine
 
-Lie down, or sit somewhere you can stop holding yourself up. Let your eyes close.
+Start with the breath, wherever this finds you — walking, warming up, on a run, or
+somewhere quiet. If your eyes can close, let them. If you are moving, keep them open
+and soft. The breath works the same either way.
 
 In, through your nose.
 
@@ -30,7 +32,7 @@ And out.
 
 [BEAT]
 
-Tonight is the pre-shot routine, and I want to start with what a routine actually is,
+This session is the pre-shot routine, and I want to start with what a routine actually is,
 because most golfers have it filed wrong. It is not superstition, and it is not a
 waggle count. A routine is a container for attention. Its job is to take a mind that
 can think about anything — the water, the match, the last hole, who is watching — and
@@ -47,7 +49,7 @@ technique problem. It is a decision that never got finished, leaking into the mo
 
 [BEAT]
 
-So the tool tonight is a boundary. Two spaces, and one line between them.
+So the tool is a boundary. Two spaces, and one line between them.
 
 Behind the ball is the deliberation space. Every question is welcome there. The
 number, the lie, the wind, the club, the side, the picture. Change your mind five
@@ -81,7 +83,7 @@ that is entirely yours to keep constant, so keep it constant.
 
 [BEAT — HOLD]
 
-Now build it. Eyes closed. Bring up a full swing shot you know well — a tee shot you
+Now build it. Bring up a full swing shot you know well — a tee shot you
 have hit a hundred times. Stand behind the ball. Ask everything. Pick the club, pick
 the side, see the shot start and see it finish. Now the last look. Feel the door
 close. Walk in, one look up, and let the swing go.

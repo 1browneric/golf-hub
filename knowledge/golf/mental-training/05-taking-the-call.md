@@ -1,6 +1,8 @@
 # Taking the Call
 
-Lie down, or sit somewhere you can stop holding yourself up. Let your eyes close.
+Start with the breath, wherever this finds you — walking, warming up, on a run, or
+somewhere quiet. If your eyes can close, let them. If you are moving, keep them open
+and soft. The breath works the same either way.
 
 In, through your nose.
 
@@ -28,11 +30,11 @@ And out.
 
 [BEAT]
 
-Tonight is commitment — specifically, what happens between a decision and a swing,
+This session is commitment — specifically, what happens between a decision and a swing,
 because that is where good calls go to die.
 
 You play with calls. A walkthrough's plan, a caddie's read, your own strategy made
-the night before. A call arrives as words: a club, a side, a number. Understand what
+before the round. A call arrives as words: a club, a side, a number. Understand what
 words are to your motor system: nothing. The swing does not execute language. It
 executes a picture. Between the words and the swing, you have to build the image —
 see the start line, see the flight, see it finish — or the body is swinging at an
@@ -73,7 +75,7 @@ setting from Session 3, wearing a lawyer's suit.
 
 [BEAT — HOLD]
 
-Now rehearse it. Eyes closed. Bring up an approach shot you know well, and give
+Now rehearse it. Bring up an approach shot you know well, and give
 yourself a call on it — club, side, number, as if it came from the book.
 
 [PAUSE — LONG]
