@@ -62,9 +62,11 @@ VOICE_NAME = "en-US-Studio-Q"     # resolved against the project at run time
 SPEAKING_RATE = 0.85
 LANGUAGE_CODE = "en-US"
 
-# Pause lengths for the `> Pause ...` cue lines.
-PAUSE_SHORT = "6s"                # a plain cue
-PAUSE_LONG = "10s"                # "let the scene build", or multiple reps
+# Pause lengths for the cue lines (`[PAUSE]` / `[BEAT]` brackets, or the older
+# `> Pause ...` blockquote form).
+PAUSE_SHORT = "6s"                # a plain [PAUSE]
+PAUSE_LONG = "10s"                # [PAUSE — LONG] / [PAUSE — REP], scene-building
+BEAT_BREAK = "2s"                 # [BEAT] / [BEAT — HOLD], a spoken-paragraph turn
 PARAGRAPH_BREAK = "800ms"         # sentence-level pacing between paragraphs
 
 # The cue line becomes silence and is not read aloud - the narrator has already
@@ -134,6 +136,22 @@ def ssml_blocks(markdown: str) -> list[str]:
     for raw in re.split(r"\n\s*\n", markdown):
         block = raw.strip()
         if not block:
+            continue
+
+        # `[PAUSE]` / `[BEAT]` bracket cue on a line of its own - the hub
+        # renders these as styled cue rows; here they become silence. LONG and
+        # REP variants get the long pause; BEAT is a shorter paragraph turn.
+        m = re.match(r"^\[(.+)\]$", block)
+        if m:
+            cue = m.group(1).strip()
+            word = cue.split()[0].upper().strip(".—-")
+            if word == "PAUSE":
+                length = (PAUSE_LONG
+                          if re.search(r"LONG|REP", cue, re.I) or _LONG_CUE.search(cue)
+                          else PAUSE_SHORT)
+            else:  # BEAT and anything else non-spoken
+                length = BEAT_BREAK
+            out.append("<break time=\"%s\"/>" % length)
             continue
 
         # `> Pause ...` - the cue line becomes silence.

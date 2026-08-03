@@ -6,7 +6,7 @@ In, through your nose.
 
 [PAUSE]
 
-And out, through your mouth. Longer than you took it in.
+And out, through your mouth, longer than you took it in.
 
 [PAUSE]
 
@@ -28,86 +28,72 @@ And out.
 
 [BEAT]
 
-Tonight is the part nobody trains.
+Tonight is the part of golf nobody trains, which happens to be most of golf.
 
-Four hours out there. Around seventy swings. Add up the time your club is actually
-moving and it is under two minutes. Everything else is walking, waiting, standing and
-talking, and that is where rounds are lost — not in the swing, in the three and a half
-hours around it.
+A round runs four hours. Add up the time your club is actually moving and it is
+under two minutes. Golf is unique this way — slow, self-paced, no opponent forcing
+your attention anywhere, and enormous gaps with nothing to do but think. Those gaps
+are where rounds are won and lost, because whatever your mind does in them is the
+state you arrive at the next ball with.
 
-So here is the whole skill. Your attention has three settings and only two of them are
-any use.
+Here is the mechanism. Attention is a spotlight, and it has two dials. Direction —
+pointed outside at the world, or inside at your own thoughts. And width — broad,
+taking everything in, or narrow, locked on one thing. That gives you settings, and
+in the gaps only some of them serve you.
 
-Wide and outside. That is the walk. You are gathering — the wind on your face, the lie
-when you get there, the number, the pin sheet, what the last green did. Everything
-comes in. Nothing is decided.
+Broad and external is the walking setting. Wind on your face, the lie you can see
+coming, what the last green told you about firmness. Gathering, without deciding.
 
-Narrow and outside. That is over the ball. One target, and the tempo. Nothing else
-exists.
+Narrow and external is the over-the-ball setting. One target, and tempo. You already
+have this one from the routine.
 
-And narrow and inside. That is the one that costs you. That is replaying the last
-shot, doing arithmetic on the score, or listening to yourself talk about your swing.
-There is nothing out there for you. It is the only setting with no information in it.
+Narrow and internal is the expensive one. Replaying the shot you just hit. Running
+arithmetic on the score. Auditing your own swing in commentary. Understand what this
+setting costs you: rumination keeps the stress physiology switched on through the
+exact minutes your system was supposed to be recovering, and it points you at the
+one place on the course with no information in it — the inside of your own head. The
+last shot has nothing left to give you. The score cannot be swung at.
 
 [BEAT]
 
-The switch between wide and narrow is the walk in. Before the walk in, everything is
-allowed. After it, one thing. If you notice you have gone narrow and inside, you do
-not fight it — you go wide. Look up. Find something at distance and let your eyes rest
-on it. Attention needs somewhere to be, and giving it a place is quicker than telling
-it to stop.
+Now the tools, and there are three.
+
+First, know that attention never switches off. It only relocates. So you do not
+fight an inward spiral by ordering yourself to stop thinking — that order points
+attention at the thought. You give it somewhere better to be. Eyes up, find
+something at distance — a treeline, a flag, a fairway edge — and let the eyes rest
+there until the spotlight follows. The eyes lead, the mind follows. It is faster
+than willpower every time.
+
+Second, the walk-in is the switch. From the moment you start the walk into the ball,
+broad collapses to narrow, external stays external, and one thing exists. Before the
+walk-in, everything is allowed — including nothing at all.
+
+Third, and this surprises people: you are not supposed to concentrate for four
+hours. Nobody can, and trying burns the very resource you need at the ball.
+Concentration is a consumable. Talk to your group. Notice the day. Be off duty in
+the gaps — genuinely off duty — and clock in at the walk-in. The skill is not
+staying focused. The skill is the clean switch.
 
 [BEAT — HOLD]
 
-Posse, two. Four hundred and thirty-one, the longest par four out there, and you have
-just made five on it.
+Now train the reset, because it only works if it is practiced. Eyes closed. Bring up
+a shot from a recent round that stung — one you caught yourself replaying. Let the
+replay actually start. Feel the pull inward.
 
-Now walk to the third tee. Wide and outside the whole way. What is the wind doing.
-What did that green do. Nothing about the five.
+[PAUSE — LONG]
 
-[PAUSE — REP]
+Now: eyes up. Find something at distance and let your eyes rest on it. Feel the
+spotlight swing outside. Broad. The wind, the ground, the day. Stay there.
 
-[BEAT]
+[PAUSE — LONG]
 
-Shoal Creek, seven. Five hundred and forty-three, the number one handicap, and it is a
-three-shot hole. The longest gap between decisions on the card.
+And now a walk-in. Watch attention collapse to one target, clean, nothing carried
+across the line.
 
-Drive is away. You know the second shot already — lay it to your number, left of
-center. That means the walk has no work in it. Let it be a walk.
-
-[PAUSE — REP]
-
-[BEAT]
-
-Outlaw, five. Water down the entire right side.
-
-You are walking past the hazard the whole way down. Do not rehearse it. Look left,
-where the ball is going, and let your eyes stay there.
-
-[PAUSE — REP]
+[PAUSE — LONG]
 
 [BEAT — HOLD]
 
-Now with noise in it.
-
-Somebody talking to you about their round. A phone going in a bag. A bad break on the
-last green you have not finished being annoyed about.
-
-Wide and outside. Look up, find something at distance, let the eyes settle. Then the
-walk in, and one thing.
-
-[PAUSE — REP]
-
-[BEAT]
-
-Posse, ten. You have just walked off the ninth and this is the first swing of a new
-nine.
-
-The front is finished either way. Whatever the number was, it is closed. Walk onto
-that tee with nothing carried across.
-
-[PAUSE — REP]
-
-[BEAT — HOLD]
-
-The one thing: wide until the walk in, narrow after it, and never inside.
+The one thing: broad until the walk-in, narrow after it — and when you catch
+yourself inside, eyes up, and let them lead you back out.

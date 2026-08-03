@@ -6,7 +6,7 @@ In, through your nose.
 
 [PAUSE]
 
-And out, through your mouth. Longer than you took it in.
+And out, through your mouth, longer than you took it in.
 
 [PAUSE]
 
@@ -28,84 +28,65 @@ And out.
 
 [BEAT]
 
-Tonight is the first tee, and the first thing to be clear about is what your body is
-doing there.
+Tonight is the first tee, and the first thing to get right is the diagnosis. What you
+feel standing there — heart rate up, hands cold and a little quick, breath sitting
+high in the chest, the urge to just get it over with — has a name, and the name is
+not fear. It is arousal. Your sympathetic nervous system is doing exactly what it was
+built to do: it read the moment as one that matters, and it is making energy
+available. Adrenaline moves blood to the big muscles. That is the whole event.
 
-The heart rate is up. The hands are cold and a little quick. The breath is shallower
-and higher in the chest.
-
-That is not a warning. It is your body making energy available, and it looks the same
-whether you have decided the moment is a threat or a chance. The physiology does not
-choose. You choose, with the word you put on it.
-
-So put the word on it. I am ready. Not calm — ready. Nobody plays well flat, and
-trying to talk yourself down from a state that is actually useful is how you end up
-with soft hands and no speed on the first swing of the day.
+Here is the part worth knowing. The physiology of dread and the physiology of
+excitement are nearly identical. Same heart rate, same hands. What differs is the
+label you attach — and the label is yours to choose. A body that is loading, read as
+threat, produces a golfer trying to survive the swing. The same body, read
+accurately, produces a golfer who is ready. So say the accurate thing: this is
+arousal. I am ready. Not calm — ready. Nobody plays well flat. You have a working
+range, and the first tee puts you at the top of it, which is a fine place to swing a
+driver from.
 
 [BEAT]
 
-The second thing. The first tee has the least information of any shot you will hit all
-day. You have no feel for the greens, no read on the wind, nothing from the round to
-go on, and more people watching than at any other point. Less information and more
-attention. That combination is exactly why the routine gets more rigid here, not less.
+Now, why this tee and no other. The first tee is the worst information environment
+of your round — no feel for the greens yet, no read on the wind, nothing from the
+round to calibrate against — and the largest audience. Minimum information, maximum
+attention. That combination pulls golfers toward exactly the wrong move: rushing,
+improvising, getting it over with. The correct move is the opposite. When
+information is lowest, the routine gets more rigid, not less. It is the one familiar
+structure available, so you lean on it.
 
-The first swing does not predict the round.
+And you cannot think your heart rate down. Arousal does not answer arguments. It
+answers the body, through three channels you own. The breath — a long exhale, longer
+than the inhale, two or three times; that is the brake pedal, and it works within a
+minute. The pace — slow the walk. Everything before the ball goes at three-quarter
+speed, and the swing goes at its own speed; you regulate the walk precisely so that
+you never have to regulate the swing. And the grip — soft hands before the takeaway,
+because pressure hides there first.
+
+One more fact to carry: the first swing does not predict the round. It feels like a
+verdict because it is public and because it is first. It is one data point from your
+widest state of the day, and it deserves exactly that much weight.
 
 [BEAT — HOLD]
 
-Shoal Creek, one. Three hundred and ninety-eight, and it is the number three
-handicap — every odd handicap on that card is on the front, so the hardest stretch you
-play all day starts on the first swing.
+Now build the state on purpose. Eyes closed. Put yourself on a first tee you know.
+People behind you, a group waiting. Let the body actually respond — heart a little
+quick, hands a little cold. Do not push it away. You need it here, because tonight
+you are training the regulation, not the swing.
 
-Mini driver, right of center. The sand is left, so you come in from the right. The
-sand never enters it.
+[PAUSE — LONG]
 
-Feel the heart rate. Name it. Ready. Then run the routine.
+Name it. This is arousal. My body is making energy available. I am ready. Now the
+long exhale, twice. Slow the walk. And run the routine, full length, same as it will
+be on the fourteenth.
 
-[PAUSE — REP]
+[PAUSE — LONG]
 
-[BEAT]
+Once more, from the top. The state rises, you name it, you breathe it into range,
+and the routine carries you the rest of the way.
 
-Posse, one. Four hundred and thirteen into bunkers on every side. A full swing at the
-middle.
-
-There is no side to use on that green and there will not be on most of them. That is
-information, not a threat.
-
-[PAUSE — REP]
-
-[BEAT]
-
-Outlaw, one. Water left, sand right at the green. Driver, aimed off the water.
-
-Ordinary swing, unusual start line. You are not making a shape. You are moving where it
-starts.
-
-[PAUSE — REP]
+[PAUSE — LONG]
 
 [BEAT — HOLD]
 
-Now the same tee, with the tightness in it.
-
-Hands cold. Chest high and quick. People behind you. Something in you wants to get it
-over with.
-
-Name it. Ready. Then slow the walk, not the swing. Everything before the ball goes at
-half speed and the swing goes at its own speed.
-
-[PAUSE — REP]
-
-[BEAT]
-
-And the version you actually get some days. You are late. No range balls, no putts,
-straight out of the car to the tee.
-
-The routine does not get skipped, it gets compressed. Same pieces, less time between
-them. Decide behind the ball. One look. Go.
-
-[PAUSE — REP]
-
-[BEAT — HOLD]
-
-The one thing: your body is loading, not warning, and the only word it needs from you
-is ready.
+The one thing: the body is loading, not warning. Name it, breathe long, slow the
+walk — and let the swing go at its own speed.

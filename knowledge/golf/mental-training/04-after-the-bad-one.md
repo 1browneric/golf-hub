@@ -6,7 +6,7 @@ In, through your nose.
 
 [PAUSE]
 
-And out, through your mouth. Longer than you took it in.
+And out, through your mouth, longer than you took it in.
 
 [PAUSE]
 
@@ -28,91 +28,78 @@ And out.
 
 [BEAT]
 
-Tonight is what happens after a bad one, and it has a routine of its own. Most people
-only ever build the one at the front.
+Tonight is the bad shot — not how to avoid it, because you cannot, but what happens
+in the ninety seconds after it, because that is where its real cost is decided.
 
-Three pieces, and all three fit inside the walk to the ball.
+Golf punishes carrying. The game gives you a bad shot and then hands you five
+minutes to walk with it, and an unprocessed emotion does not sit quietly for five
+minutes. Suppressed — jaw set, told to move on before it has been looked at — it
+does not leave. It rebounds. It colors the next decision toward either fear or
+revenge, and one bad swing quietly becomes three bad holes. The strokes you lose to
+a bad shot are rarely the shot. They are the carry.
 
-First, look at it. Actually watch where it finishes. Not looking is avoidance, and it
-costs you the one piece of information the shot just gave you.
-
-Second, one sentence, and it describes — it does not judge. That came out left. That
-was short. Description keeps the information and leaves you nothing to argue with. The
-moment the sentence turns into a verdict about you, you have started a second round
-inside your head and you will be playing both.
-
-Third, a physical release. One repeatable thing that marks the end of it. Re-grip the
-club and set it back in the bag. Pull the glove tab. One long breath on the third step.
-Pick one and use the same one every time, because the body ends things more reliably
-than the mind does.
+And listen to the sentence you say after a bad one, because your system treats your
+own words as coaching input. There are two kinds. I always block it under pressure —
+that is a verdict. Absolute, permanent, aimed at you, and it gives you nothing to do
+next except be a worse golfer. That came out left — that is a description. Specific,
+temporary, aimed at the ball, and it preserves the one thing the shot actually gave
+you, which is information. Same swing, two different futures, depending on which
+sentence follows it.
 
 [BEAT]
 
-Two more, and they are the ones that decide the card.
+So the tool is a second routine — a post-shot routine — three steps, and all three
+fit inside the walk to the ball.
 
-The damage from a bad hole is the strokes on that hole. It is never the strokes plus
-the next three. That second part is optional and it is the only part you control.
+Step one: look at it. Watch the ball until it finishes. Turning away feels like
+composure, but it is avoidance, and it throws away the shot's information while
+keeping its emotion. Exactly backwards.
 
-And two in a row is where a round actually dies. When that happens the unit gets
-smaller, not bigger. You are not saving the round. You are hitting this shot.
+Step two: one sentence, and it describes. That started left of the line. That was
+short. Never a verdict, never about you. If you catch a verdict forming — reframe
+it. Neutral, specific, forward-looking.
 
-Last thing, and it is the honest one. You will not feel fine. The routine is not a
-mood. It runs whether the feeling has cleared or not, and the feeling clears faster
-when it is running.
+Step three: a physical release. One repeatable act that marks the end of the event.
+Re-grip the club and set it back in the bag. Pull the glove tab. One long exhale on
+the third step of the walk. Pick one, and use the same one every time. The reason it
+is physical: the body closes files the mind will argue about. An action is an
+ending; a thought is a negotiation.
+
+Two more pieces, because they decide the card. The damage from a bad hole is the
+strokes on that hole — never the strokes plus the next three. That second part is
+optional, and it is the only part you control. And after two bad ones in a row, the
+unit shrinks. Not the round, not the nine — this swing. You are not saving anything.
+You are hitting one shot.
+
+Last, the honest part. The reset is not a mood. You will run all three steps and
+still feel the heat — that is normal, and it is fine. The routine is not there to
+make you feel good. It is there to keep the next decision clean while the feeling
+drains, and the feeling drains faster while it runs.
 
 [BEAT — HOLD]
 
-Outlaw, one. Water left off that tee. Driver, aimed off the water — and you did not aim
-far enough off it.
+Now rehearse it, on a real one. Eyes closed. Bring back a shot from a recent round
+that actually cost you — the one you carried. Put yourself there, just after impact.
 
-First swing of the day, and it is wet. Look at it. One sentence — that started too far
-left. Set the club in the bag. Walk.
+[PAUSE — LONG]
 
-[PAUSE — REP]
+Watch it finish. All the way to stopping. Now the sentence — describe it, nothing
+else.
 
-[BEAT]
+[PAUSE — LONG]
 
-Shoal Creek, fifteen. Short of that green is a penalty stroke and nothing else on it
-is. You went short.
+Now the release. Your act, the one you have chosen. Do it, and start the walk, and
+notice the file close behind you.
 
-Take the drop. Now the next one is just a shot with a number on it, and the routine is
-the same routine it was on the first tee.
+[PAUSE — LONG]
 
-[PAUSE — REP]
+And the two-in-a-row version. Another one goes wrong, right after. Feel the pull to
+fix the round in one swing. Shrink the unit: this swing. Run the three steps, and
+walk.
 
-[BEAT]
-
-Posse, fourteen. Long and left is water, and the only way you find it is a wedge that
-runs through the back. You ran it through the back.
-
-The worst outcome on the hole, off the one shot you were warned about. Look at it.
-Describe it. Release it. Walk.
-
-[PAUSE — REP]
+[PAUSE — LONG]
 
 [BEAT — HOLD]
 
-Now two in a row.
-
-Outlaw, seven — short, into the front, back at your feet. Then the eighth, and the same
-green punishes you at the other end.
-
-Standing on the ninth tee, the unit gets smaller. Not the round. Not the nine. This
-swing.
-
-[PAUSE — REP]
-
-[BEAT]
-
-And the one that catches good players. Shoal Creek, sixteen, straight after a double.
-Easiest hole on the card, and everything in you wants it back right now.
-
-You do not get it back on demand. You get it back by playing the hole in front of you
-at the pace you always play it.
-
-[PAUSE — REP]
-
-[BEAT — HOLD]
-
-The one thing: the shot costs what it costs, and everything after that you are choosing
+The one thing: the shot costs what it costs. Everything after that, you are choosing
 to pay.

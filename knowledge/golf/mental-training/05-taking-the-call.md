@@ -6,7 +6,7 @@ In, through your nose.
 
 [PAUSE]
 
-And out, through your mouth. Longer than you took it in.
+And out, through your mouth, longer than you took it in.
 
 [PAUSE]
 
@@ -28,85 +28,75 @@ And out.
 
 [BEAT]
 
-Tonight is taking somebody else's call, and it is a skill in its own right because a
-call arrives as words and a swing needs a picture.
+Tonight is commitment — specifically, what happens between a decision and a swing,
+because that is where good calls go to die.
 
-A call comes to you as a club, a side and a number. It is not a shot yet. If you swing
-on the words without building your own picture first, you get a careful swing, and a
-careful swing at a good target is worse than a full swing at a fair one. So the order
-never changes: take the call, build the picture, then go.
+You play with calls. A walkthrough's plan, a caddie's read, your own strategy made
+the night before. A call arrives as words: a club, a side, a number. Understand what
+words are to your motor system: nothing. The swing does not execute language. It
+executes a picture. Between the words and the swing, you have to build the image —
+see the start line, see the flight, see it finish — or the body is swinging at an
+instruction it never received in a language it speaks. Words without a picture
+produce a careful swing, and a careful swing at a good target loses to a committed
+swing at a fair one, every time.
+
+Here is the deeper mechanism, and it is the whole session. When you stand over a
+ball with two live options — the call you were given and the one you privately
+prefer — your motor system does not pick one. It blends. The swing hedges between
+two targets and delivers neither. That is the half-taken call, and it is the worst
+outcome available, because you pay for both options and own neither: the caution of
+the one you rejected and the exposure of the one you never fully chose. Deciding and
+committing are two separate acts. Most golfers do the first and skip the second.
 
 [BEAT]
 
-Second piece. If you do not believe it, say so before the walk in. Out loud, if there
-is somebody to say it to, and to yourself if there is not. A call you half-took is
-worse than either call taken fully — you get the caution of the one you rejected and
-the exposure of the one you did not commit to.
+So, the tools.
 
-Third piece, and this one is built into the reads themselves. The tilt across a green
-tells you which way it moves and whether you are going up or down. It does not give
-you the last two feet. That part is always yours and nobody is coming to fill it in.
-So when a read arrives, take the direction and the edge as given, and then own the
-finish yourself without waiting to be told.
+First: if you disagree with a call, the disagreement gets voiced before the walk-in.
+Out loud if someone gave you the call, to yourself if you did. Then one option gets
+picked — and hear this clearly, it matters less which one. Either call, fully taken,
+beats the blend. What is forbidden is not choosing wrong. What is forbidden is
+carrying the argument across the line.
 
-[BEAT]
+Second: convert every call into your own picture. The call gives you club, side,
+number. You supply start line, flight, finish. On a read, the call gives you
+direction and edge — the last two feet are always yours, from your own eyes, and
+nobody is coming to fill them in. The call is the input. The picture is the shot.
 
-And afterwards. Sometimes the call was wrong. A wrong call executed fully is a good
-shot and a bad result, and those are different things. Relitigating it for three holes
-is the actual error, and it is a much more expensive one than the call was.
+Third — and this is the discipline that keeps the whole system honest — judge the
+decision, not the result. A fully-committed swing on a sound call that finds a bad
+bounce is a good decision with a bad outcome. Those are different things, and golf
+mixes them constantly, because results are noisy and decisions are not. If you let
+results grade your decisions, one bad bounce will talk you out of a good process.
+And relitigating a call for three holes is not analysis. It is the narrow-internal
+setting from Session 3, wearing a lawyer's suit.
 
 [BEAT — HOLD]
 
-Posse, three. Five feet of fall, the most tilt on any green across the three courses.
-From below the hole it is moving left, and a lot of it. Right edge, and firm.
+Now rehearse it. Eyes closed. Bring up an approach shot you know well, and give
+yourself a call on it — club, side, number, as if it came from the book.
 
-Take that. Now add what it does not cover — the last two feet, from your own eyes.
-Then commit to the whole line as one line.
+[PAUSE — LONG]
 
-[PAUSE — REP]
+Build the picture from it. Start line. Flight. Watch it land and finish. When the
+image is whole, last look, and swing on it.
 
-[BEAT]
+[PAUSE — LONG]
 
-Shoal Creek, nine. Moving left, and more than you read. Right edge.
+Now the hard one. Same shot, but this time part of you wants the other club. Feel
+the split. Voice it — say the disagreement in your head, plainly. Now pick one.
+Close the other. Build the picture from the one you picked, and only that one, and
+swing.
 
-That read is telling you your own eyes are going to undersell it. Believe it. Play more
-break than looks right, and roll it like you chose it.
+[PAUSE — LONG]
 
-[PAUSE — REP]
+And last: the committed swing comes off exactly as planned, and the result is still
+bad. Watch it. Say what happened — the decision was sound, the bounce was not. Put
+the club away. Nothing needs fixing.
 
-[BEAT]
-
-Outlaw, eleven. Easiest hole on the card, steepest green on the card. The call is go —
-and to the front half.
-
-Part of you wants to go at the flag because the hole is easy. Settle it now, behind the
-ball, before the walk in. Then one shot, whichever you picked.
-
-[PAUSE — REP]
+[PAUSE — LONG]
 
 [BEAT — HOLD]
 
-Now the disagreement, and it is on a tee.
-
-Posse, sixteen. Water crosses that fairway. The call is the three hybrid, because it
-takes the water out and leaves a nine iron. Driver leaves ninety-two and a fifty-eight,
-and you want the driver.
-
-Say it. Out loud. Then pick one, and build the picture from the one you picked — not a
-compromise between the two.
-
-[PAUSE — REP]
-
-[BEAT]
-
-And the last one. You took the call, you executed it exactly, and the result was bad.
-
-Nothing to fix. The swing was the swing. Put the club away and walk to it, and do not
-spend the next three holes proving you were right.
-
-[PAUSE — REP]
-
-[BEAT — HOLD]
-
-The one thing: take the call, build your own picture, and own the last two feet
-yourself.
+The one thing: decide, then commit — and if you must argue, argue before the
+walk-in, because the swing only has room for one voice.

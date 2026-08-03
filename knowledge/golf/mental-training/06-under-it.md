@@ -6,7 +6,7 @@ In, through your nose.
 
 [PAUSE]
 
-And out, through your mouth. Longer than you took it in.
+And out, through your mouth, longer than you took it in.
 
 [PAUSE]
 
@@ -28,81 +28,86 @@ And out.
 
 [BEAT]
 
-Tonight is pressure, and the first thing to say is that you are not going to make it go
-away and you should stop trying.
+Tonight is pressure, and we start by retiring a goal you may still be carrying: you
+are not going to make pressure go away, and you should stop spending swings trying.
+Pressure is not a malfunction. It is the price of caring about the outcome, and you
+would not want the version of yourself that does not pay it.
 
-Pressure does two things to you and both are physical. It narrows your attention, so
-the hazard gets bigger and the target gets smaller. And it speeds your tempo — not the
-swing first, the walk, the breath, the look. The swing goes last, and by then it is too
-late to catch.
+What you can do is know exactly what pressure does, because its moves are the same
+every time, and they are all catchable.
 
-So you do not manage the feeling. You keep the routine the only thing running, and you
-catch the tempo early, out in the walk, where there is still time.
+It narrows attention. The spotlight from Session 3 clamps down — the hazard grows,
+the target shrinks, and your eyes start going where the fear points instead of where
+the shot goes.
+
+It speeds your internal clock. Not the swing first — the walk, the breath, the
+looks, the time between decision and takeaway. Everything upstream compresses, and
+the swing, which goes last, inherits the hurry when there is no time left to catch
+it.
+
+And it fills working memory with outcome. The number you are on. What this putt
+means. Who is watching. Every one of those thoughts is rent paid from the same small
+account the shot needs — the account that holds one target and one tempo.
 
 [BEAT]
 
-Learn your own tells. Grip pressure that has crept up without you asking it to. A
-breath you are holding at the top of the chest. Walking faster than the people you are
-with. Those arrive before the bad swing, every time, and they are catchable.
+Now the tools, and the first one is the most practical thing in these six sessions:
+learn your tells. Pressure announces itself in the body before it touches the swing.
+Grip pressure that crept up without being asked. A breath parked at the top of the
+chest. Walking faster than the people you are with. Yours are consistent — you have
+seen them before. The tell arrives out in the walk, where there is still time, and
+that is exactly where you catch it: long exhale, slow the walk, soft hands. You have
+run this regulation since Session 2. Under pressure it is the same lever, pulled
+earlier.
 
-And the score. A number in your head on the tee is an outcome, and outcomes belong in
-the car on the way home, not over the ball. The replacement is not positive thinking.
-It is smaller: this shot, this target, this tempo. The routine does not know the score.
+Second: you cannot blank the score out, so stop trying. Ordering yourself not to
+think about the number keeps a guard posted on the number, which keeps it lit. The
+mind does not do subtraction — it only does replacement. So replace: this shot, this
+target, this tempo. Three items, all process, all yours. The score is an outcome. It
+lives in the car on the way home. The routine does not know the score, which is
+precisely why you built it in Session 1 and kept it the same length all year — so
+that when the moment gets big, there is one structure on the course that has not
+changed size.
+
+Third: know where confidence actually comes from tonight, not from your last three
+holes. Results are noisy — too noisy to build on. Preparation is not. The plan for
+every hole already exists and was made on a calm evening. Your routine is rehearsed.
+Your reset is rehearsed. Pressure does not get a vote on any of that. Trust built on
+process survives a bad bounce; trust built on a hot streak dies with it.
+
+And one warning at the other door: three birdies produce the same error as three
+bogeys. Getting ahead of yourself — playing the round that has not happened, adding
+the score up walking to the fourteenth — is outcome focus in a better mood. Same
+tools. This shot, this target, this tempo.
 
 [BEAT — HOLD]
 
-Start easy. Outlaw, fourteen. Three hundred and fifty-two, one bunker, left, and
-nothing else on that green. Hit the driver.
+Now build it. Eyes closed. Put yourself late in a round that matters, and let the
+number into your head — you know exactly where you stand, and it is close. Feel the
+clock try to speed up.
 
-Nothing at stake and nothing to avoid. Run it as though there were. That is the whole
-point of the first rung.
+[PAUSE — LONG]
 
-[PAUSE — REP]
+Find your tell. Grip, breath, or pace — one of them has moved. Name the one that
+moved. Long exhale. Slow the walk. Now the shot in front of you: this shot, this
+target, this tempo. Run the routine at its own pace and let the swing go.
 
-[BEAT]
+[PAUSE — LONG]
 
-Now some weight. Shoal Creek, sixteen. Water crosses that fairway, and the carry number
-moves with the markers. You got it before you pulled a club, and it says driver.
+Now the putt everything comes down to. The score is sitting right there where you
+can see it. Replace it — this read, this line, this speed. One look, and roll it,
+and watch it finish, whatever it does.
 
-So it has to carry. This is the tee shot where the tempo goes first. Check the grip
-pressure before the walk in.
+[PAUSE — LONG]
 
-[PAUSE — REP]
+And the one you have to be able to do: it missed. Same green, and the next one still
+has to be rolled. Look at it. One sentence, describing. Release. Then read, one
+look, roll it again.
 
-[BEAT]
-
-More. Shoal Creek, eighteen. Four hundred and fourteen, the number two handicap, par is
-a win, and it is the last full swing of consequence. Mini driver, then the eight iron,
-right half, past the front.
-
-You are aware of the number you are on. Feel that. Then this shot, this target, this
-tempo.
-
-[PAUSE — REP]
+[PAUSE — LONG]
 
 [BEAT — HOLD]
 
-Now all of it.
-
-The putt on the last, and the score is sitting right there in your head where you can
-see it.
-
-Find the tell. Grip, breath, or pace — one of them has moved. Name it. Then read it,
-one look, and roll it. Let the ball run out and watch it finish, whatever it does.
-
-[PAUSE — REP]
-
-[BEAT]
-
-And the one you have to be able to do. You missed that putt.
-
-Same putt, same green, and now you have already failed at it once tonight.
-
-Look at it. One sentence. Release it. Then read it, one look, and roll it again.
-
-[PAUSE — REP]
-
-[BEAT — HOLD]
-
-The one thing: you cannot stop the tempo moving, but you can catch it in the walk, and
-the routine does not know the score.
+The one thing: pressure narrows you, hurries you, and fills you with outcome — and
+the answer to all three is the same: catch the tell in the walk, and give the shot
+its three words back. This shot. This target. This tempo.
