@@ -128,6 +128,11 @@ input,textarea,select{font-family:inherit}
   flex:1 1 auto;text-align:center;white-space:nowrap}
 .edtag.on{background:#0C2340;border-color:#0C2340;color:#F4EFE4;font-weight:600}
 .edhint{font-family:var(--mono);font-size:10px;color:#8792A4;margin-top:7px;text-align:center;letter-spacing:.04em}
+.edactions{display:flex;gap:8px;margin-top:12px}
+.edsave{flex:1;padding:12px;border-radius:10px;background:#0C2340;color:#F4EFE4;
+  font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;font-weight:700}
+.edcancel{flex:none;padding:12px 16px;border-radius:10px;border:1px solid rgba(12,35,64,.3);color:#5C6B82;
+  font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
 
 /* approach dispersion — TWO NUMBER BOXES UNDER THE MISS CHIPS, and nothing
    else. The chip above already says which way it missed, so the box only says
@@ -474,7 +479,7 @@ var SG_KEYS = ["driver","p176","p101","p100","putting","ball_strike"];
    is_penalty() in pull_round.py. */
 var ACC_TAGS = ["Good","Fat","Thin","Heel","Toe","Pull","Push","Hook","Slice",
                 "Left","Right","Short","Long","Fairway","Rough","Deep Rough",
-                "Green","Sand","Water","OB","Unplayable"];
+                "Green","Sand","Water","OB","Unplayable","Layup","Other"];
 var PENALTY_TAGS = ["OB","Water","Unplayable"];
 
 function sgAccTags(value){
@@ -1290,7 +1295,8 @@ const ACC_GROUPS = [
               ["Pull","Push","Hook","Slice"]]],
   ["Miss",   [["Left","Right","Short","Long"]]],
   ["Finish", [["Fairway","Rough","Deep Rough","Green"],
-              ["Sand","Water","OB","Unplayable"]]]
+              ["Sand","Water","OB","Unplayable"],
+              ["Layup","Other"]]]
 ];
 /* A Finish tag names the lie the next shot is played from, so saving a shot
    prefills it and Eric never types the same fact twice. Green/Water/OB/
@@ -2195,7 +2201,7 @@ function dispEffective(d){
      at save, so a number typed before the chip was tapped still stores with
      the unit he ended on. */
   const onGreen = tags.includes("Green") ||
-    (!tags.some(t => ["Fairway","Rough","Deep Rough","Sand","Water","OB","Unplayable"].includes(t)));
+    (!tags.some(t => ["Fairway","Rough","Deep Rough","Sand","Water","OB","Unplayable","Layup","Other"].includes(t)));
   return {
     long_ft:  v.long_ft  === undefined ? "" : v.long_ft,
     right_ft: v.right_ft === undefined ? "" : v.right_ft,
@@ -2217,12 +2223,12 @@ function dispMissFields(d){
   const v = dispEffective(d);
   const u = v.unit === "yd" ? "yd" : "ft";
   return `<div class="edrow dspmiss">
-    <div class="edfield"><div class="edlbl">Short / long (${u})</div>
-      <input type="number" inputmode="numeric" min="0" id="dsp-long"
-        value="${esc(String(v.long_ft ?? ""))}"></div>
     <div class="edfield"><div class="edlbl">Left / right (${u})</div>
       <input type="number" inputmode="numeric" min="0" id="dsp-right"
         value="${esc(String(v.right_ft ?? ""))}"></div>
+    <div class="edfield"><div class="edlbl">Short / long (${u})</div>
+      <input type="number" inputmode="numeric" min="0" id="dsp-long"
+        value="${esc(String(v.long_ft ?? ""))}"></div>
   </div>`;
 }
 
@@ -2919,8 +2925,8 @@ function bind(){
       const lbls = document.querySelectorAll(".dspmiss .edlbl");
       if (lbls.length === 2){
         const u = dispEffective(editing.draft).unit === "yd" ? "yd" : "ft";
-        lbls[0].textContent = `Short / long (${u})`;
-        lbls[1].textContent = `Left / right (${u})`;
+        lbls[0].textContent = `Left / right (${u})`;
+        lbls[1].textContent = `Short / long (${u})`;
       }
     };
   });
