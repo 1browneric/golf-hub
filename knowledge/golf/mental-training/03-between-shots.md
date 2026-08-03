@@ -70,7 +70,10 @@ putt drops.
 And when you catch yourself narrow and inside — replaying, tallying — do not argue
 with the thought. Attention never switches off; it only relocates. Eyes up, find
 something at distance, and let your eyes rest there until the spotlight follows.
-The eyes lead. The mind follows. It is faster than willpower, every time.
+The eyes lead. The mind follows. It is faster than willpower, every time. And if the
+eyes are not enough, open another door: name three sounds you can hear, or count the
+colors in front of you. The senses only work in the present — any one of them,
+pointed outward, walks you back to it.
 
 [BEAT — HOLD]
 

@@ -86,5 +86,18 @@ Style references (Eric, 2026-08-03: "These are the style that i am looking for")
    intentional; expressive, never robotic; ends with the athlete having actually
    rehearsed, not just listened; recovery decompression after competition.
 
+3. **Wicked Smart Golf** (wickedsmartgolf.com — Michael Leonard; two solo-episode
+   transcripts studied 2026-08-03): results-first framing tied to strokes ("losing
+   shots", "fading on the back nine", "stop the blowup holes"), anti-swing-tip
+   stance (better scores without swing changes), and concrete named micro-tools:
+   the 10-2 grip squeeze-and-release for tension, five-senses grounding to get
+   present (sounds, colors — "doors to the brain"), contrasting targets you can
+   actually see (the one tall tree, not "that side of the fairway"), small putting
+   targets (a scuff at the cup's edge, never just "the hole"), explain the shot or
+   putt to your mind in plain words, one or two long quality looks instead of many
+   quick glances.
+
 The blend: Cohn's conversational question-first coaching voice and vocabulary for
-the teaching body, Kairo's guided-rep structure for the rehearsal blocks.
+the teaching body, Kairo's guided-rep structure for the rehearsal blocks, and
+Wicked Smart Golf's concrete micro-tools and stroke-stakes bluntness sprinkled
+where they serve the skill.

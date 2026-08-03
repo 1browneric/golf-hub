@@ -61,7 +61,11 @@ forbidden is carrying the argument across the line.
 Second: convert every call into your own picture. The call gives you club, side,
 number. You supply start line, flight, finish. On a read, the call gives you
 direction and edge — the last two feet are always yours, from your own eyes, and
-nobody is coming to fill them in. The call is the input. The picture is the shot.
+nobody is coming to fill them in. It helps to say the read to yourself, plainly:
+fifteen feet, uphill, right to left, falling in at five o'clock. A read you can say
+is a read your mind can picture. And aim at something small — a scuff at the edge of
+the cup, one discolored blade — never just the hole. The call is the input. The
+picture is the shot.
 
 Third — the discipline that keeps the whole system honest — judge the decision, not
 the result. A fully committed swing on a sound call that finds a bad bounce is a

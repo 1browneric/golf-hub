@@ -57,7 +57,9 @@ learn your tells. Pressure announces itself in the body before it touches the sw
 Grip pressure that crept up without being asked. A breath parked at the top of the
 chest. Walking faster than the people you are with. Yours are consistent — you have
 seen them before. The tell arrives out in the walk, where there is still time, and
-that is exactly where you catch it: long exhale, slow the walk, soft hands. Same
+that is exactly where you catch it: long exhale, slow the walk, soft hands. If the
+grip is the tell, wring it out — squeeze the club as hard as you can, ten out of
+ten, then let it fall to a two. Once more. Tension does not survive that. Same
 regulation as Session 2. Under pressure it is the same lever, pulled earlier.
 
 Second: you cannot blank the score out, so stop trying. Ordering yourself not to
