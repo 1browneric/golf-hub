@@ -1627,9 +1627,8 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       return out?groupLabel('SCORE TO PAR BY WHERE IT FINISHED')+out:'';
     };
     /* IMPROVEMENT CHARTS (Eric, 2026-08-02): first putt distance, GIR
-       percent, speed control. Drawn from the same fpRounds the per-round
-       table reads, oldest first so time runs left to right. Selective
-       number labels - the table carries the exact figures. NO subheadings
+       percent, speed control. Drawn from fpRounds, oldest first so time
+       runs left to right. Selective number labels. NO subheadings
        (Eric: never), no new colours: cream and red on navy (validated
        colorblind-safe) with a chip legend, never colour alone. */
     var CH_W=372, CH_X0=26, CH_CREAM='#F4EFE4', CH_RED='#B22234', CH_STEEL='#8FA0B8', CH_NAVY='#0C2340';
@@ -1745,20 +1744,14 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       return groupLabel('GREENS IN REGULATION &middot; DASH IS SEASON')+chWrap(s,BASE+20);
     };
     var catDetail=function(name){
-      /* GIR first-putt distance by round, inside the Putting card. GIR is
-         computedGir - never the stored glyph. A round with zero GIR holes
-         (or zero non-GIR holes) shows a dash, not 0.0; a nine says so.
-         Emphasis is weight only, never a colour. */
+      /* GIR first-putt distance by round, inside the Putting card - the two
+         charts ONLY. The per-round number list that once sat here was dropped
+         on Eric's call (2026-08-02, from his phone screenshot): "I don't need
+         it listed if there is a graph." GIR is computedGir - never the
+         stored glyph. */
       if(name==='Putting'){
-        var fr=H&&H.fpRounds;
-        if(!fr||!fr.length) return '';
-        var ft=function(v){return v==null?'-':ftTenth(v);};
-        return groupLabel('FIRST PUTT FT &middot; GIR / NON-GIR / ALL')+
-          fr.map(function(r){
-            return '<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px">'+
-              '<span style="font-weight:600">'+r.date+(r.n<18?' &middot; '+r.n+' holes':'')+'</span>'+
-              '<span class="mono" style="color:var(--steel)">'+ft(r.gir)+' / '+ft(r.non)+' / '+ft(r.all)+'</span></div>';
-          }).join('')+fpDistChart()+speedChart();
+        if(!chron.length) return '';
+        return fpDistChart()+speedChart();
       }
       if(name==='Ball Striking'){
         return (PAT&&PAT.strikeAll.length
