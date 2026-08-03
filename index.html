@@ -1841,32 +1841,41 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       if(v>=-3)   return 'TOP FOCUS';
       return 'NEEDS SIGNIFICANT IMPROVEMENT';
     };
+    /* CLOSED BY DEFAULT (Eric, 2026-08-02): each Improvement card shows the
+       band tag, the SG number and the name; tapping toggles the body - the
+       same interaction as the round cards on the Rounds screen. */
     document.getElementById('plan-list').innerHTML=ranked.map(function(a,i){
       var v=a[1],pos=v>=0,tag=bandLabel(v);
       var sup=SUPPORT[a[0]]||'';
-      return '<div class="card" style="padding:16px 18px;margin-top:12px">'+
+      return '<div class="card" data-pexpand style="padding:16px 18px;margin-top:12px;cursor:pointer">'+
         '<div style="display:flex;align-items:center;justify-content:space-between">'+
           '<span style="font-family:var(--font-caps);font-weight:800;font-size:10px;letter-spacing:.14em;color:var(--steel);padding-right:10px;line-height:1.3">'+tag+'</span>'+
           '<span class="mono" style="font-weight:600;font-size:14px;color:'+(pos?'var(--green-pos)':'#E06070')+'">'+(pos?'+':'')+v.toFixed(2)+'</span></div>'+
         '<div class="h-title" style="font-size:18px;margin-top:6px">'+a[0]+'</div>'+
+        '<div class="pdetail" hidden>'+
         (sup?'<div class="mono" style="font-size:12px;color:var(--steel);margin-top:8px;opacity:.9;line-height:1.8">'+sup+'</div>':'')+
         catDetail(a[0])+
+        '</div>'+
       '</div>';
     }).join('')
-    + (rollup?'<div class="card" style="padding:16px 18px;margin-top:12px">'+
+    + (rollup?'<div class="card" data-pexpand style="padding:16px 18px;margin-top:12px;cursor:pointer">'+
         '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">'+
           '<span class="h-title" style="font-size:18px">'+rollup[0]+'</span>'+
           '<span class="mono" style="font-weight:600;font-size:14px;color:'+(rollup[1]>=0?'var(--green-pos)':'#E06070')+'">'+(rollup[1]>=0?'+':'')+rollup[1].toFixed(2)+'</span></div>'+
+        '<div class="pdetail" hidden>'+
         '<div class="mono" style="font-size:12px;color:var(--steel);margin-top:6px;opacity:.9;line-height:1.8">'+
           bits([H&&H.firHoles?'Fairways '+rate(H.firHit,H.firHoles)+'.':'',
                 PAT&&PAT.appDir.length?'Approach miss '+PAT.appDir[0][0].toLowerCase()+' '+rate(PAT.appDir[0][1],PAT.appDir.reduce(function(a,r){return a+r[1];},0))+'.':''])+
         '</div>'+
         girChart()+
+        '</div>'+
       '</div>':'')
-    + (SUPPORT['Scoring']?'<div class="card" style="padding:16px 18px;margin-top:12px">'+
+    + (SUPPORT['Scoring']?'<div class="card" data-pexpand style="padding:16px 18px;margin-top:12px;cursor:pointer">'+
         '<div class="h-title" style="font-size:18px">Scoring</div>'+
+        '<div class="pdetail" hidden>'+
         '<div class="mono" style="font-size:12px;color:var(--steel);margin-top:8px;opacity:.9;line-height:1.8">'+
           SUPPORT['Scoring']+'</div>'+
+        '</div>'+
       '</div>':'');
 
     /* Scoring trend -- the last five completed 18s, oldest to newest. This was
@@ -2718,6 +2727,14 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       grabPuttInputs();
       puttIn.out=puttRead();
       document.getElementById('puttout').innerHTML=puttIn.out;
+      return;
+    }
+    /* Improvement card fold - same tap interaction as the round cards.
+       Content is prebuilt, so the toggle is just the hidden bit. */
+    var pc=e.target.closest('[data-pexpand]');
+    if(pc){
+      var pb=pc.querySelector('.pdetail');
+      if(pb) pb.hidden=!pb.hidden;
       return;
     }
     /* Round expansion. Checked BEFORE the data-go router: a hub preview card
