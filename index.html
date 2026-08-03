@@ -1297,6 +1297,22 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
      Rounds and the Hole Log are two separate fetches, so a card can be tapped
      before the holes land -- see resetDetails(). */
   var LAST_RS=null;
+  /* GIR for the first-putt split is COMPUTED — (score - putts) <= (par - 2)
+     — NEVER read from the stored check/X glyph in the Hole Log: that flag is
+     wrong on five logged dates (04/25, 05/16, 06/07, 07/26, 08/02) and this
+     stat must not inherit the error. The ONE definition for this surface;
+     agents/pencilwedge/recap.py `computed_gir` is the same formula, and
+     tests/test_gir_first_putt.py fails if the two ever differ. */
+  function computedGir(h){ return (h.score - h.putts) <= (h.par - 2); }
+  /* One-decimal display with ties to even, matching Python's formatter, so
+     the recap email and the hub can never print different numbers for the
+     same round (a mean of exactly 38.25 must be 38.2 on both surfaces;
+     toFixed alone says 38.3). */
+  function ftTenth(v){
+    var t=v*10, f=Math.floor(t), r=t-f;
+    if(r>0.5 || (r===0.5 && (f%2))) f++;
+    return (f/10).toFixed(1);
+  }
   function parseHoles(rows){
     var holes=[];
     (rows||[]).slice(3).forEach(function(r){
@@ -1350,6 +1366,12 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     var girRec=holes.filter(function(h){return h.gir.trim()!=='';}).length;
     var firHoles=holes.filter(function(h){return h.par>3;});
     var firHit=firHoles.filter(function(h){return h.fir.indexOf('\u2713')>=0;}).length;
+    /* Mean first-putt distance over a selection, feet. Holes that never took
+       a first putt (p1 null) drop out of numerator AND denominator. */
+    var fpAvg=function(sel){
+      var v=sel.map(function(h){return h.p1;}).filter(function(x){return x!=null;});
+      return v.length? v.reduce(function(a,b){return a+b;},0)/v.length : null;
+    };
     return {
       rounds:nRounds,
       scramblePct: missed.length? saved.length/missed.length : null,
@@ -1380,6 +1402,28 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       firstPuttAvg: (function(){
         var v=holes.map(function(h){return h.p1;}).filter(function(x){return x!=null;});
         return v.length? v.reduce(function(a,b){return a+b;},0)/v.length : null;
+      })(),
+      /* GIR FIRST-PUTT DISTANCE. GIR comes from computedGir above, never the
+         stored glyph. Holes with no first putt (holed approach, chip-in) are
+         EXCLUDED from every average — never counted as zero — which is also
+         why fpAvg filters on p1 rather than defaulting it. */
+      fpGir: fpAvg(holes.filter(computedGir)),
+      fpNon: fpAvg(holes.filter(function(h){return !computedGir(h);})),
+      fpRounds: (function(){
+        var by={},order=[];
+        holes.forEach(function(h){
+          var k=h.date+'|'+h.course;
+          if(!by[k]){ by[k]={date:h.date,n:0,hs:[]}; order.push(k); }
+          by[k].n++; by[k].hs.push(h);
+        });
+        /* Newest first, matching every other per-round list in the hub. */
+        return order.map(function(k){
+          var g=by[k];
+          return {date:g.date, n:g.n,
+                  gir:fpAvg(g.hs.filter(computedGir)),
+                  non:fpAvg(g.hs.filter(function(h){return !computedGir(h);})),
+                  all:fpAvg(g.hs)};
+        }).reverse();
       })()
     };
   }
@@ -1555,7 +1599,9 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       'Putting':  bits([puttAvg==null?'':'Averaging '+puttAvg.toFixed(1)+' putts.',
                         H&&H.onePuttPer!=null?'One-putts '+H.onePuttPer.toFixed(1)+' a round ('+H.onePuttTotal+' total).':'',
                         H&&H.threePuttPer!=null?'Three-putts '+H.threePuttPer.toFixed(1)+' a round ('+H.threePuttTotal+' total).':'',
-                        H&&H.firstPuttAvg!=null?'First putt averages '+H.firstPuttAvg.toFixed(0)+' feet.':'',
+                        H&&H.firstPuttAvg!=null?'First putt averages '+ftTenth(H.firstPuttAvg)+' feet.':'',
+                        H&&H.fpGir!=null?'First putt on GIR holes averages '+ftTenth(H.fpGir)+' feet.':'',
+                        H&&H.fpNon!=null?'First putt on non-GIR holes averages '+ftTenth(H.fpNon)+' feet.':'',
                         H&&H.leaveD?'First putt left inside 3 feet '+rate(H.leaveN,H.leaveD)+'.':''])
     };
 
@@ -1576,6 +1622,21 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       return out?groupLabel('SCORE TO PAR BY WHERE IT FINISHED')+out:'';
     };
     var catDetail=function(name){
+      /* GIR first-putt distance by round, inside the Putting card. GIR is
+         computedGir - never the stored glyph. A round with zero GIR holes
+         (or zero non-GIR holes) shows a dash, not 0.0; a nine says so.
+         Emphasis is weight only, never a colour. */
+      if(name==='Putting'){
+        var fr=H&&H.fpRounds;
+        if(!fr||!fr.length) return '';
+        var ft=function(v){return v==null?'-':ftTenth(v);};
+        return groupLabel('FIRST PUTT FT &middot; GIR / NON-GIR / ALL')+
+          fr.map(function(r){
+            return '<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px">'+
+              '<span style="font-weight:600">'+r.date+(r.n<18?' &middot; '+r.n+' holes':'')+'</span>'+
+              '<span class="mono" style="color:var(--steel)">'+ft(r.gir)+' / '+ft(r.non)+' / '+ft(r.all)+'</span></div>';
+          }).join('');
+      }
       if(name==='Ball Striking'){
         return (PAT&&PAT.strikeAll.length
                  ? groupLabel('STRIKE FAULTS, EVERY CLUB')+bars(PAT.strikeAll,sumRows(PAT.strikeAll)) : '');
