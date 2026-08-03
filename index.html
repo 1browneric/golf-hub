@@ -1293,6 +1293,11 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
        46 +/- par  47 FIR  48 GIR  49 Pen
      --------------------------------------------------------------------- */
   var HOLESTATS=null;
+  /* The raw Hole Log rows behind HOLESTATS, kept because the dispersion maps
+     read the leave columns (BR/BS) straight from them — sheet as source of
+     truth. Null until the ?tab=holes fetch lands; dispReadStore falls back to
+     HOLE_CACHE so offline still plots the last rows seen. */
+  var HOLEROWS=null;
   /* The rounds last rendered, so a tapped card can find its own round object.
      Rounds and the Hole Log are two separate fetches, so a card can be tapped
      before the holes land -- see resetDetails(). */
@@ -1945,6 +1950,10 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       if(j&&j.ok&&j.rows){
         try{localStorage.setItem(HOLE_CACHE,JSON.stringify({rows:j.rows,t:Date.now()}));}catch(e){}
         HOLESTATS=parseHoles(j.rows);
+        HOLEROWS=j.rows;
+        /* the dispersion maps read these rows — repaint them with the fresh
+           sheet values (first paint used HOLE_CACHE) */
+        if(typeof renderDispersion==='function') renderDispersion();
       }
     }).catch(function(){}).then(function(){
       return fetch(HOOK).then(function(r){return r.json();}).then(function(j){
@@ -1969,8 +1978,11 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
      file and run `python3 scripts/sync_dispersion_module.py`.
      tests/test_dispersion.py fails if the two copies drift.
 
-     The Hub only READS. It never writes a dispersion record, and it never
-     touches the sheet, the Apps Script or the round record for any of this. */
+     The Hub only READS, and what it reads is the SHEET (Eric, 2026-08-03:
+     "Google sheet should always be the source of truth"). Records derive
+     from the Hole Log's signed leave columns via the same live fetch the
+     Improvement stats use, so a sheet edit updates the maps on the next
+     open. The Hub never writes a dispersion record. */
   /* DISP-MODULE START */
   /* Approach dispersion — the shared, pure core.
    *
@@ -2344,17 +2356,47 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
   }
   /* DISP-MODULE END */
 
-  /* The store the round tracker writes. Same GitHub Pages origin, so
-     localStorage is shared between the Hub and every course page under it —
-     which is exactly how the maps get their data with no server and no sheet
-     column. Per-device by consequence: nothing syncs this between his phone
-     and his iPad. */
-  var DISP_STORE_KEY='gh_dispersion_v1';
+  /* SHEET IS THE SOURCE OF TRUTH (Eric, 2026-08-03). Until this date the
+     maps read gh_dispersion_v1, the device-local store the tracker writes at
+     capture time — which meant a correction made in the sheet never reached
+     the plot, and the numbers differed by device. Records now derive from
+     the Hole Log rows (the ?tab=holes fetch, HOLE_CACHE offline): BR is the
+     signed long/short leave, BS the signed left/right leave, both feet.
+     The tracker still writes its local store for capture round-trips; the
+     Hub no longer reads it.
+
+     Band and lie come from the hole's LAST logged shot — the payload keeps
+     only the last capture per hole, so that is the shot the tracker itself
+     attributed the leave to. A hole with either leave column blank has no
+     record here: blank means un-captured (or pre-column), and nothing is
+     reconstructed from putts or any other proxy — same no-backfill rule as
+     always. */
+  var DISP_HL={DATE:0,COURSE:1,SHOT0:5,SHOT_W:6,SHOTS:6,LONG:69,RIGHT:70};
+  function dispHlNum(v){
+    if(v===null||v===undefined||v==='') return null;
+    var n=typeof v==='number'?v:Number(v);
+    return isFinite(n)?n:null;
+  }
   function dispReadStore(){
-    try{
-      var raw=JSON.parse(localStorage.getItem(DISP_STORE_KEY));
-      return raw&&Array.isArray(raw.shots)?raw.shots:[];
-    }catch(e){ return []; }
+    var rows=HOLEROWS;
+    if(!rows){ try{ var hc=JSON.parse(localStorage.getItem(HOLE_CACHE)); if(hc&&hc.rows) rows=hc.rows; }catch(e){} }
+    if(!rows) return [];
+    var out=[];
+    for(var i=3;i<rows.length;i++){
+      var r=rows[i]||[];
+      var lng=dispHlNum(r[DISP_HL.LONG]), rgt=dispHlNum(r[DISP_HL.RIGHT]);
+      if(lng===null||rgt===null) continue;
+      var db=null, lie=null;
+      for(var k=0;k<DISP_HL.SHOTS;k++){
+        var base=DISP_HL.SHOT0+k*DISP_HL.SHOT_W;
+        var d=dispHlNum(r[base+2]);
+        if(d!==null){ db=d; lie=r[base+1]; }
+      }
+      out.push({ v:DISP_VERSION, date:r[DISP_HL.DATE], course:r[DISP_HL.COURSE],
+                 played_from_yds:db, lie:dispLieFromShotLie(lie),
+                 leave_long_ft:lng, leave_right_ft:rgt });
+    }
+    return out;
   }
 
   var DISPV={ scope:'all', bands:DISP_BANDS.map(function(b){return b.key;}),
