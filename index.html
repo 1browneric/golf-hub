@@ -1387,6 +1387,23 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     });
     var last5=[];
     rorder.slice(-5).forEach(function(k){ last5=last5.concat(rby[k].hs); });
+    /* Wedge threat rate: 100&In shots that REACHED the green (last logged
+       shot) with a measured first putt; inside ten feet counts. Holes with
+       no measured putt are not guessed at - they are simply not in the set
+       (context rule, 2026-08-02: unprovable resolves to absent, never to a
+       made-up make). 07/12 logged untyped shots, so it contributes nothing
+       here - same as the miss and strike bars. */
+    var wedge10=function(sel){
+      var n=0,d=0;
+      sel.forEach(function(h){
+        h.shots.forEach(function(sh,i){
+          if(sh.type!=='Short App (100&In)') return;
+          if(i!==h.shots.length-1||h.p1==null) return;
+          d++; if(h.p1<=10) n++;
+        });
+      });
+      return {n:n,d:d};
+    };
     return {
       rounds:nRounds,
       scramblePct: missed.length? saved.length/missed.length : null,
@@ -1416,6 +1433,8 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       /* LAST 5 ROUNDS, pooled by hole (a nine carries half the holes of an
          18) - the xx (xx) chart figures read last-5 first, season in
          parentheses (Eric's format, 2026-08-02). */
+      w10: wedge10(holes),
+      w10L5: wedge10(last5),
       girComp5N: last5.filter(computedGir).length,
       girComp5D: last5.length,
       fpGir5: fpAvg(last5.filter(computedGir)),
@@ -1600,6 +1619,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     var bits=function(a){return a.filter(function(x){return x;}).join('<br>');};
     /* Same shape as the wedge card's scrambling line, for the two approach
        bands that had nothing but bars. */
+    var w10pc=function(o){return o&&o.d?Math.round(o.n/o.d*100)+'%':'-';};
     var reachLine=function(name){
       var c=PAT&&PAT.byCat&&PAT.byCat[name];
       return (c&&c.reachD)? 'Reached the green '+rate(c.reachN,c.reachD)+'.' : '';
@@ -1615,7 +1635,12 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       '100 & In': bits([H&&H.scramblePct!=null
                           ? 'Up and down after a missed green '+rate(H.scrambleN,H.scrambleD)+'.'
                           : '',
-                        reachLine('100 & In')]),
+                        reachLine('100 & In'),
+                        /* last 5 first, season in parentheses - Eric's
+                           xx (xx) convention, same as the chart averages */
+                        (H&&H.w10&&H.w10.d)
+                          ? 'Inside 10 feet '+w10pc(H.w10L5)+' ('+w10pc(H.w10)+').'
+                          : '']),
       'Putting':  bits([puttAvg==null?'':'Averaging '+puttAvg.toFixed(1)+' putts.',
                         H&&H.onePuttPer!=null?'One-putts '+H.onePuttPer.toFixed(1)+' a round ('+H.onePuttTotal+' total).':'',
                         H&&H.threePuttPer!=null?'Three-putts '+H.threePuttPer.toFixed(1)+' a round ('+H.threePuttTotal+' total).':'',
