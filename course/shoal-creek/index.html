@@ -127,6 +127,11 @@ input,textarea,select{font-family:inherit}
   border:1.5px solid rgba(12,35,64,.25);background:#F4EFE4;color:#0C2340;cursor:pointer;
   flex:1 1 auto;text-align:center;white-space:nowrap}
 .edtag.on{background:#0C2340;border-color:#0C2340;color:#F4EFE4;font-weight:600}
+/* Finish carries five pills per row (Eric, 2026-08-03): slightly tighter
+   chips, scoped to the last tag group so Strike and Miss keep the standard
+   size. 10px 7px / 11px / 4px is the loosest combo that fits 375px wide. */
+.edtags .edtaggrp:last-child .edtag{padding:10px 7px;font-size:11px}
+.edtags .edtaggrp:last-child .edtagrow{gap:4px}
 .edhint{font-family:var(--mono);font-size:10px;color:#8792A4;margin-top:7px;text-align:center;letter-spacing:.04em}
 .edactions{display:flex;gap:8px;margin-top:12px}
 .edsave{flex:1;padding:12px;border-radius:10px;background:#0C2340;color:#F4EFE4;
@@ -1201,9 +1206,8 @@ const ACC_GROUPS = [
   ["Strike", [["Good","Fat","Thin","Heel","Toe"],
               ["Pull","Push","Hook","Slice"]]],
   ["Miss",   [["Left","Right","Short","Long"]]],
-  ["Finish", [["Fairway","Rough","Deep Rough","Green"],
-              ["Sand","Water","OB","Unplayable"],
-              ["Layup","Other"]]]
+  ["Finish", [["Fairway","Layup","Rough","Deep Rough","Green"],
+              ["Sand","Water","OB","Unplayable","Other"]]]
 ];
 /* A Finish tag names the lie the next shot is played from, so saving a shot
    prefills it and Eric never types the same fact twice. Green/Water/OB/
