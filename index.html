@@ -1379,6 +1379,14 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       var v=sel.map(function(h){return h.p2;}).filter(function(x){return x!=null;});
       return v.length? v.reduce(function(a,b){return a+b;},0)/v.length : null;
     };
+    var rby={},rorder=[];
+    holes.forEach(function(h){
+      var k=h.date+'|'+h.course;
+      if(!rby[k]){ rby[k]={date:h.date,n:0,hs:[]}; rorder.push(k); }
+      rby[k].n++; rby[k].hs.push(h);
+    });
+    var last5=[];
+    rorder.slice(-5).forEach(function(k){ last5=last5.concat(rby[k].hs); });
     return {
       rounds:nRounds,
       scramblePct: missed.length? saved.length/missed.length : null,
@@ -1405,6 +1413,14 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
          "how often did the first putt finish inside three feet". Only holes
          that actually took a second putt can answer it. */
       p2Avg: p2Avg(holes),
+      /* LAST 5 ROUNDS, pooled by hole (a nine carries half the holes of an
+         18) - the xx (xx) chart figures read last-5 first, season in
+         parentheses (Eric's format, 2026-08-02). */
+      girComp5N: last5.filter(computedGir).length,
+      girComp5D: last5.length,
+      fpGir5: fpAvg(last5.filter(computedGir)),
+      fpNon5: fpAvg(last5.filter(function(h){return !computedGir(h);})),
+      p2Avg5: p2Avg(last5),
       firstPuttAvg: (function(){
         var v=holes.map(function(h){return h.p1;}).filter(function(x){return x!=null;});
         return v.length? v.reduce(function(a,b){return a+b;},0)/v.length : null;
@@ -1418,15 +1434,9 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       fpGir: fpAvg(holes.filter(computedGir)),
       fpNon: fpAvg(holes.filter(function(h){return !computedGir(h);})),
       fpRounds: (function(){
-        var by={},order=[];
-        holes.forEach(function(h){
-          var k=h.date+'|'+h.course;
-          if(!by[k]){ by[k]={date:h.date,n:0,hs:[]}; order.push(k); }
-          by[k].n++; by[k].hs.push(h);
-        });
         /* Newest first, matching every other per-round list in the hub. */
-        return order.map(function(k){
-          var g=by[k];
+        return rorder.map(function(k){
+          var g=rby[k];
           return {date:g.date, n:g.n,
                   gir:fpAvg(g.hs.filter(computedGir)),
                   non:fpAvg(g.hs.filter(function(h){return !computedGir(h);})),
@@ -1676,12 +1686,28 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     var chWrap=function(inner,hgt){
       return '<svg viewBox="0 0 '+CH_W+' '+hgt+'" style="width:100%;display:block;margin-top:6px">'+inner+'</svg>';
     };
+    var chAvg=function(v5,vs){
+      if(v5==null&&vs==null) return '';
+      var f=function(v){return v==null?'-':ftTenth(v);};
+      return f(v5)+' ('+f(vs)+')';
+    };
+    var chTitle=function(t,val){
+      if(!val) return groupLabel(t);
+      return '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:14px">'+
+        '<span style="font-family:var(--font-caps);font-weight:800;font-size:10px;letter-spacing:.14em;color:var(--steel)">'+t+'</span>'+
+        '<span class="mono" style="font-size:12px;color:var(--cream)">'+val+'</span></div>';
+    };
     var chLegend=function(items){
-      return '<div style="margin-top:8px">'+items.map(function(it){
-        return '<span style="display:inline-flex;align-items:center;gap:6px;margin-right:16px">'+
+      /* one series per row; when the item carries an average it sits
+         right-aligned on the row - xx (xx), last 5 then season */
+      return items.map(function(it){
+        return '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">'+
+          '<span style="display:inline-flex;align-items:center;gap:6px">'+
           '<span style="width:10px;height:10px;border-radius:3px;background:'+it[0]+';display:inline-block"></span>'+
-          '<span class="mono" style="font-size:10px;letter-spacing:.08em;color:var(--steel)">'+it[1]+'</span></span>';
-      }).join('')+'</div>';
+          '<span class="mono" style="font-size:10px;letter-spacing:.08em;color:var(--steel)">'+it[1]+'</span></span>'+
+          (it[2]?'<span class="mono" style="font-size:12px;color:var(--cream)">'+it[2]+'</span>':'')+
+        '</div>';
+      }).join('');
     };
     var fpDistChart=function(){
       if(chron.length<2) return '';
@@ -1704,7 +1730,8 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       });
       s+=chBase(BASE)+chDates(BASE+14);
       return groupLabel('FIRST PUTT DISTANCE &middot; FEET')+chWrap(s,BASE+20)+
-             chLegend([[CH_CREAM,'GIR HOLES'],[CH_RED,'NON-GIR HOLES']]);
+             chLegend([[CH_CREAM,'GIR HOLES',chAvg(H.fpGir5,H.fpGir)],
+                       [CH_RED,'NON-GIR HOLES',chAvg(H.fpNon5,H.fpNon)]]);
     };
     var leaveChart=function(){
       /* Where the second putts are - the average LEAVE after the first putt,
@@ -1731,7 +1758,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
           s+=chTxt(q.x,yOf(q.v)-9,ftTenth(q.v),CH_CREAM);
       });
       s+=chBase(BASE)+chDates(BASE+14);
-      return groupLabel('SECOND PUTT DISTANCE &middot; FEET &middot; DASH IS SEASON')+chWrap(s,BASE+20);
+      return chTitle('SECOND PUTT DISTANCE &middot; FEET',chAvg(H.p2Avg5,H.p2Avg))+chWrap(s,BASE+20);
     };
     var girChart=function(){
       if(chron.length<2) return '';
@@ -1749,7 +1776,8 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
         '" x2="'+(CH_W-6)+'" y2="'+yOf(H.girCompN/H.girCompD).toFixed(1)+
         '" stroke="'+CH_CREAM+'" stroke-width="1" stroke-dasharray="4 3" opacity=".7"/>';
       s+=chBase(BASE)+chDates(BASE+14);
-      return groupLabel('GREENS IN REGULATION &middot; DASH IS SEASON')+chWrap(s,BASE+20);
+      var pv=(H&&H.girComp5D)?Math.round(H.girComp5N/H.girComp5D*100)+'% ('+Math.round(H.girCompN/H.girCompD*100)+'%)':'';
+      return chTitle('GREENS IN REGULATION',pv)+chWrap(s,BASE+20);
     };
     var catDetail=function(name){
       /* GIR first-putt distance by round, inside the Putting card - the two
@@ -1799,11 +1827,6 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
         catDetail(a[0])+
       '</div>';
     }).join('')
-    + (SUPPORT['Scoring']?'<div class="card" style="padding:16px 18px;margin-top:12px">'+
-        '<div class="h-title" style="font-size:18px">Scoring</div>'+
-        '<div class="mono" style="font-size:12px;color:var(--steel);margin-top:8px;opacity:.9;line-height:1.8">'+
-          SUPPORT['Scoring']+'</div>'+
-      '</div>':'')
     + (rollup?'<div class="card" style="padding:16px 18px;margin-top:12px">'+
         '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">'+
           '<span class="h-title" style="font-size:18px">'+rollup[0]+'</span>'+
@@ -1814,6 +1837,11 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
                 PAT&&PAT.appDir.length?'Approach miss '+PAT.appDir[0][0].toLowerCase()+' '+rate(PAT.appDir[0][1],PAT.appDir.reduce(function(a,r){return a+r[1];},0))+'.':''])+
         '</div>'+
         girChart()+
+      '</div>':'')
+    + (SUPPORT['Scoring']?'<div class="card" style="padding:16px 18px;margin-top:12px">'+
+        '<div class="h-title" style="font-size:18px">Scoring</div>'+
+        '<div class="mono" style="font-size:12px;color:var(--steel);margin-top:8px;opacity:.9;line-height:1.8">'+
+          SUPPORT['Scoring']+'</div>'+
       '</div>':'');
 
     /* Scoring trend -- the last five completed 18s, oldest to newest. This was
