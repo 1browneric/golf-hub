@@ -2,13 +2,14 @@
 
 Read this. It is not a track.
 
-Six sessions, written from applied sport psychology. Each one owns a single mental
-skill: the pre-shot routine and commitment, arousal regulation, attentional control,
-recovery after a bad shot, taking a call and committing to it, and playing under
-pressure. Each session does the same three things — names a pattern you will
-recognize from your own rounds, explains the mechanism behind it, and gives you a
-tool you can carry to the course. Then it has you rehearse the tool in your head, because
-a tool you have only heard about is not yet a tool.
+Six sessions, written from applied sport psychology. Each one opens with a question
+you have actually asked on a golf course, and each owns a single mental skill: the
+pre-shot routine and commitment, first-tee nerves, focus between shots, letting a
+bad one go, taking a call and committing to it, and closing under pressure. Every
+session runs the same arc — it names the pattern, explains the mechanism behind it,
+hands you a concrete tool, and then guides you through mental reps of that tool,
+because a mental rep counts like a physical one and a tool you have only heard
+about is not yet a tool.
 
 The sessions own the mind, and only the mind. Clubs, targets, sides, reads and
 strategy live in the course walkthroughs — three courses, eighteen holes each, and

@@ -61,3 +61,30 @@ Script conventions (both consumers):
   walking, on a run, warming up, or driving. Openers are posture-neutral, eyes
   closed is optional and never commanded, and nothing anchors a session to a
   time of day.
+
+Style references (Eric, 2026-08-03: "These are the style that i am looking for"):
+
+1. **Peak Performance Sports** (youtube.com/@peakperformancesports — Dr. Patrick
+   Cohn's Golf Psychology Podcast; five transcripts studied 2026-08-03):
+   - Open with the question the golfer actually asks ("Are you overthinking your
+     swing?", "How do you stay focused for a four-hour round?").
+   - Conversational coaching language with named, memorable concepts: swing cue
+     (one, never mechanical — target/tempo/balance), good enough (setup never
+     feels perfect; proceed anyway), training mindset vs trusting mindset,
+     do your homework (plan behind the ball), decisive club selection, routine as
+     one continuous behavior (not counted steps), routine vs superstition
+     (everything has a job), ebb and flow focus (dialed in ~30 seconds per shot,
+     off duty between), click in / click out with a physical trigger, post-shot
+     routine, role of the golfer (life stays in the car), "trust the swing you
+     brought today", have fun between shots.
+   - Failure modes coached by name: rushing or abandoning the routine after a bad
+     hole, happy feet, go searching (hopping between swing cues), humming and
+     hawing over the ball.
+2. **Kairo** (kairoapp.co — guided visualization app): sessions are guided
+   first-person mental reps — "mental reps count like physical reps", a mental
+   dress rehearsal. Calm, easy-to-follow prompts that keep the listener
+   intentional; expressive, never robotic; ends with the athlete having actually
+   rehearsed, not just listened; recovery decompression after competition.
+
+The blend: Cohn's conversational question-first coaching voice and vocabulary for
+the teaching body, Kairo's guided-rep structure for the rehearsal blocks.

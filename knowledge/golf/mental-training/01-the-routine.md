@@ -1,16 +1,20 @@
 # The Routine
 
-Start with the breath, wherever this finds you — walking, warming up, on a run, or
-somewhere quiet. If your eyes can close, let them. If you are moving, keep them open
-and soft. The breath works the same either way.
+How do you build a pre-shot routine that holds up under pressure?
+
+[BEAT]
+
+Before we work on it, give your system a minute to settle — wherever this finds you,
+walking, warming up, on a run, or somewhere quiet. If your eyes can close, let them.
+If you are moving, keep them open and soft.
 
 In, through your nose.
 
 [PAUSE]
 
-And out, through your mouth, longer than you took it in. The long exhale is not a
-ritual. It is the one lever on your nervous system you steer directly, and it is
-going to come up again and again in these sessions. For now, just use it.
+And out, through your mouth, longer than you took it in. The long exhale is the one
+lever on your nervous system you steer directly, and it will come up in every one of
+these sessions.
 
 [PAUSE]
 
@@ -18,85 +22,82 @@ Again. In.
 
 [PAUSE]
 
-Out, longer.
-
-[PAUSE]
-
-Once more. In.
-
-[PAUSE]
-
-And out.
+And out, longer.
 
 [PAUSE — LONG]
 
 [BEAT]
 
-This session is the pre-shot routine, and I want to start with what a routine actually is,
-because most golfers have it filed wrong. It is not superstition, and it is not a
-waggle count. A routine is a container for attention. Its job is to take a mind that
-can think about anything — the water, the match, the last hole, who is watching — and
-walk it, the same way every time, down to the only thing that can help you: this
-target, this swing.
+First, be clear about what a routine is, because most golfers have it filed wrong. A
+routine is not a superstition — not a lucky number of waggles, not the right number
+of looks. Everything in a real routine has a job: it prepares the body or it
+prepares the mind to hit this one shot. And it is not six steps you count off. It is
+one continuous behavior, from the first decision behind the ball to the swing
+itself. Its purpose is to carry your attention, the same way every time, down to the
+only thing that helps you: this target, this swing.
 
-Here is the mechanism. At the moment you swing, your working memory has room for
-about one instruction. One. If the decision behind the ball is not finished — if some
-part of you is still weighing the club, or the line, or whether this is too
-aggressive — that unfinished question takes the seat your one instruction needed. And
-an unanswered question does not stay in your head. It shows up in your hands. Grip
-pressure climbs, the swing shortens, the release hedges. A steered swing is not a
-technique problem. It is a decision that never got finished, leaking into the motion.
-
-[BEAT]
-
-So the tool is a boundary. Two spaces, and one line between them.
-
-Behind the ball is the deliberation space. Every question is welcome there. The
-number, the lie, the wind, the club, the side, the picture. Change your mind five
-times if you need to — that is what the space is for. Nothing that happens behind the
-ball costs you anything.
-
-Over the ball is the execution space. Questions are over. There is a target, and
-there is tempo. That is the entire inventory.
-
-And the line between them is one event, the same event every time: the last look at
-the target. That look is not a glance. It is a decision — the decision that
-deliberating is finished. Commitment is not the feeling that the shot will work. You
-do not get to order that feeling up. Commitment is the act of closing the question
-and swinging on the answer you chose.
+Here is why it matters. Over the ball, your mind has room for about one thought.
+One. If the decision is not finished — if part of you is still weighing the club, or
+the line, or whether this is too aggressive — that unfinished question takes the
+seat your one thought needed. And an unanswered question does not stay in your head.
+It shows up in your hands. Grip tightens, the swing shortens, you steer it. A
+steered swing is rarely a technique problem. It is an unfinished decision leaking
+into the motion.
 
 [BEAT]
 
-One rule completes it. If a question arrives after the last look — wrong club, wrong
-line, a gust — you step off. All the way off, back into the deliberation space, and
-the routine starts again from the top. Understand what stepping off is: it is the
-routine working. The alarm caught a live question in the execution space and cleared
-it. The failure is not stepping off. The failure is swinging with the question still
-open, and you already know what that swing looks like, because it is the one you
-replay on the drive home.
+So build the routine in two halves, with a hard line between them.
 
-One more thing, because it matters under pressure. What makes a routine hold up when
-it counts is not that it is short. It is that it is the same. Same order, same
-length, first tee and last hole. Pressure does not invent a new swing for you — it
-amplifies whatever process you brought. The routine is the one thing on the course
-that is entirely yours to keep constant, so keep it constant.
+The first half is the homework, behind the ball. Yardage, lie, wind, club, shot
+shape, target. Make every decision there, and be decisive — once the club is chosen,
+that is the club. Then see the shot: the start line, the flight, where it lands and
+finishes. That picture is the commitment.
+
+The second half is over the ball, and it holds exactly one thing: your swing cue.
+One cue, and never a mechanical one — the target, the tempo, the balance. Not the
+three fixes from your last lesson. One. And your setup does not have to feel perfect
+to proceed — it has to be good enough. Step in, settle, tell yourself good enough,
+and go. Waiting over the ball for perfect is how you get stuck there.
+
+The line between the halves is the last look at the target. Everything is a question
+until the last look. Nothing is a question after it.
+
+[BEAT]
+
+Now, the two ways this routine will try to break, and both arrive on a bad day.
+After a frustrating hole, you will want to rush it — just walk up and hit. And when
+the shots are not coming off, you will want to abandon it: the routine is not
+working anyway. Hear this clearly. The routine is not why the shots are bad, and on
+a bad day it is the only consistency you have left. Same order, same length, first
+tee and last hole. Pressure does not invent a new swing — it amplifies whatever
+process you brought.
+
+One rule completes it. If a real question shows up after the last look — wrong club,
+a gust — step off. All the way off, and start again from the top. Stepping off is
+the routine working, not failing. The swing you make with an open question in it is
+the one you replay on the drive home.
 
 [BEAT — HOLD]
 
-Now build it. Bring up a full swing shot you know well — a tee shot you
-have hit a hundred times. Stand behind the ball. Ask everything. Pick the club, pick
-the side, see the shot start and see it finish. Now the last look. Feel the door
-close. Walk in, one look up, and let the swing go.
+Now rehearse it, because a mental rep counts like a physical one. Bring up a tee
+shot you know well. Stand behind the ball. Do the homework — the number, the wind,
+the club. Decide, and feel the decision close. See the shot start, fly, and finish.
 
 [PAUSE — LONG]
 
-Again, and this time the question shows up late. You are over the ball and something
-says wrong club. Step off. Feel that it costs you nothing. Back behind the ball,
-answer it, and run the whole routine again from the top.
+Now the last look. Walk in. Set up — good enough. One cue, target or tempo, and let
+it go.
+
+[PAUSE — LONG]
+
+Once more, and this time doubt shows up over the ball. Step off — it costs you
+nothing. Answer the question behind the ball, and run the whole routine again, same
+order, same length.
 
 [PAUSE — LONG]
 
 [BEAT — HOLD]
 
-The one thing: everything is a question until the last look, and nothing is a
-question after it.
+The one thing: one continuous routine, every decision made behind the ball, one cue
+over it. Everything is a question until the last look, and nothing is a question
+after it.
