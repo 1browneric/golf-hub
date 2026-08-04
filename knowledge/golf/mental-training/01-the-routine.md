@@ -50,17 +50,27 @@ So build the routine in two halves, with a hard line between them.
 
 The first half is the homework, behind the ball. Yardage, lie, wind, club, shot
 shape, target. Make every decision there, and be decisive — once the club is chosen,
-that is the club. And pick a target you can actually see. Not that side of the
-fairway — the one tall tree, the dead limb, the edge of the far bunker. Golf is a
-target sport, and a contrasting target gives the picture something to hang on. Then
-see the shot: the start line, the flight, where it lands and finishes. That picture
-is the commitment.
+that is the club. And state the shot in the positive: the shot you want to hit,
+never the one you are avoiding. Not "don't go right" — a shot starting at the tall
+tree, finishing on the left half. Your body can only aim at something. Give it the
+something.
+
+About that target: pick one you can actually see. Not that side of the fairway —
+the one tall tree, the dead limb, the water tower. On a full swing, prefer a target
+above the ground: it matches the flight you are about to make, and the body
+releases toward what the eyes hold, the way a throw goes higher the instant the
+catcher raises their hands. Around the greens the target moves to the ground — a
+landing spot, an old pitch mark. Golf is a target sport that makes you look at the
+ball, which is exactly why the picture has to be built before you swing: start
+line, flight, where it lands and finishes. That picture is the commitment.
 
 The second half is over the ball, and it holds exactly one thing: your swing cue.
-One cue, and never a mechanical one — the target, the tempo, the balance. Not the
-three fixes from your last lesson. One. And your setup does not have to feel perfect
-to proceed — it has to be good enough. Step in, settle, tell yourself good enough,
-and go. Waiting over the ball for perfect is how you get stuck there.
+One cue, and never a mechanical one — the target, the tempo, the balance. Technical
+thoughts are legal currency behind the ball; in the last seconds before the
+takeaway they are noise, loud enough to drown the only signal the body still
+needed, which is where the ball is going. And your setup does not have to feel
+perfect to proceed — it has to be good enough. Step in, settle, tell yourself good
+enough, and go. Waiting over the ball for perfect is how you get stuck there.
 
 The line between the halves is the last look at the target. One long, quality look —
 not four or five quick glances, which feed the brain nothing. Everything is a

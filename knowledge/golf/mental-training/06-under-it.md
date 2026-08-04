@@ -52,7 +52,7 @@ needs — the account that holds one target and one cue.
 
 [BEAT]
 
-Now the tools, and the first is the most practical thing in these six sessions:
+Now the tools, and the first is the most practical thing in these sessions:
 learn your tells. Pressure announces itself in the body before it touches the swing.
 Grip pressure that crept up without being asked. A breath parked at the top of the
 chest. Walking faster than the people you are with. Yours are consistent — you have

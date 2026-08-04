@@ -63,9 +63,13 @@ number. You supply start line, flight, finish. On a read, the call gives you
 direction and edge — the last two feet are always yours, from your own eyes, and
 nobody is coming to fill them in. It helps to say the read to yourself, plainly:
 fifteen feet, uphill, right to left, falling in at five o'clock. A read you can say
-is a read your mind can picture. And aim at something small — a scuff at the edge of
-the cup, one discolored blade — never just the hole. The call is the input. The
-picture is the shot.
+is a read your mind can picture. And put the target at the destination, not in
+front of the ball — something small where the ball finishes. A scuff at the edge of
+the cup, the seam of light at the back lip, one discolored blade. The body scales
+force to wherever attention ends, so hold the entry point and the distance takes
+care of itself. Even the hunt for that target pays: the seconds spent finding a
+mark at the cup are seconds your mind is fully here, which is exactly where a
+pressure putt wants you. The call is the input. The picture is the shot.
 
 Third — the discipline that keeps the whole system honest — judge the decision, not
 the result. A fully committed swing on a sound call that finds a bad bounce is a

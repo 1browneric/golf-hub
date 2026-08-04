@@ -306,9 +306,13 @@ def _run_time(slug: str) -> str:
 
 
 def _sessions() -> list[dict]:
-    """The six session scripts, plus the intro, straight from the markdown."""
+    """The numbered session scripts, plus the intro, straight from the markdown.
+
+    Only NN-*.md files are sessions - VOICE.md (the style persona) and any other
+    unnumbered markdown in the directory are not tracks and must not be baked.
+    """
     out = []
-    for md in sorted(SESSION_DIR.glob("*.md")):
+    for md in sorted(SESSION_DIR.glob("[0-9][0-9]-*.md")):
         text = md.read_text(encoding="utf-8")
         m = re.search(r"^#\s+(.+)$", text, re.M)
         title = m.group(1).strip() if m else md.stem

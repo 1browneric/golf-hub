@@ -101,3 +101,13 @@ The blend: Cohn's conversational question-first coaching voice and vocabulary fo
 the teaching body, Kairo's guided-rep structure for the rehearsal blocks, and
 Wicked Smart Golf's concrete micro-tools and stroke-stakes bluntness sprinkled
 where they serve the skill.
+
+The references are also CONTENT sources, not just style (Eric, 2026-08-03: "take
+what they discussed and combine or incorporate with the sessions... that is what i
+would like to template off of"). Material templated in: positive intention and
+trajectory-matched visible targets, the last-seconds intention window (Session 1);
+destination putting targets and force-from-attention (Session 5); Cohn's ten-minute
+post-round mental assessment, learn-the-lesson-leave-the-event, the spikes-off role
+switch, person-not-the-athlete (Session 7, new); practice-retention protocol
+(record the keys, guard the hour, re-shelve before sleep) and the 411 method
+(Session 8, new).
