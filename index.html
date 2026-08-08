@@ -434,6 +434,9 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       <div class="card" style="padding:16px 18px;margin-top:12px;cursor:pointer" data-go="mental">
         <div class="h-title" style="font-size:18px">Mental Training</div>
       </div>
+      <div class="card" style="padding:16px 18px;margin-top:12px;cursor:pointer" data-go="drills">
+        <div class="h-title" style="font-size:18px">Drills</div>
+      </div>
       <div id="plan-list"></div>
       <!-- Approach dispersion. Both scopes live here, in one card: the whole
            season across every course, and any single course pooled across its
@@ -473,6 +476,36 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       <div class="mtback" id="mt-script-back">Back</div>
       <div class="h-title" style="font-size:26px;margin-top:6px" id="mt-script-title"></div>
       <div id="mt-script-body"></div>
+    </section>
+
+    <!-- Drills: the same chain shape as Mental Training - each level is a real
+         screen with a back row, not a panel that grows under the tap. Card ->
+         Drills (the SG categories) -> a category -> a drill -> its session log.
+         Categories are the hub's own CATS labels so this reads as the same
+         taxonomy as the strokes-gained bars; Ball Striking is a subtotal and
+         is not a category here. -->
+    <section class="screen" data-screen="drills">
+      <div class="mtback" data-go="plan">Back</div>
+      <div class="h-title" style="font-size:32px;margin-top:6px">Drills</div>
+      <div id="drills-home"></div>
+    </section>
+
+    <section class="screen" data-screen="drill-cat">
+      <div class="mtback" data-go="drills">Back</div>
+      <div class="h-title" style="font-size:32px;margin-top:6px" id="drill-cat-title"></div>
+      <div id="drill-cat-list"></div>
+    </section>
+
+    <section class="screen" data-screen="drill">
+      <div class="mtback" data-go="drill-cat">Back</div>
+      <div class="h-title" style="font-size:32px;margin-top:6px" id="drill-title"></div>
+      <div id="drill-body"></div>
+    </section>
+
+    <section class="screen" data-screen="drill-log">
+      <div class="mtback" data-go="drill">Back</div>
+      <div class="h-title" style="font-size:32px;margin-top:6px" id="drill-log-title"></div>
+      <div id="drill-log-body"></div>
     </section>
 
 
@@ -2694,6 +2727,424 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
                    'mt-holes',seq('h',a,b));
       }
     });
+  })();
+
+  /* =====================================================================
+     DRILLS
+     Structured practice with a score. One drill so far - the Short Putting
+     Combine under Putting - but the chain (categories -> drills -> drill ->
+     session log) is built for more. Sessions live on the sheet's Drills tab
+     (sheet is the source of truth): the page GETs ?tab=drills on every open
+     and POSTs a session with the same token the course trackers send. The
+     handicap index the benchmark needs also comes from that tab (row 1), so
+     the number on screen is the sheet's, labelled as such - the hub itself
+     holds no index.
+     ===================================================================== */
+  (function(){
+    var DRILL_TOKEN='hb-golf-2026';   // same speed bump the course pages send - not a security boundary
+    var DRILL_CACHE='gh_drills_cache_v1';
+    /* Snake order, never sequential: 3,12,4,11,5,10,6,9,7,8 - run twice.
+       Attempt i is played from SNAKE[i%10] feet; the entry grid, the derived
+       stats and the sheet columns all key off this one array. */
+    var SNAKE=[3,12,4,11,5,10,6,9,7,8];
+    var DRILL_DISTS=[3,4,5,6,7,8,9,10,11,12];
+    var GOAL_INDEX=5.0;
+    /* Benchmark: expected total putts for the 20-attempt combine by handicap
+       index (source: Arccos Golf data published by Lou Stagner). Piecewise
+       linear between the anchors; below 0 extrapolates the 0-5 slope, above
+       20 the 15-20 slope. */
+    var DRILL_ANCHORS=[[0,29.79],[5,31.03],[10,31.95],[15,32.91],[20,33.88]];
+    function drillBench(x){
+      var A=DRILL_ANCHORS, n=A.length;
+      if(x<=A[0][0]) return A[0][1]+(x-A[0][0])*(A[1][1]-A[0][1])/(A[1][0]-A[0][0]);
+      for(var i=1;i<n;i++){
+        if(x<=A[i][0]){
+          var f=(x-A[i-1][0])/(A[i][0]-A[i-1][0]);
+          return A[i-1][1]+f*(A[i][1]-A[i-1][1]);
+        }
+      }
+      return A[n-1][1]+(x-A[n-1][0])*(A[n-1][1]-A[n-2][1])/(A[n-1][0]-A[n-2][0]);
+    }
+    var DRILLS={
+      'Driver':[], '176+':[], '101-175':[], '100 & In':[],
+      'Putting':[{
+        slug:'short-putting-combine',
+        name:'Short Putting Combine',
+        protocol:[
+          'Ten starting distances: 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 feet.',
+          'Two attempts from each = 20 attempts. From each start, putt until holed and count every putt.',
+          'Snake the order, never sequential: 3, 12, 4, 11, 5, 10, 6, 9, 7, 8 - run that sequence twice.',
+          'Switch holes every attempt and vary the direction and break.',
+          'Calibrate your step to three feet, or measure with a tape.'
+        ]
+      }]
+    };
+    /* Category order comes from the hub's own CATS, so this screen reads as
+       the same taxonomy as the SG bars. Ball Striking is their subtotal, not
+       a category. */
+    var DCATS=CATS.filter(function(c){return !c.subtotal;}).map(function(c){return c.label;});
+
+    var DIDX=null;      // handicap index, read from the sheet's Drills tab row 1
+    var DSESS=[];       // saved sessions, newest first
+    var CUR={cat:null,drill:null};
+
+    function dNum(v){ if(v===null||v===undefined||v==='')return null; var n=typeof v==='number'?v:Number(v); return isFinite(n)?n:null; }
+    function fmtSg(v){ return v==null?'-':(v>=0?'+':'')+v.toFixed(2); }
+    function idxLabel(){ return DIDX==null?'index unavailable':'Index '+DIDX+' (from the sheet)'; }
+    /* The hub's list row, same markup as the Mental Training item(): .card,
+       the Improvement Plan's padding, an 18px .h-title. A category with no
+       drills carries a plain "No drills yet" line and no tap target. */
+    function item(label,attrs,sub){
+      return '<div class="card" style="padding:16px 18px;margin-top:12px'+(attrs?';cursor:pointer':'')+'" '+(attrs||'')+'>'+
+        '<div class="h-title" style="font-size:18px">'+esc(label)+'</div>'+
+        (sub?'<div style="font-family:var(--font-body);font-size:12px;color:var(--steel);margin-top:4px">'+esc(sub)+'</div>':'')+
+      '</div>';
+    }
+
+    /* ---- sheet round-trip ----
+       Drills tab layout (row numbers are 1-based in the sheet):
+         row 1  Handicap Index | <value>     <- the benchmark's index, Eric edits it
+         row 2  Date | Drill | Location | Total Putts | A1..A20 | Notes
+         row 3+ one row per session, appended by the Apps Script doPost. */
+    function parseDrillRows(rows){
+      var idx=null;
+      if(rows&&rows[0]&&String(rows[0][0]||'').toLowerCase().indexOf('index')>=0) idx=dNum(rows[0][1]);
+      var out=[];
+      (rows||[]).slice(2).forEach(function(r){
+        if(!r||!r[0]) return;
+        var m=/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/.exec(String(r[0]));
+        if(!m) return;
+        var mm=+m[1], dd=+m[2], yy=m[3]?+m[3]:0;
+        var at=[];
+        for(var i=0;i<20;i++){ var v=dNum(r[4+i]); if(v==null){at=null;break;} at.push(v); }
+        if(!at) return;
+        var tot=dNum(r[3]); if(tot==null) tot=at.reduce(function(a,b){return a+b;},0);
+        out.push({key:yy*10000+mm*100+dd, date:MON[mm-1]+' '+dd,
+                  drill:String(r[1]||''), loc:String(r[2]||''),
+                  total:tot, at:at, notes:String(r[24]||'')});
+      });
+      out.sort(function(a,b){return b.key-a.key;});
+      return {index:idx, sessions:out};
+    }
+    function applyDrillData(parsed){
+      DIDX=parsed.index; DSESS=parsed.sessions;
+      renderHome();
+      if(CUR.drill) renderDrill();
+    }
+
+    /* ---- derived stats ----
+       Computed from the 20 cells, per distance: make percentage (holed in
+       one), average putts to hole out, plus one-putt and three-putt-or-worse
+       counts. A single session is two balls per distance, so the rolling
+       numbers across every saved session are the real signal. */
+    function dStats(sessions){
+      var res={dist:{},one:0,three:0,n:0};
+      DRILL_DISTS.forEach(function(d){res.dist[d]={n:0,sum:0,made:0};});
+      sessions.forEach(function(s){
+        s.at.forEach(function(p,i){
+          var o=res.dist[SNAKE[i%10]];
+          o.n++; o.sum+=p; if(p===1){o.made++;res.one++;}
+          if(p>=3) res.three++;
+          res.n++;
+        });
+      });
+      return res;
+    }
+
+    /* ---- the score ----
+       SG = benchmark(index) - total putts, two decimals, shown against BOTH
+       the current index and the 5.0 goal. The index is the sheet's and says
+       so on screen. */
+    function statRow(k,v){
+      return '<div style="display:flex;justify-content:space-between;padding:6px 0;'+
+        'border-bottom:1px solid rgba(143,160,184,.14)">'+
+        '<span style="font-size:12px;color:var(--steel)">'+k+'</span>'+
+        '<span class="mono" style="font-size:12px;font-weight:600">'+v+'</span></div>';
+    }
+    function sgBlock(total,st){
+      var cur=DIDX==null?null:drillBench(DIDX), goal=drillBench(GOAL_INDEX);
+      return '<div style="margin-top:8px">'+
+        statRow('Total putts', total)+
+        statRow('Benchmark - '+esc(idxLabel()), cur==null?'-':cur.toFixed(2))+
+        statRow('Strokes gained vs current', cur==null?'-':fmtSg(cur-total))+
+        statRow('Benchmark - 5.0 goal', goal.toFixed(2))+
+        statRow('Strokes gained vs goal', fmtSg(goal-total))+
+        (st?statRow('One-putts', st.one+' of '+st.n)+
+            statRow('Three putts or worse', st.three+' of '+st.n):'')+
+      '</div>';
+    }
+
+    /* By-distance table on the course book's cream plate - Georgia, ink
+       #0F2F45, navy #1F4E9D - the same plate language as the dispersion map,
+       so drill numbers read as book pages inside the hub chrome. */
+    function distTable(st,label){
+      var rows=DRILL_DISTS.map(function(d){
+        var o=st.dist[d];
+        if(!o.n) return '';
+        return '<tr><td style="text-align:left;font-weight:700;color:#1F4E9D;padding:6px 4px;border-bottom:1px solid rgba(12,35,64,.1)">'+d+' ft</td>'+
+          '<td style="text-align:center;padding:6px 4px;border-bottom:1px solid rgba(12,35,64,.1)">'+Math.round(o.made/o.n*100)+'% ('+o.made+' of '+o.n+')</td>'+
+          '<td style="text-align:center;padding:6px 4px;border-bottom:1px solid rgba(12,35,64,.1)">'+(o.sum/o.n).toFixed(2)+'</td></tr>';
+      }).join('');
+      if(!rows) return '';
+      return groupLabel(label)+
+        '<div class="dspplate" style="padding:12px 10px">'+
+        '<table style="width:100%;border-collapse:collapse;font-family:Georgia,serif;font-size:12.5px;color:#0F2F45">'+
+        '<thead><tr>'+
+          '<th style="text-align:left;font-size:9px;letter-spacing:.12em;color:#5C6B82;font-weight:600;padding:4px;border-bottom:1.5px solid #1F4E9D">FROM</th>'+
+          '<th style="text-align:center;font-size:9px;letter-spacing:.12em;color:#5C6B82;font-weight:600;padding:4px;border-bottom:1.5px solid #1F4E9D">HOLED IN ONE PUTT</th>'+
+          '<th style="text-align:center;font-size:9px;letter-spacing:.12em;color:#5C6B82;font-weight:600;padding:4px;border-bottom:1.5px solid #1F4E9D">AVG PUTTS</th>'+
+        '</tr></thead><tbody>'+rows+'</tbody></table></div>';
+    }
+
+    /* ---- trend chart ----
+       Total putts per session over time, with the current-index benchmark and
+       the 5.0 goal benchmark as dashed reference lines. Same inline SVG
+       helper shapes as the Improvement charts (chTitle/chWrap/chBase/chDates
+       pattern) - cream and red on navy with a text legend, never a colour
+       alone, no chart library. */
+    function drillChart(){
+      var chron=DSESS.slice().reverse();
+      if(chron.length<2) return '';
+      var W=372,X0=26,CREAM='#F4EFE4',RED='#B22234',STEEL='#8FA0B8',NAVY='#0C2340';
+      var step=(W-X0-6)/chron.length;
+      var X=function(i){return X0+step*i+step/2;};
+      var txt=function(x,y,t,fill,anchor){
+        return '<text x="'+x+'" y="'+y+'" text-anchor="'+(anchor||'middle')+'" font-size="8" fill="'+(fill||STEEL)+
+               '" font-family="Spline Sans Mono">'+t+'</text>';
+      };
+      var cur=DIDX==null?null:drillBench(DIDX), goal=drillBench(GOAL_INDEX);
+      var vals=chron.map(function(s){return s.total;}).concat(goal, cur==null?[]:[cur]);
+      var lo=Math.floor(Math.min.apply(null,vals)/5)*5-5, hi=Math.ceil(Math.max.apply(null,vals)/5)*5+5;
+      var BASE=140,TOP=16;
+      var Y=function(v){return BASE-(v-lo)/(hi-lo)*(BASE-TOP);};
+      var s='';
+      for(var g=lo+5;g<hi;g+=5){
+        s+='<line x1="'+(X0-6)+'" y1="'+Y(g).toFixed(1)+'" x2="'+(W-6)+'" y2="'+Y(g).toFixed(1)+
+           '" stroke="'+STEEL+'" stroke-width=".5" opacity=".15"/>'+txt(X0-8,Y(g)+3,g,STEEL,'end');
+      }
+      var ref=function(v,col){
+        return '<line x1="'+(X0-6)+'" y1="'+Y(v).toFixed(1)+'" x2="'+(W-6)+'" y2="'+Y(v).toFixed(1)+
+               '" stroke="'+col+'" stroke-width="1" stroke-dasharray="4 3" opacity=".7"/>';
+      };
+      if(cur!=null) s+=ref(cur,STEEL);
+      s+=ref(goal,RED);
+      s+='<polyline points="'+chron.map(function(q,i){return X(i).toFixed(1)+','+Y(q.total).toFixed(1);}).join(' ')+
+         '" fill="none" stroke="'+CREAM+'" stroke-width="2"/>';
+      chron.forEach(function(q,i){
+        s+='<circle cx="'+X(i).toFixed(1)+'" cy="'+Y(q.total).toFixed(1)+'" r="4" fill="'+CREAM+'" stroke="'+NAVY+'" stroke-width="2"/>';
+        if(i===0||i===chron.length-1) s+=txt(X(i),Y(q.total)-9,q.total,CREAM);
+      });
+      s+='<line x1="'+(X0-6)+'" y1="'+BASE+'" x2="'+(W-6)+'" y2="'+BASE+'" stroke="'+STEEL+'" stroke-width="1" opacity=".5"/>';
+      var k=Math.ceil(chron.length/12);
+      chron.forEach(function(q,i){
+        if(i%k && i!==chron.length-1) return;
+        s+=txt(X(i),BASE+14,q.date);
+      });
+      var legend=[[CREAM,'TOTAL PUTTS',''],
+                  [STEEL,(DIDX==null?'INDEX BENCHMARK - UNAVAILABLE':'INDEX '+DIDX+' BENCHMARK'),cur==null?'':cur.toFixed(2)],
+                  [RED,'GOAL 5.0 BENCHMARK',goal.toFixed(2)]].map(function(it){
+        return '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">'+
+          '<span style="display:inline-flex;align-items:center;gap:6px">'+
+          '<span style="width:10px;height:10px;border-radius:3px;background:'+it[0]+';display:inline-block"></span>'+
+          '<span class="mono" style="font-size:10px;letter-spacing:.08em;color:var(--steel)">'+it[1]+'</span></span>'+
+          (it[2]?'<span class="mono" style="font-size:12px;color:var(--cream)">'+it[2]+'</span>':'')+
+        '</div>';
+      }).join('');
+      return groupLabel('TOTAL PUTTS BY SESSION')+
+        '<svg viewBox="0 0 '+W+' '+(BASE+20)+'" style="width:100%;display:block;margin-top:6px">'+s+'</svg>'+legend;
+    }
+
+    /* ---- screens ---- */
+    function renderHome(){
+      var el=document.getElementById('drills-home');
+      if(!el) return;
+      el.innerHTML=DCATS.map(function(c){
+        var list=DRILLS[c]||[];
+        return list.length? item(c,'data-dcat="'+esc(c)+'"') : item(c,null,'No drills yet');
+      }).join('');
+    }
+    function renderCat(cat){
+      CUR.cat=cat;
+      document.getElementById('drill-cat-title').textContent=cat;
+      document.getElementById('drill-cat-list').innerHTML=(DRILLS[cat]||[]).map(function(d,i){
+        return item(d.name,'data-ddrill="'+esc(cat)+':'+i+'"');
+      }).join('');
+    }
+    function sessionsFor(slug){
+      return DSESS.filter(function(s){return s.drill===slug;});
+    }
+    function renderDrill(){
+      var d=CUR.drill; if(!d) return;
+      document.getElementById('drill-title').textContent=d.name;
+      var sess=sessionsFor(d.slug);
+      var proto='<div class="card" style="padding:16px 18px;margin-top:12px">'+
+        d.protocol.map(function(p,i){
+          var last=i===d.protocol.length-1;
+          return '<p style="font-family:var(--font-body);font-size:13.5px;line-height:1.7;color:var(--cream);margin:0 0 '+(last?'0':'10px')+'">'+esc(p)+'</p>';
+        }).join('')+
+      '</div>';
+      var hist='';
+      if(sess.length){
+        var cur=DIDX==null?null:drillBench(DIDX), goal=drillBench(GOAL_INDEX);
+        hist=groupLabel('SESSIONS')+sess.map(function(s,i){
+          return '<div class="card" data-dsess="'+i+'" style="padding:14px 16px;margin-top:10px;cursor:pointer">'+
+            '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">'+
+              '<div><div class="h-title" style="font-size:15px">'+esc(s.date)+'</div>'+
+              '<div style="font-family:var(--font-body);font-size:11px;color:var(--steel);margin-top:2px">'+esc(s.loc)+'</div></div>'+
+              '<div style="text-align:right"><div class="mono" style="font-weight:600;font-size:20px;line-height:1">'+s.total+'</div>'+
+              '<div class="mono" style="font-size:11px;color:var(--steel);margin-top:2px">'+
+                (cur==null?'-':fmtSg(cur-s.total))+' / '+fmtSg(goal-s.total)+'</div></div>'+
+            '</div>'+
+            '<div class="ddetail" hidden>'+sgBlock(s.total,dStats([s]))+distTable(dStats([s]),'THIS SESSION BY DISTANCE')+
+              (s.notes?'<div style="font-family:var(--font-body);font-size:12px;color:var(--steel);margin-top:10px;line-height:1.6">'+esc(s.notes)+'</div>':'')+
+            '</div>'+
+          '</div>';
+        }).join('');
+        hist+=drillChart()+distTable(dStats(sess),'ALL SESSIONS BY DISTANCE');
+        var roll=dStats(sess);
+        hist+='<div style="margin-top:8px">'+
+          statRow('One-putts, all sessions', roll.one+' of '+roll.n)+
+          statRow('Three putts or worse, all sessions', roll.three+' of '+roll.n)+'</div>';
+      } else {
+        hist='<div style="font-family:var(--font-body);font-size:12.5px;color:var(--steel);margin-top:16px">No sessions yet.</div>';
+      }
+      document.getElementById('drill-body').innerHTML=
+        proto+item('Log a session','data-dgo="log"')+hist;
+    }
+
+    /* ---- the session log ----
+       20 numeric cells, each pre-labelled with its snake-order distance.
+       Running total fills live; all 20 are required to save. The entry grid
+       sits on the cream plate in Georgia - a worksheet, not an app form. */
+    function renderLog(){
+      var d=CUR.drill; if(!d) return;
+      document.getElementById('drill-log-title').textContent=d.name;
+      var today=new Date().toLocaleDateString('en-CA',{timeZone:'America/Chicago'});
+      var cells='';
+      for(var i=0;i<20;i++){
+        cells+='<div>'+
+          '<div style="font-family:Georgia,serif;font-size:9.5px;letter-spacing:.08em;color:#5C6B82;margin-bottom:4px;text-align:center">'+
+            (i+1)+' &middot; '+SNAKE[i%10]+' FT</div>'+
+          '<input type="number" inputmode="numeric" min="1" step="1" class="dl-cell" data-cell="'+i+'"'+
+          ' style="width:100%;height:44px;text-align:center;border:1.5px solid rgba(12,35,64,.25);border-radius:10px;'+
+          'background:#fff;font-family:var(--font-data);font-size:16px;font-weight:700;color:#0F2F45;-webkit-appearance:none;appearance:none">'+
+        '</div>';
+      }
+      document.getElementById('drill-log-body').innerHTML=
+        '<div class="edrow" style="margin-top:16px">'+
+          '<div class="edfield"><div class="edlbl" style="color:var(--steel)">Date</div>'+
+            '<input type="date" id="dl-date" value="'+today+'" style="width:100%;height:46px;padding:0 10px;'+
+            'border:1.5px solid rgba(143,160,184,.35);border-radius:10px;background:var(--navy);'+
+            'font-family:var(--font-data);font-size:14px;font-weight:700;color:var(--cream);-webkit-appearance:none;appearance:none"></div>'+
+          '<div class="edfield"><div class="edlbl" style="color:var(--steel)">Practice green / location</div>'+
+            '<input type="text" id="dl-loc" style="width:100%;height:46px;padding:0 10px;text-align:left;'+
+            'border:1.5px solid rgba(143,160,184,.35);border-radius:10px;background:var(--navy);'+
+            'font-family:var(--font-data);font-size:14px;font-weight:700;color:var(--cream)"></div>'+
+        '</div>'+
+        '<div class="dspplate" style="padding:14px 12px;margin-top:14px">'+
+          '<div style="font-family:Georgia,serif;font-size:11px;color:#0F2F45;text-align:center;margin-bottom:10px">'+
+            'Putts to hole out from each start, snake order</div>'+
+          '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">'+cells+'</div>'+
+          '<div style="font-family:Georgia,serif;font-size:13px;color:#0F2F45;text-align:center;margin-top:12px">'+
+            'Total <span id="dl-total" style="font-weight:700;color:#1F4E9D">0</span>'+
+            ' &middot; <span id="dl-filled">0</span> of 20 entered</div>'+
+        '</div>'+
+        '<div class="edfield" style="margin-top:14px"><div class="edlbl" style="color:var(--steel)">Notes</div>'+
+          '<input type="text" id="dl-notes" style="width:100%;height:46px;padding:0 10px;text-align:left;'+
+          'border:1.5px solid rgba(143,160,184,.35);border-radius:10px;background:var(--navy);'+
+          'font-family:var(--font-data);font-size:14px;color:var(--cream)"></div>'+
+        '<button class="btn btn-red" style="width:100%;margin-top:16px" data-dact="save">SAVE SESSION</button>'+
+        '<div id="dl-result" style="margin-top:8px"></div>';
+    }
+    function logTotals(){
+      var tot=0, filled=0;
+      document.querySelectorAll('.dl-cell').forEach(function(inp){
+        var n=parseInt(inp.value,10);
+        if(isFinite(n)&&n>=1){tot+=n;filled++;}
+      });
+      var t=document.getElementById('dl-total'), f=document.getElementById('dl-filled');
+      if(t) t.textContent=tot;
+      if(f) f.textContent=filled;
+      return {total:tot,filled:filled};
+    }
+    function saveSession(){
+      var d=CUR.drill; if(!d) return;
+      var out=document.getElementById('dl-result');
+      var at=[], bad=null;
+      document.querySelectorAll('.dl-cell').forEach(function(inp){
+        var i=+inp.dataset.cell, n=parseInt(inp.value,10);
+        if(String(inp.value).trim()===''||!isFinite(n)||n<1||String(n)!==String(inp.value).trim()) bad=bad==null?i:bad;
+        at[i]=n;
+      });
+      var date=(document.getElementById('dl-date')||{}).value||'';
+      var loc=((document.getElementById('dl-loc')||{}).value||'').trim();
+      var notes=((document.getElementById('dl-notes')||{}).value||'').trim();
+      var msg=function(t){out.innerHTML='<div style="font-family:var(--font-body);font-size:12.5px;color:var(--steel);padding:10px 2px;line-height:1.6">'+esc(t)+'</div>';};
+      if(bad!=null){ msg('Cell '+(bad+1)+' ('+SNAKE[bad%10]+' ft) needs a whole number of putts, minimum 1. All 20 cells are required.'); return; }
+      if(!date){ msg('Give it a date.'); return; }
+      if(!loc){ msg('Give it a practice green or location.'); return; }
+      var btn=document.querySelector('[data-dact="save"]');
+      if(btn){btn.disabled=true;btn.textContent='SAVING…';}
+      fetch(HOOK,{method:'POST',headers:{'Content-Type':'text/plain'},
+        body:JSON.stringify({token:DRILL_TOKEN,kind:'drill',
+          session:{date:date,drill:d.slug,location:loc,notes:notes,attempts:at}})})
+      .then(function(r){return r.json();})
+      .then(function(j){
+        if(!j.ok) throw new Error(j.error||'sheet said not-ok');
+        var total=at.reduce(function(a,b){return a+b;},0);
+        var st=dStats([{at:at}]);
+        out.innerHTML='<div style="font-family:var(--font-body);font-size:12.5px;color:var(--cream);padding:10px 2px">Session saved to the sheet.</div>'+
+          sgBlock(total,st)+distTable(st,'THIS SESSION BY DISTANCE');
+        if(btn){btn.textContent='SAVED';}
+        return fetch(HOOK+'?tab=drills').then(function(r){return r.json();}).then(function(j2){
+          if(j2&&j2.ok&&j2.rows){
+            try{localStorage.setItem(DRILL_CACHE,JSON.stringify({rows:j2.rows,t:Date.now()}));}catch(e){}
+            applyDrillData(parseDrillRows(j2.rows));
+          }
+        });
+      })
+      .catch(function(e){
+        /* Nothing reached the sheet: say so and leave every cell exactly as
+           typed, so a retry is one tap, not a re-entry. */
+        msg('Save did not reach the sheet - '+String(e).slice(0,140)+'. Your numbers are still here; try again.');
+        if(btn){btn.disabled=false;btn.textContent='SAVE SESSION';}
+      });
+    }
+
+    document.addEventListener('input',function(e){
+      if(e.target.classList&&e.target.classList.contains('dl-cell')) logTotals();
+    });
+    document.addEventListener('click',function(e){
+      var c=e.target.closest('[data-dcat]');
+      if(c){ renderCat(c.getAttribute('data-dcat')); show('drill-cat'); return; }
+      var dd=e.target.closest('[data-ddrill]');
+      if(dd){
+        var bits=dd.getAttribute('data-ddrill').split(':');
+        CUR.cat=bits[0]; CUR.drill=(DRILLS[bits[0]]||[])[+bits[1]]||null;
+        renderDrill(); show('drill'); return;
+      }
+      var g=e.target.closest('[data-dgo="log"]');
+      if(g){ renderLog(); show('drill-log'); return; }
+      var sv=e.target.closest('[data-dact="save"]');
+      if(sv){ saveSession(); return; }
+      var sx=e.target.closest('[data-dsess]');
+      if(sx&&!e.target.closest('.ddetail')){
+        var box=sx.querySelector('.ddetail');
+        if(box) box.hidden=!box.hidden;
+        return;
+      }
+    });
+
+    /* Cache first so the screens work offline, then the live read - the same
+       shape as the Rounds and Hole Log fetches above. */
+    renderHome();
+    try{var c0=JSON.parse(localStorage.getItem(DRILL_CACHE)); if(c0&&c0.rows) applyDrillData(parseDrillRows(c0.rows));}catch(e){}
+    fetch(HOOK+'?tab=drills').then(function(r){return r.json();}).then(function(j){
+      if(j&&j.ok&&j.rows){
+        try{localStorage.setItem(DRILL_CACHE,JSON.stringify({rows:j.rows,t:Date.now()}));}catch(e){}
+        applyDrillData(parseDrillRows(j.rows));
+      }
+    }).catch(function(){});
   })();
 
   // ---- live Kansas City weather (Open-Meteo, no API key needed) ----
