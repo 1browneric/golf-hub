@@ -324,7 +324,9 @@ def _sessions() -> list[dict]:
         # the session's goal.
         body = re.sub(r"^#\s+.+$", "", text, count=1, flags=re.M).strip()
         first = body.split("\n\n")[0].replace("\n", " ").strip()
-        audio = _audio_rel(
+        # Reading material never gets a player, even if a stale MP3 of an
+        # older draft is still sitting on disk under the same name.
+        audio = None if md.stem in tts.NOT_NARRATED else _audio_rel(
             md.stem, text,
             REPO / "assets" / "audio" / "mental-training" / ("%s.mp3" % md.stem),
             REPO / "assets" / "audio" / "mental-training" / ".hashes")

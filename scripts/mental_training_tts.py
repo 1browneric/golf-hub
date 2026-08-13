@@ -128,6 +128,16 @@ def _plain(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
+# Files in SESSION_DIR that are READING MATERIAL, not narration. The Five is
+# Eric's DECADE scoring reference - Why / What to do prose with no pause cues
+# and nothing to run with your eyes closed ("it was suppose to just be a aspect
+# like the pdf i sent you on under scoring", 2026-08-13). Narrating it would
+# produce a track that reads a reference sheet aloud, which is not a session and
+# is not what he asked for. Anything listed here is skipped by the render and
+# carries no audio path on the hub.
+NOT_NARRATED = {"07-the-five"}
+
+
 def strip_comments(markdown: str) -> str:
     """Drop HTML comments before a script is spoken, hashed or displayed.
 
@@ -413,7 +423,8 @@ def main(argv: list[str]) -> int:
         list_voices()
         return 0
 
-    sessions = sorted(p for p in SESSION_DIR.glob("*.md"))
+    sessions = sorted(p for p in SESSION_DIR.glob("*.md")
+                      if p.stem not in NOT_NARRATED)
     if not sessions:
         print("no session scripts in %s" % SESSION_DIR)
         return 1
