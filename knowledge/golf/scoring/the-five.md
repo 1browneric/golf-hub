@@ -19,7 +19,7 @@
      the two labels. No preamble above the first stat - the content is the
      page. -->
 
-## One. No double bogeys.
+## 1. No double bogeys.
 
 ### Why
 
@@ -32,7 +32,7 @@ gained a double is six times worse than a bogey.
 Manage the risk instead of forcing the birdie. Avoid undue risk and manage what
 you expect from a hole.
 
-## Two. No bogeys on par 5s.
+## 2. No bogeys on par 5s.
 
 ### Why
 
@@ -45,7 +45,7 @@ trying to force your way back into position.
 Get as close to the green as you can without taking on a hazard. Nothing about a
 par five is worth bringing a penalty stroke into play.
 
-## Three. No three-putts.
+## 3. No three-putts.
 
 ### Why
 
@@ -58,7 +58,7 @@ Practice speed uphill and downhill at varying distances. Half your putting time
 on speed, a quarter on five to fifteen footers, a quarter simulating a putting
 course.
 
-## Four. No bogeys with nine iron or less (about 150 yards and in).
+## 4. No bogeys with nine iron or less (about 150 yards and in).
 
 ### Why
 
@@ -69,7 +69,7 @@ Bogeys from your scoring clubs mean the target was wrong, not the swing.
 Stop being overly aggressive and stop trying to force birdies. From 79 to 76, 82
 percent of the improvement is bogeys avoided rather than birdies made.
 
-## Five. No double chips.
+## 5. No double chips.
 
 ### Why
 
