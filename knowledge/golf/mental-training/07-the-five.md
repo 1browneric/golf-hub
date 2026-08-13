@@ -1,10 +1,8 @@
 # The Five
 
-<!-- Item five is a deliberate substitution and is not an error. Scott Fawcett's
-     original fifth item is "no missed easy up-and-downs". Eric replaced it with
-     "no double chips" because it is a binary standard with no judgment call in
-     it, and because it targets his measured weakness - inside sixty yards from
-     the rough. Do not "correct" it back to the original. -->
+<!-- Source: DECADE 'Five Stats Every Golfer Should Be Tracking.' All five items
+     canonical. Item 4 title is Blown Easy Saves; Two Chips Per Hole is the
+     measurable. -->
 
 This is a scoring discipline, not a swing thought. Scott Fawcett teaches it as the five
 mistakes Tiger Woods counted against himself each round. Tiger's standard was six or
@@ -19,7 +17,7 @@ Two. No bogeys on par 5s.
 
 Three. No three-putts.
 
-Four. No bogeys from inside 150 yards.
+Four. No bogeys with nine iron or less (about 150 yards and in).
 
 Five. No double chips.
 
@@ -59,7 +57,7 @@ The goal is never putting again from outside three feet.
 
 [BEAT — HOLD]
 
-Four. Inside 150, scoring club in hand.
+Four. Nine iron or less in your hands — about 150 yards and in.
 
 One club, one start line, full commitment. Center of the green is a good shot.
 
