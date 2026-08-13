@@ -9,3 +9,10 @@ __pycache__/
 
 # Local preview config, never committed.
 .claude/
+
+# A local GitHub Actions Pages workflow that is deliberately NOT tracked.
+# Pages builds this site without it, and a Claude Code token has no `workflow`
+# scope, so a commit that swept it in was rejected outright on push
+# (2026-08-13). Ignoring the exact file rather than all of .github, so issue
+# templates or anything else added later still show up as untracked.
+.github/workflows/pages.yml
