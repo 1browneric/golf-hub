@@ -67,6 +67,34 @@ PAUSE_SHORT = "6s"                # a plain cue
 PAUSE_LONG = "10s"                # "let the scene build", or multiple reps
 PARAGRAPH_BREAK = "800ms"         # sentence-level pacing between paragraphs
 
+# BRACKET CUES - the form every current script uses.
+#
+# The scripts were rewritten to bare bracket lines ([PAUSE], [BEAT - HOLD],
+# [PAUSE - REP]) and this module still only understood the older `> Pause ...`
+# blockquote. A bracket line therefore fell through to the body branch and was
+# NARRATED: 393 of them across the 65 session and hole scripts, so the voice
+# would have said "PAUSE" out loud everywhere a silence was intended. Nothing
+# had been rendered yet, so no audio carries the fault - but a render before
+# this fix would have had to be paid for twice.
+#
+# A TABLE, not logic, so the timings can be tuned without touching the parser.
+# Keys are matched on the cue's own words, case-insensitively, ignoring the
+# dash style so an em dash and a hyphen behave the same.
+CUE_BREAKS = {
+    "pause":        PAUSE_SHORT,   # a breath
+    "pause long":   PAUSE_LONG,    # settle before the work starts
+    "pause rep":    "20s",         # a whole shot played with the eyes closed
+    "beat":         "2s",          # a section change
+    "beat hold":    "4s",          # a section change with weight on it
+    # 54 of these, all in the hole walkthroughs, and they sit between the
+    # rehearsal and the closing "The call: ..." recap. It is a BEAT by name and
+    # the words are an instruction to the listener rather than a silence to
+    # fill, so it gets the weighted beat rather than a rep-length gap. This is
+    # the one timing worth checking on the first listen.
+    "beat run it again": "4s",
+}
+CUE_DEFAULT = PAUSE_SHORT          # an unrecognised cue is still silence
+
 # The cue line becomes silence and is not read aloud - the narrator has already
 # said what to do. Flip this to True to have the cue spoken before the break.
 SPEAK_PAUSE_CUES = False
@@ -149,7 +177,22 @@ def ssml_blocks(markdown: str) -> list[str]:
         if not block:
             continue
 
-        # `> Pause ...` - the cue line becomes silence.
+        # `[PAUSE]`, `[BEAT - HOLD]`, `[PAUSE - REP]` - a whole line in
+        # brackets is a stage direction. It becomes silence and is never read
+        # aloud; the narrator has already said what to do.
+        m_cue = re.match(r"^\[([^\]]+)\]$", block)
+        if m_cue:
+            key = re.sub(r"[^a-z ]+", " ", m_cue.group(1).lower())
+            key = re.sub(r"\s+", " ", key).strip()
+            length = CUE_BREAKS.get(key, CUE_DEFAULT)
+            if SPEAK_PAUSE_CUES:
+                out.append("%s<break time=\"%s\"/>"
+                           % (_escape(_plain(m_cue.group(1))), length))
+            else:
+                out.append("<break time=\"%s\"/>" % length)
+            continue
+
+        # `> Pause ...` - the older cue form, kept for any script still on it.
         if block.lstrip().startswith(">"):
             cue = block.lstrip("> ").strip()
             if cue.lower().startswith("pause"):
@@ -379,7 +422,12 @@ def _fingerprint(markdown: str) -> str:
     h.update(strip_comments(markdown).encode("utf-8"))
     h.update(("|".join([VOICE_NAME, str(SPEAKING_RATE), PAUSE_SHORT,
                         PAUSE_LONG, PARAGRAPH_BREAK, str(SPEAK_PAUSE_CUES),
-                        MP3_BITRATE, str(SAMPLE_RATE_HZ)])).encode("utf-8"))
+                        MP3_BITRATE, str(SAMPLE_RATE_HZ),
+                        # the cue timings shape the audio as much as the
+                        # speaking rate does, so retuning one has to
+                        # invalidate the render
+                        repr(sorted(CUE_BREAKS.items())), CUE_DEFAULT])
+                      ).encode("utf-8"))
     return h.hexdigest()
 
 
