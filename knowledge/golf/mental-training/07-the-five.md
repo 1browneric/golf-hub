@@ -24,7 +24,7 @@ four or fewer per round.
 
 3. No three-putts.
 
-4. No bogeys with nine iron or less (about 150 yards and in).
+4. No bogeys with 9 iron or less.
 
 5. No double chips.
 
@@ -64,7 +64,7 @@ The goal is never putting again from outside three feet.
 
 [BEAT — HOLD]
 
-4. Nine iron or less in your hands — about 150 yards and in.
+4. 9 iron or less in your hands — 150 yds and in.
 
 One club, one start line, full commitment. Center of the green is a good shot.
 
