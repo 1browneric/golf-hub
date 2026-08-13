@@ -1766,7 +1766,10 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
                         H&&H.threePuttPer!=null?'Three-putts '+H.threePuttPer.toFixed(1)+' a round ('+H.threePuttTotal+' total).':'',
                         H&&H.firstPuttAvg!=null?'First putt averages '+ftTenth(H.firstPuttAvg)+' feet.':'',
                         (H&&H.tenPct&&H.tenPct.d)
-                          ? 'Ten percent putts '+Math.round(H.tenPct.pct*100)+' percent ('+
+                          /* Eric's wording, 2026-08-13, replacing "Ten percent
+                             putts": the label should say what the rule is, not
+                             restate the number in the name. */
+                          ? 'Within 10% of starting distance '+Math.round(H.tenPct.pct*100)+' percent ('+
                             H.tenPct.n+' of '+H.tenPct.d+')'+
                             (H.tenPct.gaps? ', '+H.tenPct.gaps+' excluded for no second putt distance':'')+'.'
                           : ''])
@@ -1952,7 +1955,10 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
          screen, correct units. */
       var pc=function(o){return (o&&o.pct!=null)? Math.round(o.pct*100)+'%' : '-';};
       var t=H&&H.tenPct, t5=H&&H.tenPct5;
-      return chTitle('TEN PERCENT PUTTS &middot; PERCENT',
+      /* No unit suffix, unlike its FEET siblings: the label already carries
+         the percent sign and the axis is 25/50/75/100, and "&middot; PERCENT"
+         pushed the title onto a second line where the suffix sat orphaned. */
+      return chTitle('WITHIN 10% OF STARTING DISTANCE',
                      (t&&t.d)? pc(t5)+' ('+pc(t)+')' : '')+
              chWrap(s2,BASE+20);
     };
