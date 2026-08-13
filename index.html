@@ -1418,6 +1418,15 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
      Data gaps: a hole that took more than one putt but has no p2 recorded
      is excluded and counted separately, so a thin sample shows as a gap
      rather than quietly inflating the rate. */
+  /* Eric's target for 10% Putts, 2026-08-13. HIS number, not a published
+     benchmark - none exists for this rule, and the Stagner corpus has no
+     lag-quality table (the nearest is three-putt rate by first-putt distance,
+     which is the outcome this rule prevents rather than the rule itself).
+     He picked 50 knowing what it costs: 62 passes of 123 against the 40 he
+     has, and only 16 of his 83 misses are within a foot of passing. Change
+     the number here and the line and its label both follow. */
+  var TEN_PCT_TARGET = 50;
+
   function tenPct(sel){
     var n=0,d=0,gaps=0;
     sel.forEach(function(h){
@@ -1940,10 +1949,21 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
          above it. Two digits and three lines read the same as its siblings,
          and the data sits between 17 and 63 so nothing is lost. */
       var s2=chGrid([25,50,75],yOf,function(g){return Math.round(g);});
-      if(H&&H.tenPct&&H.tenPct.pct!=null)
-        s2+='<line x1="'+(CH_X0-6)+'" y1="'+yOf(H.tenPct.pct*100).toFixed(1)+'" x2="'+(CH_W-6)+
-            '" y2="'+yOf(H.tenPct.pct*100).toFixed(1)+'" stroke="'+CH_STEEL+
-            '" stroke-width="1" stroke-dasharray="4 3" opacity=".6"/>';
+      /* Two dashed references, each carrying its own words at the right end.
+         Eric is red-green colourblind, so neither line may depend on its
+         colour to be identified - and the target sits exactly on the 50
+         gridline, so without a label it would read as axis furniture rather
+         than as a standard he set. */
+      var ref=function(v,col,label){
+        var y=yOf(v).toFixed(1);
+        return '<line x1="'+(CH_X0-6)+'" y1="'+y+'" x2="'+(CH_W-6)+'" y2="'+y+
+               '" stroke="'+col+'" stroke-width="1" stroke-dasharray="4 3" opacity=".7"/>'+
+               chTxt(CH_W-8,+y-4,label,col,'end');
+      };
+      /* ONE reference line, the target. A second line at the season rate
+         duplicated the title, which already reads "last five (season)", and
+         its label landed on top of the final data point at the right edge. */
+      s2+=ref(TEN_PCT_TARGET,CH_RED,'TARGET '+TEN_PCT_TARGET+'%');
       s2+='<polyline points="'+pts.map(function(q){return q.x.toFixed(1)+','+yOf(q.v).toFixed(1);}).join(' ')+
           '" fill="none" stroke="'+CH_CREAM+'" stroke-width="2"/>';
       var minI=0;
