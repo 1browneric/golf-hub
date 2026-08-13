@@ -2832,7 +2832,19 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       return A[n-1][1]+(x-A[n-1][0])*(A[n-1][1]-A[n-2][1])/(A[n-1][0]-A[n-2][0]);
     }
     var DRILLS={
-      'Driver':[], '176+':[], '101-175':[], '100 & In':[],
+      'Driver':[], '176+':[], '101-175':[],
+      '100 & In':[{
+        slug:'carry-ladder',
+        kind:'carry',
+        name:'Carry Ladder',
+        protocol:[
+          'Seven carry numbers: 5, 7, 9, 11, 15, 20, 30 yards. CARRY, not total - rollout is a club choice and is not scored here.',
+          'Block phase: three balls at each number, ascending. 21 shots.',
+          'Random phase: one ball at each number, in an order the app shuffles and shows one at a time. 7 shots.',
+          'Pick the landing spot, name the number, run the rehearsed motion. Never recalibrate mid-swing.',
+          'Entry mode is chosen at the start and stored with the session - a launch monitor carry, or short / in / long against tees.'
+        ]
+      }],
       'Putting':[{
         slug:'short-putting-combine',
         name:'Short Putting Combine',
@@ -3020,6 +3032,466 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
         '<svg viewBox="0 0 '+W+' '+(BASE+20)+'" style="width:100%;display:block;margin-top:6px">'+s+'</svg>'+legend;
     }
 
+    /* =====================================================================
+       CARRY LADDER  (100 & In)
+       Scott Fawcett's simplify-chipping premise: chipping fails because "how
+       hard do I hit this" gets answered by feel, and feel degrades under
+       pressure and out of rough. Seven fixed carry numbers turn the question
+       into a lookup - pick a landing spot, name the number, run a rehearsed
+       motion, never recalibrate mid-swing.
+
+       CARRY, never total. Rollout is a club decision and this drill does not
+       score it.
+       ===================================================================== */
+    var CARRY_DISTS=[5,7,9,11,15,20,30];
+    /* Tolerance is DATA, not literals inside the scorer. Widen or tighten a
+       band by editing this one map and every number on every screen follows;
+       nothing downstream knows a yardage. The short four are the ones a
+       rehearsed motion should own outright, so they are held to a yard. */
+    var CARRY_TOL={5:1,7:1,9:1,11:1,15:2,20:2,30:3};
+    var CARRY_BALLS=3;                                   // block balls per number
+    var CARRY_N_BLOCK=CARRY_DISTS.length*CARRY_BALLS;    // 21
+    var CARRY_N=CARRY_N_BLOCK+CARRY_DISTS.length;        // 28
+    /* Two entry modes, and they are two different measurements. A launch
+       monitor gives a signed yardage; tees on the ground give a direction and
+       no magnitude. Every stat below is computed inside ONE mode and labelled
+       with it - a mean that mixed them would be a number about nothing. */
+    var CARRY_MODES={lm:'Launch monitor', zone:'Landing zone'};
+    var CARRY_ZONES={short:'Short', in:'In', long:'Long'};
+    /* Optional, because a session on the mat has no lie. It matters here more
+       than anywhere else on the hub: inside 60 yards from ROUGH is Eric's
+       measured hole - cumulative -15.1 strokes gained against the 9 baseline,
+       and 31.8 ft average proximity from 31-60 out of rough against 14.0 ft
+       from the fairway. A ladder calibrated only off tight lies does not
+       touch that, so the split is kept and shown, never pooled away. */
+    var CARRY_LIES={fairway:'Fairway', rough:'Rough'};
+    var CARRY_CACHE='gh_carry_cache_v1';
+    var CSESS=[];                 // carry sessions, newest first
+    var CLOG=null;                // the session being entered
+
+    /* Block: CARRY_BALLS at each number, ascending. Random: one at each of
+       the seven, in an order shuffled per session and shown one shot at a
+       time. Transfer from block to random is the actual measure of whether
+       the ladder is holding up, so the phases are stored and scored apart. */
+    function carryBlockPlan(){
+      var out=[];
+      CARRY_DISTS.forEach(function(d){ for(var i=0;i<CARRY_BALLS;i++) out.push(d); });
+      return out;
+    }
+    function carryShuffle(){
+      var a=CARRY_DISTS.slice();
+      for(var i=a.length-1;i>0;i--){
+        var j=Math.floor(Math.random()*(i+1)), t=a[i]; a[i]=a[j]; a[j]=t;
+      }
+      return a;
+    }
+    /* Shot i's target. The block half is fixed, so it is derived; the random
+       half is not, so the session carries its own order and old sessions stay
+       readable if the shuffle ever changes. */
+    function carryTarget(sess,i){
+      return i<CARRY_N_BLOCK ? carryBlockPlan()[i] : (sess.order||[])[i-CARRY_N_BLOCK];
+    }
+    /* One shot against its own band. `err` is signed yards and exists ONLY in
+       launch-monitor mode. `dir` is the word, never a colour: short or long.  */
+    function carryScore(target,val,mode){
+      var tol=CARRY_TOL[target];
+      if(target==null||tol==null) return null;
+      if(mode==='zone'){
+        if(!val||!CARRY_ZONES[val]) return null;
+        return {hit:val==='in', dir:val==='in'?'':val, err:null, tol:tol};
+      }
+      var n=dNum(val); if(n==null) return null;
+      var e=n-target;
+      return {hit:Math.abs(e)<=tol, dir:e<0?'short':(e>0?'long':''), err:e, tol:tol};
+    }
+    /* Per-distance aggregates for ONE mode and ONE phase. phase is 'block',
+       'random' or null for both. Callers never mix modes into one call. */
+    function carryStats(sessions,phase){
+      var res={dist:{},n:0,hits:0};
+      CARRY_DISTS.forEach(function(d){
+        res.dist[d]={n:0,hits:0,errN:0,errSum:0,short:0,long:0};
+      });
+      sessions.forEach(function(s){
+        (s.shots||[]).forEach(function(v,i){
+          var isBlock=i<CARRY_N_BLOCK;
+          if(phase==='block'&&!isBlock) return;
+          if(phase==='random'&&isBlock) return;
+          var t=carryTarget(s,i), sc=carryScore(t,v,s.mode);
+          if(!sc) return;
+          var o=res.dist[t]; if(!o) return;
+          o.n++; res.n++;
+          if(sc.hit){ o.hits++; res.hits++; }
+          else if(sc.dir==='short') o.short++;
+          else if(sc.dir==='long') o.long++;
+          if(sc.err!=null){ o.errN++; o.errSum+=sc.err; }
+        });
+      });
+      return res;
+    }
+    function carryRate(st){ return st.n?Math.round(st.hits/st.n*100):null; }
+    /* The signed mean, spelled out. A consistent negative is deceleration and
+       a consistent positive is over-hitting, and the difference has to survive
+       being read by someone who cannot use a red/green cue - so the word is
+       the encoding and the sign is only there to back it up. */
+    function carryMean(o){
+      if(!o.errN) return '-';
+      var m=o.errSum/o.errN;
+      var w=Math.abs(m)<0.05?'on the number':(m<0?'short':'long');
+      return (m>=0?'+':'')+m.toFixed(1)+' yd '+w;
+    }
+    function carrySessLabel(s){
+      return (CARRY_MODES[s.mode]||s.mode)+
+        ' · '+(s.lie?CARRY_LIES[s.lie]||s.lie:'lie not recorded');
+    }
+
+    /* ---- sheet round-trip ----
+       Its own tab, because the row shape is its own: the Drills tab is 20
+       putting cells under a "Total Putts" header and a 28-shot ladder does not
+       belong under it. Same HOOK, same token, same append-only shape.
+         row 1  Date | Drill | Location | Mode | Lie | Random Order | S1..S28 | Notes
+         row 2+ one row per session. */
+    function parseCarryRows(rows){
+      var out=[];
+      (rows||[]).slice(1).forEach(function(r){
+        if(!r||!r[0]) return;
+        var m=/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/.exec(String(r[0]));
+        if(!m) return;
+        var mm=+m[1], dd=+m[2], yy=m[3]?+m[3]:0;
+        var mode=String(r[3]||'').trim();
+        if(!CARRY_MODES[mode]) return;
+        var order=String(r[5]||'').split(',').map(function(x){return dNum(x);})
+                   .filter(function(x){return x!=null;});
+        var shots=[];
+        for(var i=0;i<CARRY_N;i++){
+          var c=r[6+i];
+          shots.push(mode==='zone'?String(c||'').trim().toLowerCase():dNum(c));
+        }
+        out.push({key:yy*10000+mm*100+dd, date:MON[mm-1]+' '+dd,
+                  drill:String(r[1]||''), loc:String(r[2]||''),
+                  mode:mode, lie:String(r[4]||'').trim().toLowerCase(),
+                  order:order, shots:shots, notes:String(r[6+CARRY_N]||'')});
+      });
+      out.sort(function(a,b){return b.key-a.key;});
+      return out;
+    }
+    function loadCarry(){
+      return fetch(HOOK+'?tab=drills-carry').then(function(r){return r.json();})
+        .then(function(j){
+          if(!j||!j.ok||!j.rows) return;
+          try{localStorage.setItem(CARRY_CACHE,JSON.stringify({rows:j.rows,t:Date.now()}));}catch(e){}
+          CSESS=parseCarryRows(j.rows);
+          if(CUR.drill&&CUR.drill.kind==='carry') renderDrill();
+        }).catch(function(){});
+    }
+
+    /* ---- the drill screen ----
+       Same furniture as the Short Putting Combine: protocol card, log row,
+       session cards that open, rolling tables, trend. What differs is that
+       everything below the session list is rendered once PER MODE, under its
+       own heading, because the two modes are not the same measurement. */
+    function carryTable(st,label,mode){
+      var rows=CARRY_DISTS.map(function(d){
+        var o=st.dist[d];
+        if(!o.n) return '';
+        var third=mode==='zone'
+          ? (o.short+' short · '+o.long+' long')
+          : carryMean(o);
+        return '<tr><td style="text-align:left;font-weight:700;color:#1F4E9D;padding:6px 4px;border-bottom:1px solid rgba(12,35,64,.1)">'+d+' yd</td>'+
+          '<td style="text-align:center;padding:6px 4px;border-bottom:1px solid rgba(12,35,64,.1)">'+
+            Math.round(o.hits/o.n*100)+'% ('+o.hits+' of '+o.n+')</td>'+
+          '<td style="text-align:center;padding:6px 4px;border-bottom:1px solid rgba(12,35,64,.1)">'+third+'</td></tr>';
+      }).join('');
+      if(!rows) return '';
+      var th=function(t){return '<th style="text-align:center;font-size:9px;letter-spacing:.12em;color:#5C6B82;font-weight:600;padding:4px;border-bottom:1.5px solid #1F4E9D">'+t+'</th>';};
+      return groupLabel(label)+
+        '<div class="dspplate" style="padding:12px 10px">'+
+        '<table style="width:100%;border-collapse:collapse;font-family:Georgia,serif;font-size:12.5px;color:#0F2F45">'+
+        '<thead><tr><th style="text-align:left;font-size:9px;letter-spacing:.12em;color:#5C6B82;font-weight:600;padding:4px;border-bottom:1.5px solid #1F4E9D">CARRY</th>'+
+        th('INSIDE BAND')+th(mode==='zone'?'MISSES':'MEAN MISS')+'</tr></thead><tbody>'+rows+'</tbody></table></div>';
+    }
+    function carryPhaseRows(sess,mode){
+      var b=carryStats(sess,'block'), r=carryStats(sess,'random');
+      var f=function(st){var v=carryRate(st); return v==null?'-':v+'% ('+st.hits+' of '+st.n+')';};
+      var out=statRow('Block phase inside band',f(b))+statRow('Random phase inside band',f(r));
+      var bv=carryRate(b), rv=carryRate(r);
+      if(bv!=null&&rv!=null){
+        var d=rv-bv;
+        out+=statRow('Transfer, random minus block',
+          (d>=0?'+':'')+d+' pts '+(d>=0?'holding up':'falling off'));
+      }
+      return out;
+    }
+    /* Hit rate per session, one chart PER MODE. Same inline SVG shapes as the
+       putting trend - cream line on navy, a dashed reference, a text legend,
+       no chart library and never a colour carrying meaning on its own. */
+    function carryChart(sess,mode){
+      var chron=sess.slice().reverse();
+      if(chron.length<2) return '';
+      var pts=chron.map(function(s){
+        var st=carryStats([s],null);
+        return {v:carryRate(st), date:s.date};
+      }).filter(function(p){return p.v!=null;});
+      if(pts.length<2) return '';
+      var W=372,X0=26,CREAM='#F4EFE4',RED='#B22234',STEEL='#8FA0B8',NAVY='#0C2340';
+      var step=(W-X0-6)/pts.length, X=function(i){return X0+step*i+step/2;};
+      var txt=function(x,y,t,fill,anchor){
+        return '<text x="'+x+'" y="'+y+'" text-anchor="'+(anchor||'middle')+'" font-size="8" fill="'+(fill||STEEL)+
+               '" font-family="Spline Sans Mono">'+t+'</text>';
+      };
+      var lo=0, hi=100, BASE=140, TOP=16;
+      var Y=function(v){return BASE-(v-lo)/(hi-lo)*(BASE-TOP);};
+      var s='';
+      for(var g=20;g<100;g+=20){
+        s+='<line x1="'+(X0-6)+'" y1="'+Y(g).toFixed(1)+'" x2="'+(W-6)+'" y2="'+Y(g).toFixed(1)+
+           '" stroke="'+STEEL+'" stroke-width=".5" opacity=".15"/>'+txt(X0-8,Y(g)+3,g,STEEL,'end');
+      }
+      s+='<line x1="'+(X0-6)+'" y1="'+Y(80).toFixed(1)+'" x2="'+(W-6)+'" y2="'+Y(80).toFixed(1)+
+         '" stroke="'+RED+'" stroke-width="1" stroke-dasharray="4 3" opacity=".7"/>';
+      s+='<polyline points="'+pts.map(function(p,i){return X(i).toFixed(1)+','+Y(p.v).toFixed(1);}).join(' ')+
+         '" fill="none" stroke="'+CREAM+'" stroke-width="2"/>';
+      pts.forEach(function(p,i){
+        s+='<circle cx="'+X(i).toFixed(1)+'" cy="'+Y(p.v).toFixed(1)+'" r="4" fill="'+CREAM+'" stroke="'+NAVY+'" stroke-width="2"/>';
+        if(i===0||i===pts.length-1) s+=txt(X(i),Y(p.v)-9,p.v+'%',CREAM);
+      });
+      s+='<line x1="'+(X0-6)+'" y1="'+BASE+'" x2="'+(W-6)+'" y2="'+BASE+'" stroke="'+STEEL+'" stroke-width="1" opacity=".5"/>';
+      var k=Math.ceil(pts.length/12);
+      pts.forEach(function(p,i){
+        if(i%k && i!==pts.length-1) return;
+        s+=txt(X(i),BASE+14,p.date);
+      });
+      var legend=[[CREAM,'INSIDE BAND, WHOLE SESSION',''],[RED,'80 PER CENT MARK','']]
+        .map(function(it){
+          return '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">'+
+            '<span style="display:inline-flex;align-items:center;gap:6px">'+
+            '<span style="width:10px;height:10px;border-radius:3px;background:'+it[0]+';display:inline-block"></span>'+
+            '<span class="mono" style="font-size:10px;letter-spacing:.08em;color:var(--steel)">'+it[1]+'</span></span></div>';
+        }).join('');
+      return groupLabel('INSIDE BAND BY SESSION - '+CARRY_MODES[mode].toUpperCase())+
+        '<svg viewBox="0 0 '+W+' '+(BASE+20)+'" style="width:100%;display:block;margin-top:6px">'+s+'</svg>'+legend;
+    }
+    function carryModeBlock(sess,mode){
+      var mine=sess.filter(function(s){return s.mode===mode;});
+      if(!mine.length) return '';
+      var name=CARRY_MODES[mode].toUpperCase();
+      var out=groupLabel(name+' - '+mine.length+(mine.length===1?' SESSION':' SESSIONS'));
+      out+='<div style="margin-top:8px">'+carryPhaseRows(mine,mode)+'</div>';
+      out+=carryTable(carryStats(mine,null),name+' - ALL LIES BY CARRY',mode);
+      Object.keys(CARRY_LIES).forEach(function(lie){
+        var byLie=mine.filter(function(s){return s.lie===lie;});
+        if(!byLie.length) return;
+        out+=carryTable(carryStats(byLie,null),
+          name+' - '+CARRY_LIES[lie].toUpperCase()+' ONLY',mode);
+      });
+      out+=carryChart(mine,mode);
+      return out;
+    }
+    function renderCarryDrill(){
+      var d=CUR.drill;
+      document.getElementById('drill-title').textContent=d.name;
+      var sess=CSESS.filter(function(s){return s.drill===d.slug;});
+      var proto='<div class="card" style="padding:16px 18px;margin-top:12px">'+
+        d.protocol.map(function(p,i){
+          var last=i===d.protocol.length-1;
+          return '<div style="font-family:var(--font-body);font-size:12.5px;color:var(--steel);line-height:1.6;'+
+            'padding:8px 0'+(last?'':';border-bottom:1px solid rgba(143,160,184,.14)')+'">'+esc(p)+'</div>';
+        }).join('')+
+        '<div style="font-family:var(--font-body);font-size:12.5px;color:var(--steel);line-height:1.6;padding:10px 0 0;border-top:1px solid rgba(143,160,184,.14);margin-top:4px">'+
+        'Bands: '+CARRY_DISTS.map(function(x){return x+' yd plus or minus '+CARRY_TOL[x];}).join(', ')+'.</div>'+
+      '</div>';
+      var hist='';
+      if(sess.length){
+        hist=groupLabel('SESSIONS')+sess.map(function(s,i){
+          var st=carryStats([s],null), rate=carryRate(st);
+          return '<div class="card" data-csess="'+i+'" style="padding:14px 16px;margin-top:10px;cursor:pointer">'+
+            '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">'+
+              '<div><div class="h-title" style="font-size:15px">'+esc(s.date)+'</div>'+
+              '<div style="font-family:var(--font-body);font-size:11px;color:var(--steel);margin-top:2px">'+esc(carrySessLabel(s))+'</div>'+
+              '<div style="font-family:var(--font-body);font-size:11px;color:var(--steel);margin-top:2px">'+esc(s.loc)+'</div></div>'+
+              '<div style="text-align:right"><div class="mono" style="font-weight:600;font-size:20px;line-height:1">'+(rate==null?'-':rate+'%')+'</div>'+
+              '<div class="mono" style="font-size:11px;color:var(--steel);margin-top:2px">'+st.hits+' of '+st.n+' in band</div></div>'+
+            '</div>'+
+            '<div class="cdetail" hidden><div style="margin-top:8px">'+carryPhaseRows([s],s.mode)+'</div>'+
+              carryTable(carryStats([s],'block'),'THIS SESSION - BLOCK PHASE',s.mode)+
+              carryTable(carryStats([s],'random'),'THIS SESSION - RANDOM PHASE',s.mode)+
+              (s.notes?'<div style="font-family:var(--font-body);font-size:12px;color:var(--steel);margin-top:10px;line-height:1.6">'+esc(s.notes)+'</div>':'')+
+            '</div>'+
+          '</div>';
+        }).join('');
+        hist+=Object.keys(CARRY_MODES).map(function(m){return carryModeBlock(sess,m);}).join('');
+      } else {
+        hist='<div style="font-family:var(--font-body);font-size:12.5px;color:var(--steel);margin-top:16px">No sessions yet.</div>';
+      }
+      document.getElementById('drill-body').innerHTML=
+        proto+item('Log a session','data-dgo="log"')+hist;
+    }
+
+    /* ---- the session log ----
+       Mode first, because it decides what a cell even is, and nothing is
+       pre-selected - the drill does not guess which one he ran. The block
+       half is a grid; the random half is a stepper that shows one number at a
+       time, which is the point of the phase. */
+    function carryChip(k,label,attr,on){
+      return '<button type="button" '+attr+'="'+esc(k)+'" style="flex:1;height:44px;border-radius:10px;cursor:pointer;'+
+        'border:1.5px solid '+(on?'var(--cream)':'rgba(143,160,184,.35)')+';background:'+(on?'rgba(244,239,228,.14)':'var(--navy)')+';'+
+        'font-family:var(--font-caps);font-weight:700;font-size:11px;letter-spacing:.12em;color:'+(on?'var(--cream)':'var(--steel)')+'">'+
+        esc(label.toUpperCase())+(on?' ·':'')+'</button>';
+    }
+    function renderCarryLog(){
+      var d=CUR.drill;
+      document.getElementById('drill-log-title').textContent=d.name;
+      if(!CLOG||CLOG.slug!==d.slug){
+        CLOG={slug:d.slug, mode:null, lie:'', order:carryShuffle(),
+              shots:new Array(CARRY_N).fill(''), step:0};
+      }
+      renderCarryLogBody();
+    }
+    function renderCarryLogBody(){
+      var today=new Date().toLocaleDateString('en-CA',{timeZone:'America/Chicago'});
+      var dateV=(document.getElementById('cl-date')||{}).value||today;
+      var locV=((document.getElementById('cl-loc')||{}).value||'');
+      var noteV=((document.getElementById('cl-notes')||{}).value||'');
+      var h='';
+      h+=groupLabel('ENTRY MODE');
+      h+='<div style="display:flex;gap:8px;margin-top:8px">'+
+        Object.keys(CARRY_MODES).map(function(k){
+          return carryChip(k,CARRY_MODES[k],'data-cmode',CLOG.mode===k);
+        }).join('')+'</div>';
+      h+='<div style="font-family:var(--font-body);font-size:11.5px;color:var(--steel);margin-top:6px;line-height:1.6">'+
+        'Launch monitor: type the carry the MLM2Pro read, in yards. Landing zone: tees mark the number and you record short, in or long.</div>';
+      h+=groupLabel('LIE - OPTIONAL');
+      h+='<div style="display:flex;gap:8px;margin-top:8px">'+
+        Object.keys(CARRY_LIES).map(function(k){
+          return carryChip(k,CARRY_LIES[k],'data-clie',CLOG.lie===k);
+        }).join('')+'</div>';
+      h+='<div class="edrow" style="margin-top:16px">'+
+          '<div class="edfield"><div class="edlbl" style="color:var(--steel)">Date</div>'+
+            '<input type="date" id="cl-date" value="'+esc(dateV)+'" style="width:100%;height:46px;padding:0 10px;'+
+            'border:1.5px solid rgba(143,160,184,.35);border-radius:10px;background:var(--navy);'+
+            'font-family:var(--font-data);font-size:14px;font-weight:700;color:var(--cream);-webkit-appearance:none;appearance:none"></div>'+
+          '<div class="edfield"><div class="edlbl" style="color:var(--steel)">Practice area / location</div>'+
+            '<input type="text" id="cl-loc" value="'+esc(locV)+'" style="width:100%;height:46px;padding:0 10px;text-align:left;'+
+            'border:1.5px solid rgba(143,160,184,.35);border-radius:10px;background:var(--navy);'+
+            'font-family:var(--font-data);font-size:14px;font-weight:700;color:var(--cream)"></div>'+
+        '</div>';
+      if(!CLOG.mode){
+        h+='<div style="font-family:var(--font-body);font-size:12.5px;color:var(--steel);margin-top:16px;line-height:1.6">'+
+           'Pick an entry mode and the shot cells appear. The two modes record different things and are never averaged together, so the session carries the one you chose.</div>';
+        document.getElementById('drill-log-body').innerHTML=h;
+        return;
+      }
+      var plan=carryBlockPlan();
+      h+='<div class="dspplate" style="padding:14px 12px;margin-top:14px">'+
+        '<div style="font-family:Georgia,serif;font-size:11px;color:#0F2F45;text-align:center;margin-bottom:10px">'+
+          'Block phase - three balls at each number, ascending. Carry only.</div>'+
+        '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">'+
+        plan.map(function(t,i){
+          return '<div>'+
+            '<div style="font-family:Georgia,serif;font-size:9.5px;letter-spacing:.08em;color:#5C6B82;margin-bottom:4px;text-align:center">'+
+              (i+1)+' &middot; '+t+' YD</div>'+carryCell(i)+'</div>';
+        }).join('')+'</div></div>';
+      var step=CLOG.step, rIdx=CARRY_N_BLOCK+step;
+      h+='<div class="dspplate" style="padding:14px 12px;margin-top:14px">'+
+        '<div style="font-family:Georgia,serif;font-size:11px;color:#0F2F45;text-align:center;margin-bottom:6px">'+
+          'Random phase - one ball at each number, one at a time</div>';
+      if(step<CARRY_DISTS.length){
+        h+='<div style="font-family:Georgia,serif;font-size:10px;color:#5C6B82;text-align:center">'+
+             'Shot '+(step+1)+' of '+CARRY_DISTS.length+'</div>'+
+           '<div style="font-family:var(--font-data);font-weight:700;font-size:44px;color:#1F4E9D;text-align:center;line-height:1.2">'+
+             CLOG.order[step]+'</div>'+
+           '<div style="font-family:Georgia,serif;font-size:10px;color:#5C6B82;text-align:center;margin-bottom:10px">YARDS CARRY</div>'+
+           '<div style="max-width:220px;margin:0 auto">'+carryCell(rIdx)+'</div>'+
+           '<div style="display:flex;gap:8px;margin-top:12px;max-width:260px;margin-left:auto;margin-right:auto">'+
+             (step>0?'<button type="button" data-cstep="-1" style="flex:1;height:40px;border-radius:10px;cursor:pointer;border:1.5px solid rgba(12,35,64,.25);background:#fff;font-family:var(--font-caps);font-weight:700;font-size:11px;letter-spacing:.12em;color:#0F2F45">BACK</button>':'')+
+             '<button type="button" data-cstep="1" style="flex:1;height:40px;border-radius:10px;cursor:pointer;border:1.5px solid #1F4E9D;background:#1F4E9D;font-family:var(--font-caps);font-weight:700;font-size:11px;letter-spacing:.12em;color:#fff">NEXT</button>'+
+           '</div>';
+      } else {
+        h+='<div style="font-family:Georgia,serif;font-size:11px;color:#0F2F45;text-align:center;margin-bottom:8px">'+
+             'Order: '+CLOG.order.join(', ')+'</div>'+
+           '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">'+
+           CLOG.order.map(function(t,i){
+             return '<div><div style="font-family:Georgia,serif;font-size:9.5px;letter-spacing:.08em;color:#5C6B82;margin-bottom:4px;text-align:center">'+
+               t+' YD</div>'+carryCell(CARRY_N_BLOCK+i)+'</div>';
+           }).join('')+'</div>'+
+           '<div style="display:flex;margin-top:12px;max-width:260px;margin-left:auto;margin-right:auto">'+
+             '<button type="button" data-cstep="-1" style="flex:1;height:40px;border-radius:10px;cursor:pointer;border:1.5px solid rgba(12,35,64,.25);background:#fff;font-family:var(--font-caps);font-weight:700;font-size:11px;letter-spacing:.12em;color:#0F2F45">BACK</button></div>';
+      }
+      h+='</div>';
+      h+='<div style="font-family:Georgia,serif;font-size:13px;color:var(--steel);text-align:center;margin-top:12px">'+
+           '<span id="cl-filled">'+carryFilled()+'</span> of '+CARRY_N+' entered</div>';
+      h+='<div class="edfield" style="margin-top:14px"><div class="edlbl" style="color:var(--steel)">Notes</div>'+
+        '<input type="text" id="cl-notes" value="'+esc(noteV)+'" style="width:100%;height:46px;padding:0 10px;text-align:left;'+
+        'border:1.5px solid rgba(143,160,184,.35);border-radius:10px;background:var(--navy);'+
+        'font-family:var(--font-data);font-size:14px;color:var(--cream)"></div>';
+      h+='<button class="btn btn-red" style="width:100%;margin-top:16px" data-cact="save">SAVE SESSION</button>'+
+         '<div id="cl-result" style="margin-top:8px"></div>';
+      document.getElementById('drill-log-body').innerHTML=h;
+    }
+    /* One shot cell. A number box on a launch-monitor session, three words on
+       a landing-zone one - the chosen one is marked with a dot as well as its
+       fill, so the selection never depends on colour. */
+    function carryCell(i){
+      var v=CLOG.shots[i];
+      if(CLOG.mode==='zone'){
+        return '<div style="display:flex;gap:3px">'+Object.keys(CARRY_ZONES).map(function(k){
+          var on=v===k;
+          return '<button type="button" data-czone="'+i+':'+k+'" style="flex:1;height:40px;border-radius:8px;cursor:pointer;'+
+            'border:1.5px solid '+(on?'#1F4E9D':'rgba(12,35,64,.25)')+';background:'+(on?'#1F4E9D':'#fff')+';'+
+            'font-family:Georgia,serif;font-size:10px;font-weight:700;color:'+(on?'#fff':'#0F2F45')+'">'+
+            CARRY_ZONES[k].charAt(0)+(on?' ·':'')+'</button>';
+        }).join('')+'</div>';
+      }
+      return '<input type="number" inputmode="decimal" step="0.1" min="0" class="cl-cell" data-ccell="'+i+'" value="'+esc(String(v))+'"'+
+        ' style="width:100%;height:44px;text-align:center;border:1.5px solid rgba(12,35,64,.25);border-radius:10px;'+
+        'background:#fff;font-family:var(--font-data);font-size:16px;font-weight:700;color:#0F2F45;-webkit-appearance:none;appearance:none">';
+    }
+    function carryFilled(){
+      return CLOG.shots.filter(function(v){return String(v).trim()!=='';}).length;
+    }
+    function carrySave(){
+      var d=CUR.drill;
+      var out=document.getElementById('cl-result');
+      var msg=function(t){out.innerHTML='<div style="font-family:var(--font-body);font-size:12.5px;color:var(--steel);padding:10px 2px;line-height:1.6">'+esc(t)+'</div>';};
+      var date=(document.getElementById('cl-date')||{}).value||'';
+      var loc=((document.getElementById('cl-loc')||{}).value||'').trim();
+      var notes=((document.getElementById('cl-notes')||{}).value||'').trim();
+      if(!CLOG.mode){ msg('Pick an entry mode first.'); return; }
+      if(!date){ msg('Give it a date.'); return; }
+      if(!loc){ msg('Give it a practice area or location.'); return; }
+      for(var i=0;i<CARRY_N;i++){
+        var t=carryTarget(CLOG,i), sc=carryScore(t,CLOG.shots[i],CLOG.mode);
+        if(!sc){
+          msg('Shot '+(i+1)+' ('+t+' yd, '+(i<CARRY_N_BLOCK?'block':'random')+' phase) is not recorded. All '+CARRY_N+' shots are required.');
+          return;
+        }
+      }
+      var btn=document.querySelector('[data-cact="save"]');
+      if(btn){btn.disabled=true;btn.textContent='SAVING…';}
+      fetch(HOOK,{method:'POST',headers:{'Content-Type':'text/plain'},
+        body:JSON.stringify({token:DRILL_TOKEN,kind:'carry',
+          session:{date:date,drill:d.slug,location:loc,mode:CLOG.mode,lie:CLOG.lie,
+                   order:CLOG.order,shots:CLOG.shots,notes:notes}})})
+      .then(function(r){return r.json();})
+      .then(function(j){
+        if(!j.ok) throw new Error(j.error||'sheet said not-ok');
+        var saved={date:'',drill:d.slug,loc:loc,mode:CLOG.mode,lie:CLOG.lie,
+                   order:CLOG.order,shots:CLOG.shots,notes:notes};
+        var st=carryStats([saved],null);
+        out.innerHTML='<div style="font-family:var(--font-body);font-size:12.5px;color:var(--cream);padding:10px 2px">Session saved to the sheet.</div>'+
+          '<div style="margin-top:8px">'+carryPhaseRows([saved],CLOG.mode)+
+          statRow('Inside band, whole session',st.hits+' of '+st.n)+'</div>'+
+          carryTable(carryStats([saved],null),'THIS SESSION BY CARRY',CLOG.mode);
+        if(btn){btn.textContent='SAVED';}
+        CLOG=null;
+        return loadCarry();
+      })
+      .catch(function(e){
+        /* Nothing reached the sheet: say so and leave every entry exactly as
+           taken, so a retry is one tap and not a re-shoot. */
+        msg('Save did not reach the sheet - '+String(e).slice(0,140)+'. Your numbers are still here; try again.');
+        if(btn){btn.disabled=false;btn.textContent='SAVE SESSION';}
+      });
+    }
+
     /* ---- screens ---- */
     function renderHome(){
       var el=document.getElementById('drills-home');
@@ -3041,6 +3513,10 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     }
     function renderDrill(){
       var d=CUR.drill; if(!d) return;
+      /* A drill owns its own screen body. Everything below this line is the
+         Short Putting Combine's and is unchanged; a drill with its own kind
+         renders itself and shares only the chain, the chrome and the HOOK. */
+      if(d.kind==='carry'){ renderCarryDrill(); return; }
       document.getElementById('drill-title').textContent=d.name;
       var sess=sessionsFor(d.slug);
       var proto='<div class="card" style="padding:16px 18px;margin-top:12px">'+
@@ -3084,6 +3560,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
        sits on the cream plate in Georgia - a worksheet, not an app form. */
     function renderLog(){
       var d=CUR.drill; if(!d) return;
+      if(d.kind==='carry'){ renderCarryLog(); return; }
       document.getElementById('drill-log-title').textContent=d.name;
       var today=new Date().toLocaleDateString('en-CA',{timeZone:'America/Chicago'});
       var cells='';
@@ -3179,6 +3656,14 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
 
     document.addEventListener('input',function(e){
       if(e.target.classList&&e.target.classList.contains('dl-cell')) logTotals();
+      /* Carry cells write straight into the session in memory and update the
+         counter only. Re-rendering on a keystroke would take the caret with
+         it, and this grid is 28 cells deep. */
+      if(e.target.classList&&e.target.classList.contains('cl-cell')&&CLOG){
+        CLOG.shots[+e.target.dataset.ccell]=e.target.value;
+        var f=document.getElementById('cl-filled');
+        if(f) f.textContent=carryFilled();
+      }
     });
     document.addEventListener('click',function(e){
       var c=e.target.closest('[data-dcat]');
@@ -3193,6 +3678,40 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       if(g){ renderLog(); show('drill-log'); return; }
       var sv=e.target.closest('[data-dact="save"]');
       if(sv){ saveSession(); return; }
+      var cm=e.target.closest('[data-cmode]');
+      if(cm&&CLOG){
+        var mk=cm.getAttribute('data-cmode');
+        /* Switching mode clears the shots: a yardage and a short/in/long are
+           not the same reading, and carrying one across would silently label
+           the other. */
+        if(CLOG.mode!==mk){ CLOG.mode=mk; CLOG.shots=new Array(CARRY_N).fill(''); CLOG.step=0; }
+        renderCarryLogBody(); return;
+      }
+      var cl=e.target.closest('[data-clie]');
+      if(cl&&CLOG){
+        var lk=cl.getAttribute('data-clie');
+        CLOG.lie=(CLOG.lie===lk?'':lk);   // tapping the chosen one clears it - the lie is optional
+        renderCarryLogBody(); return;
+      }
+      var cz=e.target.closest('[data-czone]');
+      if(cz&&CLOG){
+        var zb=cz.getAttribute('data-czone').split(':');
+        CLOG.shots[+zb[0]]=zb[1];
+        renderCarryLogBody(); return;
+      }
+      var cs=e.target.closest('[data-cstep]');
+      if(cs&&CLOG){
+        CLOG.step=Math.max(0,Math.min(CARRY_DISTS.length,CLOG.step+ +cs.getAttribute('data-cstep')));
+        renderCarryLogBody(); return;
+      }
+      var cv=e.target.closest('[data-cact="save"]');
+      if(cv){ carrySave(); return; }
+      var cx=e.target.closest('[data-csess]');
+      if(cx&&!e.target.closest('.cdetail')){
+        var cbox=cx.querySelector('.cdetail');
+        if(cbox) cbox.hidden=!cbox.hidden;
+        return;
+      }
       var sx=e.target.closest('[data-dsess]');
       if(sx&&!e.target.closest('.ddetail')){
         var box=sx.querySelector('.ddetail');
@@ -3211,6 +3730,8 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
         applyDrillData(parseDrillRows(j.rows));
       }
     }).catch(function(){});
+    try{var c1=JSON.parse(localStorage.getItem(CARRY_CACHE)); if(c1&&c1.rows) CSESS=parseCarryRows(c1.rows);}catch(e){}
+    loadCarry();
   })();
 
   /* ---- Benchmarks: the Stagner corpus at Eric's own index ----------------
