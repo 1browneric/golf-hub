@@ -2799,9 +2799,15 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
           'Entry mode is chosen at the start and stored with the session - a launch monitor carry, or short / in / long against tees.'
         ]
       }],
+      /* Putting carries one SCORED drill - the Short Putting Combine, which
+         owns the sheet round-trip, the benchmark and the trend - and five that
+         are text only. A drill without a `kind` has no logging path of its own;
+         `bucket` is a label and is never an input to any score. */
       'Putting':[{
         slug:'short-putting-combine',
         name:'Short Putting Combine',
+        bucket:'5 to 15 foot putts',
+        scored:true,
         protocol:[
           'Ten starting distances: 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 feet.',
           'Two attempts from each = 20 attempts. From each start, putt until holed and count every putt.',
@@ -2809,8 +2815,73 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
           'Switch holes every attempt and vary the direction and break.',
           'Calibrate your step to three feet, or measure with a tape.'
         ]
+      },{
+        slug:'twenty-at-twenty',
+        name:'Twenty at Twenty',
+        bucket:'Speed',
+        protocol:[
+          'Pick a spot on the green twenty feet away. Use a tee, not a hole.',
+          'Twenty putts to that spot. You are not trying to make anything.',
+          'The only goal is stopping each ball as close to twenty feet as possible.',
+          'Scott Fawcett ran this with Aaron Wise. Removing the hole removes the temptation to putt at a target instead of a distance.'
+        ]
+      },{
+        slug:'uphill-downhill-ladder',
+        name:'Uphill and Downhill Ladder',
+        bucket:'Speed',
+        protocol:[
+          'Find a slope. Work the same distances both uphill and downhill.',
+          'Five putts each at fifteen, twenty five, and thirty five feet, uphill.',
+          'Repeat all three distances downhill.',
+          'Same distance plays as two different putts depending on direction. Flat ground practice does not teach that.',
+          'DECADE names uphill and downhill specifically as the speed work that matters.'
+        ]
+      },{
+        slug:'second-putt-average',
+        name:'Second Putt Average',
+        bucket:'Speed',
+        protocol:[
+          'Ten lag putts from random distances between twenty and forty feet.',
+          'After each, mark where the ball finished and record the distance left.',
+          'Your score is the average of those ten numbers. Lower is better.',
+          'Fawcett calls approach putt performance - the average length of your second putt - the best predictor of two putting versus three putting.',
+          'Inside five feet left is close to an automatic two putt.'
+        ]
+      },{
+        /* RECONSTRUCTION, not a published protocol. Built on Fawcett's stated
+           principles; his exact version lives inside the DECADE app and has
+           never been published. Do not cite it as his. */
+        slug:'forty-foot-gate',
+        name:'Forty Foot Gate',
+        bucket:'Speed',
+        protocol:[
+          'One tee at the ball, one tee at forty feet. Two more tees flanking the target three feet short and three feet long, making a six foot window.',
+          'Ten balls to the target. Count how many finish inside the window.',
+          'Then randomize: forty, twenty five, thirty five, twenty, forty five, thirty. One ball each, resetting the target every time.',
+          'Track which way you miss, not just the count. Consistently short means you are decelerating. Consistently long means you are not trusting the read.',
+          'Widen the window to four feet either side if you are hitting two or three of ten. Tighten it as it improves.'
+        ]
+      },{
+        slug:'eighteen-hole-putting-course',
+        name:'Eighteen Hole Putting Course',
+        bucket:'Putting course simulation',
+        protocol:[
+          'One ball. Play eighteen putts as if they were holes, holing out every one.',
+          'Vary distance, break, and slope every hole. Never the same putt twice.',
+          'Two putts is par. Score against thirty six.',
+          'No do-overs and no second balls. The point is putting under a running score, which is the only thing that resembles a round.'
+        ]
       }]
     };
+    /* How Eric is told to split putting practice. DECADE's numbers, shown on
+       the Putting category screen only - the other categories have no
+       published allocation and get nothing rather than an invented one. */
+    var PUTT_ALLOCATION=[
+      '50 percent speed drills',
+      '25 percent 5 to 15 foot putts',
+      '25 percent simulating a putting course',
+      'Source: DECADE, Five Stats Every Golfer Should Be Tracking'
+    ];
     /* Category order comes from the hub's own CATS, so this screen reads as
        the same taxonomy as the SG bars. Ball Striking is their subtotal, not
        a category. */
@@ -3276,7 +3347,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
         hist='<div style="font-family:var(--font-body);font-size:12.5px;color:var(--steel);margin-top:16px">No sessions yet.</div>';
       }
       document.getElementById('drill-body').innerHTML=
-        proto+item('Log a session','data-dgo="log"')+hist;
+        bucketLine(d)+proto+item('Log a session','data-dgo="log"')+hist;
     }
 
     /* ---- the session log ----
@@ -3455,15 +3526,47 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
         return list.length? item(c,'data-dcat="'+esc(c)+'"') : item(c,null,'No drills yet');
       }).join('');
     }
+    /* The row's second line is which slice of the allocation the drill serves.
+       Plain text in the steel the list already uses - no badge and no colour,
+       so nothing here carries meaning on hue alone. A drill with no bucket
+       renders one line, exactly as before. */
     function renderCat(cat){
       CUR.cat=cat;
       document.getElementById('drill-cat-title').textContent=cat;
-      document.getElementById('drill-cat-list').innerHTML=(DRILLS[cat]||[]).map(function(d,i){
-        return item(d.name,'data-ddrill="'+esc(cat)+':'+i+'"');
+      var head='';
+      if(cat==='Putting'){
+        head='<div class="card" style="padding:16px 18px;margin-top:12px">'+
+          '<div class="h-title" style="font-size:18px">Practice allocation</div>'+
+          PUTT_ALLOCATION.map(function(l){
+            return '<div style="font-family:var(--font-body);font-size:12px;color:var(--steel);margin-top:4px">'+esc(l)+'</div>';
+          }).join('')+
+        '</div>';
+      }
+      document.getElementById('drill-cat-list').innerHTML=head+(DRILLS[cat]||[]).map(function(d,i){
+        return item(d.name,'data-ddrill="'+esc(cat)+':'+i+'"',d.bucket||'');
       }).join('');
+    }
+    /* The same label at the top of a drill's own screen. Returns nothing when
+       the drill has no bucket, so the 100 & In screens are unchanged. */
+    function bucketLine(d){
+      return d && d.bucket
+        ? '<div style="font-family:var(--font-body);font-size:12px;color:var(--steel);margin-top:12px">'+esc(d.bucket)+'</div>'
+        : '';
     }
     function sessionsFor(slug){
       return DSESS.filter(function(s){return s.drill===slug;});
+    }
+    /* The protocol card on its own - the whole screen for a drill that is
+       reading material. Shared with the scored path below, which adds its log
+       row and its history underneath. */
+    function protoCard(d){
+      return '<div class="card" style="padding:16px 18px;margin-top:12px">'+
+        d.protocol.map(function(p,i){
+          var last=i===d.protocol.length-1;
+          return '<div style="font-family:var(--font-body);font-size:12.5px;color:var(--steel);line-height:1.6;'+
+            'padding:8px 0'+(last?'':';border-bottom:1px solid rgba(143,160,184,.14)')+'">'+esc(p)+'</div>';
+        }).join('')+
+      '</div>';
     }
     function renderDrill(){
       var d=CUR.drill; if(!d) return;
@@ -3472,6 +3575,16 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
          renders itself and shares only the chain, the chrome and the HOOK. */
       if(d.kind==='carry'){ renderCarryDrill(); return; }
       document.getElementById('drill-title').textContent=d.name;
+      /* TEXT ONLY. Most putting drills are things to go and do, with no score
+         to keep - they have no logging path, so they must not offer one. The
+         default body below is the Short Putting Combine's, and letting a text
+         drill fall into it would hand it the combine's Log a session row, its
+         twenty-cell putting grid and its benchmark, and a save from there
+         would append a putting session to the sheet under THIS drill's slug. */
+      if(!d.scored){
+        document.getElementById('drill-body').innerHTML=bucketLine(d)+protoCard(d);
+        return;
+      }
       var sess=sessionsFor(d.slug);
       var proto='<div class="card" style="padding:16px 18px;margin-top:12px">'+
         d.protocol.map(function(p,i){
@@ -3505,7 +3618,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
         hist='<div style="font-family:var(--font-body);font-size:12.5px;color:var(--steel);margin-top:16px">No sessions yet.</div>';
       }
       document.getElementById('drill-body').innerHTML=
-        proto+item('Log a session','data-dgo="log"')+hist;
+        bucketLine(d)+proto+item('Log a session','data-dgo="log"')+hist;
     }
 
     /* ---- the session log ----
