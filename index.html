@@ -2912,7 +2912,87 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       return A[n-1][1]+(x-A[n-1][0])*(A[n-1][1]-A[n-2][1])/(A[n-1][0]-A[n-2][0]);
     }
     var DRILLS={
-      'Driver':[], '176+':[], '101-175':[],
+      /* Driver, 176+ and 101-175 were empty until 2026-08-13. They are filled
+         from Eric's own measured holes over the Aug 1-2 rounds, not from a
+         generic practice list: 101-175 was the worst category on the card at
+         -10.67 strokes gained across the two rounds, 176+ was -7.35 and
+         Driver -4.08, and none of the three had a drill.
+         Only ladders carry a `kind` and a logging path. Everything else here
+         is reading material - a drill without a `kind` has no sheet
+         round-trip, exactly as with the five text-only putting drills. */
+      'Driver':[{
+        slug:'fairway-width-test',
+        name:'Fairway Width Test',
+        protocol:[
+          'Fifteen drivers at one target line on a range with visible reference posts. Every ball counts, including the bad ones.',
+          'Mark the widest ball left and the widest ball right. Throw out the single worst ball each way, then measure what is left. That span is your real pattern.',
+          'Compare it against the fairway you actually play. If your pattern is wider than the fairway, no amount of aiming makes it fit - the aim point has to move to the side that leaves you a shot.',
+          'Aim so the WHOLE pattern misses the trouble, not so the middle of it finds the fairway. The middle is not where the trouble is decided.',
+          'Rerun it every few weeks. The number moves, and an old number aims you at the wrong spot.'
+        ]
+      },{
+        slug:'commit-or-club-down',
+        name:'Commit or Club Down',
+        protocol:[
+          'Ten tee shots, alternating: driver, then the club you would hit if the hole frightened you. Five each.',
+          'Score both the same way - is the ball in play with a shot to the green, yes or no.',
+          'The point is not which club is longer. It is which club puts more of the ten in play, measured rather than assumed.',
+          'On Aug 2 the driver cost 4.27 strokes on its own and you hit 4 of 14 fairways. That is the round this drill is aimed at.',
+          'If the safe club wins on the range it wins on the course, and the tee shot stops being a decision you make standing over the ball.'
+        ]
+      }],
+      '176+':[{
+        slug:'middle-third-only',
+        name:'Middle Third Only',
+        protocol:[
+          'Ten approaches from 176 yards and out. Pick a green with a visible front, middle and back third.',
+          'The target is the MIDDLE THIRD, every single ball, whatever the flag is doing. A ball that finishes anywhere in that third is a hit.',
+          'Score is out of ten. Nothing about proximity to a pin is recorded, because from this distance the pin is not the target.',
+          'From 176 and out you lost 7.35 strokes over two rounds. None of that is recovered by getting closer to flags; it is recovered by stopping the ball on the surface.',
+          'A ball short of the green and a ball over it are the same miss here. Both are counted as misses and both are worth noticing.'
+        ]
+      },{
+        slug:'six-clubs-six-targets',
+        name:'Six Clubs, Six Targets',
+        protocol:[
+          'Six long clubs, six different targets. One ball each, then start the rotation again.',
+          'Never hit the same club twice in a row and never hit the same target twice in a row. Go through the full rotation three times - eighteen shots.',
+          'Full routine on every ball, including picking the target and setting the feet. Rehearsing the swing is not the drill; rehearsing the decision is.',
+          'This is the same block-versus-random idea the Carry Ladder is built on, applied to the long clubs. Hitting thirty seven irons in a row teaches a swing you cannot reach on the course.',
+          'Score it as shots that started on line and finished on the target side of trouble. Not distance.'
+        ]
+      }],
+      '101-175':[{
+        slug:'dispersion-oval',
+        name:'Dispersion Oval',
+        protocol:[
+          'One club, fifteen balls, one target. Note the widest miss left, the widest right, the shortest and the longest.',
+          'That box is your pattern with that club. Write it down per club and keep the sheet - it is the only honest input to an aim point.',
+          'Aim so the WHOLE oval fits the green. If it does not fit, the club is wrong for the shot, not the swing.',
+          'Repeat for every iron you carry. Most of the value is discovering that the long end of the pattern is longer than you think.',
+          'This is the core DECADE idea: you do not aim at a target, you aim a pattern.'
+        ]
+      },{
+        slug:'aim-stick-audit',
+        name:'Aim Stick Audit',
+        protocol:[
+          'Set up to a target as you normally would. Do not adjust anything. Have someone lay an alignment stick along your toes and a second one on your target line.',
+          'Step back and look at where the two sticks actually point. Then do it again with a mid iron and again with a wedge.',
+          'Across the Aug 1-2 rounds, six of the seven leaves from 100 yards and out finished LEFT of the pin - mean 21 feet - while the wedges the same day were neutral. That is either a pull or an aim, and the two look identical on a scorecard.',
+          'A near-constant offset with almost no spread is what an aim error looks like. A pull is noisier. Five shots is not enough to tell them apart from the data alone.',
+          'Run this before changing anything in the swing. It is the cheapest way to rule out the boring explanation first.'
+        ]
+      },{
+        slug:'random-iron-ladder',
+        name:'Random Iron Ladder',
+        protocol:[
+          'Pick five yardages between 101 and 175 that you actually face. Write them down.',
+          'Shuffle them and work through the list one ball at a time, never the same number twice in a row. Five rounds of five - twenty five shots.',
+          'Say the number and the club out loud before each ball. If you cannot name the club without thinking, that is the gap the drill is finding.',
+          'Between shots, change something - stand somewhere else, take a full break, look away. Block practice on the mat does not survive a walk up the fairway.',
+          'Score is how many finished within ten yards of the number, and which way the misses went.'
+        ]
+      }],
       '100 & In':[{
         slug:'carry-ladder',
         kind:'carry',
@@ -2923,6 +3003,34 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
           'Random phase: one ball at each number, in an order the app shuffles and shows one at a time. 7 shots.',
           'Pick the landing spot, name the number, run the rehearsed motion. Never recalibrate mid-swing.',
           'Entry mode is chosen at the start and stored with the session - a launch monitor carry, or short / in / long against tees.'
+        ]
+      },{
+        /* THE SECOND LADDER. Same drill shape, same scorer, moved out to the
+           distances the dispersion map says are actually costing him: over the
+           Aug 1-2 rounds, 31-100 yd averaged 39.4 ft proximity against 18.3 ft
+           from inside 30, and the seven shots from 75-100 ran +60, +48, +39,
+           +20, +5, -18, -30 yd - a ninety foot range on one club. That is a
+           calibration problem, which is the one thing a ladder fixes. */
+        slug:'wedge-ladder',
+        kind:'carry',
+        name:'Wedge Ladder',
+        protocol:[
+          'Five carry numbers: 40, 50, 60, 75, 90 yards. CARRY, not total - rollout is a club choice and is not scored here.',
+          'Block phase: three balls at each number, ascending. 15 shots.',
+          'Random phase: one ball at each number, in an order the app shuffles and shows one at a time. 5 shots.',
+          'Above 30 yards a rung is a club AND a swing length, not just a number. Settle both, put them in the Notes, and hit the same pair every time that number comes up.',
+          'The bands are wider than the chipping ladder because a full wedge is not a chip - roughly seven per cent of the number at every rung.',
+          'Entry mode is chosen at the start and stored with the session - a launch monitor carry, or short / in / long against tees.'
+        ]
+      },{
+        slug:'up-and-down-par-18',
+        name:'Up and Down Par 18',
+        protocol:[
+          'Nine short-game shots from nine different lies around one green. One ball each. Hole every one out.',
+          'Par is 2 on each - up and down. Score against 18 for the round.',
+          'Throw the balls rather than placing them, and play whatever lie they find. A drill you set up for yourself is a drill you have already made easier.',
+          'At least three of the nine must come from rough. Two thirds of your leaves over the Aug 1-2 rounds came from rough, and inside 60 yards from rough is your measured hole.',
+          'One ball, no reloads. The whole point is the shot you get once.'
         ]
       }],
       /* Putting carries one SCORED drill - the Short Putting Combine, which
@@ -3216,21 +3324,62 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
        from the fairway. A ladder calibrated only off tight lies does not
        touch that, so the split is kept and shown, never pooled away. */
     var CARRY_LIES={fairway:'Fairway', rough:'Rough'};
+    /* ---- THE LADDERS ----
+       Two drills, one scorer. `carry-ladder` is the chipping ladder. The
+       `wedge-ladder` is the same shape moved out to full-swing wedge
+       distances, which is where Eric's measured hole actually is: across the
+       Aug 1-2 rounds, 31-100 yd averaged 39.4 ft proximity against 18.3 ft
+       from inside 30, and the 75-100 cell ran from +60 to -30 yd on the same
+       club. A ladder that stops at 30 does not touch that.
+
+       The rung sets are DISJOINT on purpose. No distance belongs to two
+       ladders, so a tolerance lookup never has to ask which drill it is in,
+       and one scorer serves both without changing a single signature. */
+    var WEDGE_DISTS=[40,50,60,75,90];
+    /* Same rule as CARRY_TOL: the band is data the scorer READS, never a
+       literal inside it. Roughly seven per cent of the number throughout,
+       which is as tight as a full wedge is worth judging. Widen one here and
+       every session ever logged re-scores. */
+    var WEDGE_TOL={40:3,50:4,60:4,75:5,90:6};
+    var LADDERS={
+      'carry-ladder':{slug:'carry-ladder',dists:CARRY_DISTS,tol:CARRY_TOL,
+                      tab:'drills-carry',cache:'gh_carry_cache_v1'},
+      'wedge-ladder':{slug:'wedge-ladder',dists:WEDGE_DISTS,tol:WEDGE_TOL,
+                      tab:'drills-wedge',cache:'gh_wedge_cache_v1'}
+    };
+    /* A session carries its own slug. Anything without one is the chipping
+       ladder - which is what every session logged before the wedge ladder
+       existed is. Defaulting HERE rather than at each call site is what lets
+       carryTarget, carryStats and carryScore keep the signatures that
+       scripts/verify_carry_ladder.js pins. */
+    function ladderOf(s){
+      return (s&&(LADDERS[s.drill]||LADDERS[s.slug]))||LADDERS['carry-ladder'];
+    }
+    function ladderNBlock(L){ return L.dists.length*CARRY_BALLS; }
+    function ladderN(L){ return ladderNBlock(L)+L.dists.length; }
+    /* Disjoint rungs mean ONE lookup answers for both ladders. CARRY_TOL is
+       read first and in place, so the chipping ladder's band stays mutable -
+       which is what the verifier leans on to prove the band is data. */
+    function carryTol(target){
+      return CARRY_TOL[target]!=null?CARRY_TOL[target]:WEDGE_TOL[target];
+    }
     var CARRY_CACHE='gh_carry_cache_v1';
-    var CSESS=[];                 // carry sessions, newest first
+    var CSESS=[];                 // ladder sessions, both ladders, newest first
     var CLOG=null;                // the session being entered
 
     /* Block: CARRY_BALLS at each number, ascending. Random: one at each of
        the seven, in an order shuffled per session and shown one shot at a
        time. Transfer from block to random is the actual measure of whether
        the ladder is holding up, so the phases are stored and scored apart. */
-    function carryBlockPlan(){
+    function carryBlockPlan(L){
+      L=L||LADDERS['carry-ladder'];
       var out=[];
-      CARRY_DISTS.forEach(function(d){ for(var i=0;i<CARRY_BALLS;i++) out.push(d); });
+      L.dists.forEach(function(d){ for(var i=0;i<CARRY_BALLS;i++) out.push(d); });
       return out;
     }
-    function carryShuffle(){
-      var a=CARRY_DISTS.slice();
+    function carryShuffle(L){
+      L=L||LADDERS['carry-ladder'];
+      var a=L.dists.slice();
       for(var i=a.length-1;i>0;i--){
         var j=Math.floor(Math.random()*(i+1)), t=a[i]; a[i]=a[j]; a[j]=t;
       }
@@ -3240,12 +3389,13 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
        half is not, so the session carries its own order and old sessions stay
        readable if the shuffle ever changes. */
     function carryTarget(sess,i){
-      return i<CARRY_N_BLOCK ? carryBlockPlan()[i] : (sess.order||[])[i-CARRY_N_BLOCK];
+      var L=ladderOf(sess), nb=ladderNBlock(L);
+      return i<nb ? carryBlockPlan(L)[i] : (sess.order||[])[i-nb];
     }
     /* One shot against its own band. `err` is signed yards and exists ONLY in
        launch-monitor mode. `dir` is the word, never a colour: short or long.  */
     function carryScore(target,val,mode){
-      var tol=CARRY_TOL[target];
+      var tol=carryTol(target);
       if(target==null||tol==null) return null;
       if(mode==='zone'){
         if(!val||!CARRY_ZONES[val]) return null;
@@ -3258,13 +3408,15 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     /* Per-distance aggregates for ONE mode and ONE phase. phase is 'block',
        'random' or null for both. Callers never mix modes into one call. */
     function carryStats(sessions,phase){
-      var res={dist:{},n:0,hits:0};
-      CARRY_DISTS.forEach(function(d){
+      var L=ladderOf((sessions||[])[0]);
+      var res={dist:{},n:0,hits:0,dists:L.dists};
+      L.dists.forEach(function(d){
         res.dist[d]={n:0,hits:0,errN:0,errSum:0,short:0,long:0};
       });
+      var nb=ladderNBlock(L);
       sessions.forEach(function(s){
         (s.shots||[]).forEach(function(v,i){
-          var isBlock=i<CARRY_N_BLOCK;
+          var isBlock=i<nb;
           if(phase==='block'&&!isBlock) return;
           if(phase==='random'&&isBlock) return;
           var t=carryTarget(s,i), sc=carryScore(t,v,s.mode);
@@ -3312,27 +3464,44 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
         if(!CARRY_MODES[mode]) return;
         var order=String(r[5]||'').split(',').map(function(x){return dNum(x);})
                    .filter(function(x){return x!=null;});
+        /* The row names its own ladder in column B, so ONE parser reads both
+           tabs and a row can never be scored against the wrong rungs. */
+        var slug=String(r[1]||''), L=ladderOf({drill:slug}), N=ladderN(L);
         var shots=[];
-        for(var i=0;i<CARRY_N;i++){
+        for(var i=0;i<N;i++){
           var c=r[6+i];
           shots.push(mode==='zone'?String(c||'').trim().toLowerCase():dNum(c));
         }
         out.push({key:yy*10000+mm*100+dd, date:MON[mm-1]+' '+dd,
-                  drill:String(r[1]||''), loc:String(r[2]||''),
+                  drill:slug, loc:String(r[2]||''),
                   mode:mode, lie:String(r[4]||'').trim().toLowerCase(),
-                  order:order, shots:shots, notes:String(r[6+CARRY_N]||'')});
+                  order:order, shots:shots, notes:String(r[6+N]||'')});
       });
       out.sort(function(a,b){return b.key-a.key;});
       return out;
     }
-    function loadCarry(){
-      return fetch(HOOK+'?tab=drills-carry').then(function(r){return r.json();})
+    /* One fetch PER LADDER, each to its own tab and its own cache, then the
+       two lists are pooled into CSESS - which is safe only because every
+       session is keyed by its drill slug and every screen filters on it. A
+       failed tab leaves the other one's sessions intact. */
+    function loadCarryTab(L){
+      return fetch(HOOK+'?tab='+L.tab).then(function(r){return r.json();})
         .then(function(j){
-          if(!j||!j.ok||!j.rows) return;
-          try{localStorage.setItem(CARRY_CACHE,JSON.stringify({rows:j.rows,t:Date.now()}));}catch(e){}
-          CSESS=parseCarryRows(j.rows);
+          if(!j||!j.ok||!j.rows) return [];
+          try{localStorage.setItem(L.cache,JSON.stringify({rows:j.rows,t:Date.now()}));}catch(e){}
+          return parseCarryRows(j.rows);
+        }).catch(function(){ return []; });
+    }
+    function loadCarry(){
+      var keys=Object.keys(LADDERS);
+      return Promise.all(keys.map(function(k){ return loadCarryTab(LADDERS[k]); }))
+        .then(function(lists){
+          var all=[];
+          lists.forEach(function(l){ all=all.concat(l||[]); });
+          all.sort(function(a,b){return b.key-a.key;});
+          CSESS=all;
           if(CUR.drill&&CUR.drill.kind==='carry') renderDrill();
-        }).catch(function(){});
+        });
     }
 
     /* ---- the drill screen ----
@@ -3341,7 +3510,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
        everything below the session list is rendered once PER MODE, under its
        own heading, because the two modes are not the same measurement. */
     function carryTable(st,label,mode){
-      var rows=CARRY_DISTS.map(function(d){
+      var rows=(st.dists||CARRY_DISTS).map(function(d){
         var o=st.dist[d];
         if(!o.n) return '';
         var third=mode==='zone'
@@ -3447,7 +3616,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
             'padding:8px 0'+(last?'':';border-bottom:1px solid rgba(143,160,184,.14)')+'">'+esc(p)+'</div>';
         }).join('')+
         '<div style="font-family:var(--font-body);font-size:12.5px;color:var(--steel);line-height:1.6;padding:10px 0 0;border-top:1px solid rgba(143,160,184,.14);margin-top:4px">'+
-        'Bands: '+CARRY_DISTS.map(function(x){return x+' yd plus or minus '+CARRY_TOL[x];}).join(', ')+'.</div>'+
+        'Bands: '+ladderOf(d).dists.map(function(x){return x+' yd plus or minus '+carryTol(x);}).join(', ')+'.</div>'+
       '</div>';
       var hist='';
       if(sess.length){
@@ -3491,8 +3660,9 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       var d=CUR.drill;
       document.getElementById('drill-log-title').textContent=d.name;
       if(!CLOG||CLOG.slug!==d.slug){
-        CLOG={slug:d.slug, mode:null, lie:'', order:carryShuffle(),
-              shots:new Array(CARRY_N).fill(''), step:0};
+        var L0=ladderOf(d);
+        CLOG={slug:d.slug, mode:null, lie:'', order:carryShuffle(L0),
+              shots:new Array(ladderN(L0)).fill(''), step:0};
       }
       renderCarryLogBody();
     }
@@ -3540,13 +3710,13 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
             '<div style="font-family:Georgia,serif;font-size:9.5px;letter-spacing:.08em;color:#5C6B82;margin-bottom:4px;text-align:center">'+
               (i+1)+' &middot; '+t+' YD</div>'+carryCell(i)+'</div>';
         }).join('')+'</div></div>';
-      var step=CLOG.step, rIdx=CARRY_N_BLOCK+step;
+      var L=ladderOf(CLOG), step=CLOG.step, rIdx=ladderNBlock(L)+step;
       h+='<div class="dspplate" style="padding:14px 12px;margin-top:14px">'+
         '<div style="font-family:Georgia,serif;font-size:11px;color:#0F2F45;text-align:center;margin-bottom:6px">'+
           'Random phase - one ball at each number, one at a time</div>';
-      if(step<CARRY_DISTS.length){
+      if(step<L.dists.length){
         h+='<div style="font-family:Georgia,serif;font-size:10px;color:#5C6B82;text-align:center">'+
-             'Shot '+(step+1)+' of '+CARRY_DISTS.length+'</div>'+
+             'Shot '+(step+1)+' of '+L.dists.length+'</div>'+
            '<div style="font-family:var(--font-data);font-weight:700;font-size:44px;color:#1F4E9D;text-align:center;line-height:1.2">'+
              CLOG.order[step]+'</div>'+
            '<div style="font-family:Georgia,serif;font-size:10px;color:#5C6B82;text-align:center;margin-bottom:10px">YARDS CARRY</div>'+
@@ -3561,14 +3731,14 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
            '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">'+
            CLOG.order.map(function(t,i){
              return '<div><div style="font-family:Georgia,serif;font-size:9.5px;letter-spacing:.08em;color:#5C6B82;margin-bottom:4px;text-align:center">'+
-               t+' YD</div>'+carryCell(CARRY_N_BLOCK+i)+'</div>';
+               t+' YD</div>'+carryCell(ladderNBlock(L)+i)+'</div>';
            }).join('')+'</div>'+
            '<div style="display:flex;margin-top:12px;max-width:260px;margin-left:auto;margin-right:auto">'+
              '<button type="button" data-cstep="-1" style="flex:1;height:40px;border-radius:10px;cursor:pointer;border:1.5px solid rgba(12,35,64,.25);background:#fff;font-family:var(--font-caps);font-weight:700;font-size:11px;letter-spacing:.12em;color:#0F2F45">BACK</button></div>';
       }
       h+='</div>';
       h+='<div style="font-family:Georgia,serif;font-size:13px;color:var(--steel);text-align:center;margin-top:12px">'+
-           '<span id="cl-filled">'+carryFilled()+'</span> of '+CARRY_N+' entered</div>';
+           '<span id="cl-filled">'+carryFilled()+'</span> of '+ladderN(L)+' entered</div>';
       h+='<div class="edfield" style="margin-top:14px"><div class="edlbl" style="color:var(--steel)">Notes</div>'+
         '<input type="text" id="cl-notes" value="'+esc(noteV)+'" style="width:100%;height:46px;padding:0 10px;text-align:left;'+
         'border:1.5px solid rgba(143,160,184,.35);border-radius:10px;background:var(--navy);'+
@@ -3608,10 +3778,11 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       if(!CLOG.mode){ msg('Pick an entry mode first.'); return; }
       if(!date){ msg('Give it a date.'); return; }
       if(!loc){ msg('Give it a practice area or location.'); return; }
-      for(var i=0;i<CARRY_N;i++){
+      var LS=ladderOf(CLOG), NS=ladderN(LS), NBS=ladderNBlock(LS);
+      for(var i=0;i<NS;i++){
         var t=carryTarget(CLOG,i), sc=carryScore(t,CLOG.shots[i],CLOG.mode);
         if(!sc){
-          msg('Shot '+(i+1)+' ('+t+' yd, '+(i<CARRY_N_BLOCK?'block':'random')+' phase) is not recorded. All '+CARRY_N+' shots are required.');
+          msg('Shot '+(i+1)+' ('+t+' yd, '+(i<NBS?'block':'random')+' phase) is not recorded. All '+NS+' shots are required.');
           return;
         }
       }
@@ -3877,7 +4048,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
         /* Switching mode clears the shots: a yardage and a short/in/long are
            not the same reading, and carrying one across would silently label
            the other. */
-        if(CLOG.mode!==mk){ CLOG.mode=mk; CLOG.shots=new Array(CARRY_N).fill(''); CLOG.step=0; }
+        if(CLOG.mode!==mk){ CLOG.mode=mk; CLOG.shots=new Array(ladderN(ladderOf(CLOG))).fill(''); CLOG.step=0; }
         renderCarryLogBody(); return;
       }
       var cl=e.target.closest('[data-clie]');
@@ -3894,7 +4065,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       }
       var cs=e.target.closest('[data-cstep]');
       if(cs&&CLOG){
-        CLOG.step=Math.max(0,Math.min(CARRY_DISTS.length,CLOG.step+ +cs.getAttribute('data-cstep')));
+        CLOG.step=Math.max(0,Math.min(ladderOf(CLOG).dists.length,CLOG.step+ +cs.getAttribute('data-cstep')));
         renderCarryLogBody(); return;
       }
       var cv=e.target.closest('[data-cact="save"]');
@@ -3923,7 +4094,15 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
         applyDrillData(parseDrillRows(j.rows));
       }
     }).catch(function(){});
-    try{var c1=JSON.parse(localStorage.getItem(CARRY_CACHE)); if(c1&&c1.rows) CSESS=parseCarryRows(c1.rows);}catch(e){}
+    try{
+      var seed=[];
+      Object.keys(LADDERS).forEach(function(k){
+        var c1=JSON.parse(localStorage.getItem(LADDERS[k].cache));
+        if(c1&&c1.rows) seed=seed.concat(parseCarryRows(c1.rows));
+      });
+      seed.sort(function(a,b){return b.key-a.key;});
+      CSESS=seed;
+    }catch(e){}
     loadCarry();
   })();
 
