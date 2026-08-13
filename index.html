@@ -1769,7 +1769,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
                           /* Eric's wording, 2026-08-13, replacing "Ten percent
                              putts": the label should say what the rule is, not
                              restate the number in the name. */
-                          ? 'Within 10% of starting distance '+Math.round(H.tenPct.pct*100)+' percent ('+
+                          ? 'Within 10% of starting distance '+Math.round(H.tenPct.pct*100)+'% ('+
                             H.tenPct.n+' of '+H.tenPct.d+')'+
                             (H.tenPct.gaps? ', '+H.tenPct.gaps+' excluded for no second putt distance':'')+'.'
                           : ''])
@@ -1933,7 +1933,13 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       if(pts.length<2) return '';
       var BASE=120,TOP=16;
       var yOf=function(v){return BASE-v/100*(BASE-TOP);};
-      var s2=chGrid([25,50,75,100],yOf,function(g){return Math.round(g);});
+      /* 25/50/75 and no 100 line. Every other chart on this card labels
+         three gridlines with one digit each; a four-label 0-100 axis puts a
+         three-digit "100" at x=3.6 in a 372-wide viewBox, hard against the
+         edge, and squeezes the labels into a tighter band than the charts
+         above it. Two digits and three lines read the same as its siblings,
+         and the data sits between 17 and 63 so nothing is lost. */
+      var s2=chGrid([25,50,75],yOf,function(g){return Math.round(g);});
       if(H&&H.tenPct&&H.tenPct.pct!=null)
         s2+='<line x1="'+(CH_X0-6)+'" y1="'+yOf(H.tenPct.pct*100).toFixed(1)+'" x2="'+(CH_W-6)+
             '" y2="'+yOf(H.tenPct.pct*100).toFixed(1)+'" stroke="'+CH_STEEL+
