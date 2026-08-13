@@ -50,8 +50,8 @@ END = "  /* MENTAL-TRAINING:END */"
 SESSION_DIR = REPO / "knowledge" / "golf" / "mental-training"
 INTRO_SLUG = "00-before-any-of-it"  # front matter, not a session to run
 
-# The only sensory detail that is allowed in the opening line, because it is
-# the only course-level detail that is verified (see 00-how-to-use.md). A slug
+# The only sensory detail that is allowed in the opening line, because it is the
+# only course-level detail that is verified (see 00-before-any-of-it.md). A slug
 # that is not listed gets a neutral anchor rather than a borrowed one.
 ANCHORS = {
     "paradise-pointe-posse":
@@ -306,10 +306,17 @@ def _run_time(slug: str) -> str:
 
 
 def _sessions() -> list[dict]:
-    """The six session scripts, plus the intro, straight from the markdown."""
+    """Every session script in the directory, straight from the markdown.
+
+    The list is the directory, sorted - there is no array of session names to
+    keep in step. Dropping 07-the-five.md in beside the others is the whole of
+    adding a session; the numeric prefix is the order the hub shows them in.
+    HTML comments are stripped here, so an editing note in a source file never
+    reaches the page (scriptHtml would render it as a spoken paragraph).
+    """
     out = []
     for md in sorted(SESSION_DIR.glob("*.md")):
-        text = md.read_text(encoding="utf-8")
+        text = tts.strip_comments(md.read_text(encoding="utf-8"))
         m = re.search(r"^#\s+(.+)$", text, re.M)
         title = m.group(1).strip() if m else md.stem
         # The row's subtitle is the measured run time. Failing that - no audio
