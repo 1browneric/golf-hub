@@ -128,10 +128,23 @@ def _plain(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
+def strip_comments(markdown: str) -> str:
+    """Drop HTML comments before a script is spoken, hashed or displayed.
+
+    A comment in a session file is a note to whoever edits it next, not
+    narration - 07-the-five.md carries one recording that its fifth item is a
+    deliberate substitution for Fawcett's original, so a later reader does not
+    "correct" it back. Every consumer strips at this one point, which is why
+    the fingerprint below is taken on the stripped text: an edit to a note
+    must not invalidate a rendered MP3 whose words did not change.
+    """
+    return re.sub(r"<!--.*?-->[ \t]*\n?", "", markdown, flags=re.S)
+
+
 def ssml_blocks(markdown: str) -> list[str]:
     """Turn one session's markdown into an ordered list of SSML fragments."""
     out: list[str] = []
-    for raw in re.split(r"\n\s*\n", markdown):
+    for raw in re.split(r"\n\s*\n", strip_comments(markdown)):
         block = raw.strip()
         if not block:
             continue
@@ -363,7 +376,7 @@ def _fingerprint(markdown: str) -> str:
     speaking-rate change, which is the one thing a cache like this must not do.
     """
     h = hashlib.sha256()
-    h.update(markdown.encode("utf-8"))
+    h.update(strip_comments(markdown).encode("utf-8"))
     h.update(("|".join([VOICE_NAME, str(SPEAKING_RATE), PAUSE_SHORT,
                         PAUSE_LONG, PARAGRAPH_BREAK, str(SPEAK_PAUSE_CUES),
                         MP3_BITRATE, str(SAMPLE_RATE_HZ)])).encode("utf-8"))
