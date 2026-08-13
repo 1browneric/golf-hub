@@ -1280,6 +1280,17 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       detailStat('3-putts',          cnt(function(h){return h.putts>=3;}))+
       detailStat('1-putts',          cnt(function(h){return h.putts===1;}))+
       detailStat('First putt average', avgP1==null?'&ndash;':num(avgP1)+' ft')+
+      /* Count AND rate, never the rate alone - on eleven putts a single hole
+         moves the percentage nine points, and the denominator is the honest
+         part. The gap note rides in the same muted type the list already
+         uses, so a thin sample is visible instead of inflating the number. */
+      detailStat('10% Putts', (function(){
+        var t=tenPct(hs);
+        if(!t.d) return '&ndash;';
+        return t.n+' of '+t.d+' ('+Math.round(t.pct*100)+'%)'+
+          (t.gaps? '<span style="color:var(--steel);font-weight:400"> &middot; '+
+                   t.gaps+(t.gaps===1?' hole':' holes')+' excluded, no p2</span>' : '');
+      })())+
       detailStat('Scrambling', missed.length? saved.length+' of '+missed.length : '&ndash;')+
       '</div>';
 
@@ -1388,6 +1399,37 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     if(r>0.5 || (r===0.5 && (f%2))) f++;
     return (f/10).toFixed(1);
   }
+  /* 10% Putts - Eric's lag-quality rule. Of the first putts from 10 feet or
+     more that were NOT holed, how many finished within ten percent of the
+     distance they started from. A 30 footer passes at 3 feet or closer.
+
+     Made first putts are OUT OF THE SAMPLE ENTIRELY, numerator and
+     denominator both: this measures the quality of a lag, not a make rate,
+     and counting holed putts as passes would make a good putting day look
+     like a good lagging day.
+
+     NOT A BUG, do not "fix" it: standard_ft carries a max(..., 1.0) floor
+     that can never bind, because qualifying already requires p1 >= 10 and
+     ten percent of 10 feet is exactly 1 foot. It stays as a guard and as
+     the whole-foot convention if the 10 foot gate ever moves.
+
+     Third putts are not scored. p3 is ignored by this metric entirely.
+
+     Data gaps: a hole that took more than one putt but has no p2 recorded
+     is excluded and counted separately, so a thin sample shows as a gap
+     rather than quietly inflating the rate. */
+  function tenPct(sel){
+    var n=0,d=0,gaps=0;
+    sel.forEach(function(h){
+      if(h.p1==null||h.p1<10) return;      // not a qualifying first putt
+      if(!(h.putts>1)) return;             // holed it - out of the sample
+      if(h.p2==null){ gaps++; return; }    // took another putt, distance not logged
+      d++;
+      if(h.p2<=Math.max(0.10*h.p1,1.0)) n++;
+    });
+    return {n:n,d:d,gaps:gaps,pct:d?n/d:null};
+  }
+
   function parseHoles(rows){
     var holes=[];
     (rows||[]).slice(3).forEach(function(r){
@@ -1488,6 +1530,8 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       onePuttPer: holes.filter(function(h){return h.putts===1;}).length/nRounds,
       onePuttTotal: holes.filter(function(h){return h.putts===1;}).length,
       holes: holes,
+      tenPct: tenPct(holes),
+      tenPct5: tenPct(last5),
       girHit:girHit, girHoles:girRec,
       firHit:firHit, firHoles:firHoles.length,
       penaltyPer: holes.reduce(function(a,h){return a+h.pen;},0)/nRounds,
@@ -1536,7 +1580,8 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
                   non:fpAvg(g.hs.filter(function(h){return !computedGir(h);})),
                   all:fpAvg(g.hs),
                   girN:g.hs.filter(computedGir).length,
-                  leave:p2Avg(g.hs)};
+                  leave:p2Avg(g.hs),
+                  ten:tenPct(g.hs)};
         }).reverse();
       })()
     };
@@ -1719,7 +1764,12 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       'Putting':  bits([puttAvg==null?'':'Averaging '+puttAvg.toFixed(1)+' putts.',
                         H&&H.onePuttPer!=null?'One-putts '+H.onePuttPer.toFixed(1)+' a round ('+H.onePuttTotal+' total).':'',
                         H&&H.threePuttPer!=null?'Three-putts '+H.threePuttPer.toFixed(1)+' a round ('+H.threePuttTotal+' total).':'',
-                        H&&H.firstPuttAvg!=null?'First putt averages '+ftTenth(H.firstPuttAvg)+' feet.':''])
+                        H&&H.firstPuttAvg!=null?'First putt averages '+ftTenth(H.firstPuttAvg)+' feet.':'',
+                        (H&&H.tenPct&&H.tenPct.d)
+                          ? 'Ten percent putts '+Math.round(H.tenPct.pct*100)+' percent ('+
+                            H.tenPct.n+' of '+H.tenPct.d+')'+
+                            (H.tenPct.gaps? ', '+H.tenPct.gaps+' excluded for no second putt distance':'')+'.'
+                          : ''])
                         /* the GIR / non-GIR / second-putt season lines are
                            GONE (Eric, 2026-08-02): the charts below carry
                            those figures as xx (xx). Only the blended
@@ -1861,6 +1911,51 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       s+=chBase(BASE)+chDates(BASE+14);
       return chTitle('SECOND PUTT DISTANCE &middot; FEET',chAvg(H.p2Avg5,H.p2Avg))+chWrap(s,BASE+20);
     };
+    var tenChart=function(){
+      /* 10% Putts per round, the same shape as the leave chart directly above
+         it - cream line on the grid, a dashed season mean, the extremes
+         labelled. NO BENCHMARK LINE: no published baseline exists for this
+         metric and none is invented here (Eric, explicitly). The dashed line
+         is his own season figure and says so in the legend.
+
+         Percent, so the axis is fixed 0 to 100 rather than scaled to the
+         data - a rate that moved from 55 to 60 should look like five points,
+         not like the whole chart. Rounds with no qualifying putts are absent
+         from the line, never plotted as zero. */
+      if(chron.length<2) return '';
+      var pts=[];
+      chron.forEach(function(r,i){
+        if(r.ten&&r.ten.d) pts.push({x:chX(i),v:r.ten.pct*100,r:r});
+      });
+      if(pts.length<2) return '';
+      var BASE=120,TOP=16;
+      var yOf=function(v){return BASE-v/100*(BASE-TOP);};
+      var s2=chGrid([25,50,75,100],yOf,function(g){return Math.round(g);});
+      if(H&&H.tenPct&&H.tenPct.pct!=null)
+        s2+='<line x1="'+(CH_X0-6)+'" y1="'+yOf(H.tenPct.pct*100).toFixed(1)+'" x2="'+(CH_W-6)+
+            '" y2="'+yOf(H.tenPct.pct*100).toFixed(1)+'" stroke="'+CH_STEEL+
+            '" stroke-width="1" stroke-dasharray="4 3" opacity=".6"/>';
+      s2+='<polyline points="'+pts.map(function(q){return q.x.toFixed(1)+','+yOf(q.v).toFixed(1);}).join(' ')+
+          '" fill="none" stroke="'+CH_CREAM+'" stroke-width="2"/>';
+      var minI=0;
+      pts.forEach(function(q,i){ if(q.v<pts[minI].v) minI=i; });
+      pts.forEach(function(q,i){
+        s2+='<circle cx="'+q.x.toFixed(1)+'" cy="'+yOf(q.v).toFixed(1)+'" r="4" fill="'+CH_CREAM+
+            '" stroke="'+CH_NAVY+'" stroke-width="2"/>';
+        if(i===0||i===pts.length-1||i===minI)
+          s2+=chTxt(q.x,yOf(q.v)-9,Math.round(q.v)+'%',CH_CREAM);
+      });
+      s2+=chBase(BASE)+chDates(BASE+14);
+      /* Eric's "last five (season)" convention, built here rather than through
+         chAvg: that helper runs its arguments through ftTenth, which is a FEET
+         formatter, so handing it a percentage renders NaN (NaN). Same shape on
+         screen, correct units. */
+      var pc=function(o){return (o&&o.pct!=null)? Math.round(o.pct*100)+'%' : '-';};
+      var t=H&&H.tenPct, t5=H&&H.tenPct5;
+      return chTitle('TEN PERCENT PUTTS &middot; PERCENT',
+                     (t&&t.d)? pc(t5)+' ('+pc(t)+')' : '')+
+             chWrap(s2,BASE+20);
+    };
     var girChart=function(){
       if(chron.length<2) return '';
       var BASE=132,TOP=16;
@@ -1888,7 +1983,9 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
          stored glyph. */
       if(name==='Putting'){
         if(!chron.length) return '';
-        return fpDistChart()+leaveChart();
+        /* Adjacent to the second-putt chart, which is the closest existing
+           metric - both are about the leave, not the make. */
+        return fpDistChart()+leaveChart()+tenChart();
       }
       if(name==='Ball Striking'){
         return (PAT&&PAT.strikeAll.length
