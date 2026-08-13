@@ -324,6 +324,14 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
         <div class="gdate" id="trend-dates"></div>
       </div>
 
+      <!-- Approach dispersion. Both scopes live here, in one card: the whole
+           season across every course, and any single course pooled across its
+           18 holes. Fed by the round tracker's capture, never by the sheet.
+           It sits on the home screen under How I'm playing and above Strokes
+           Gained, where Eric asked for it - it is a picture of how he is
+           playing, not a page of the improvement plan. -->
+      <div id="disp-card"></div>
+
       <div class="card" style="padding:20px;margin-top:16px">
         <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px">
           <span class="lab" style="font-weight:700;font-size:11px;letter-spacing:.16em">STROKES GAINED</span><span class="lab" style="font-size:9px;letter-spacing:.1em;opacity:.65">PER 18 HOLES &middot; vs 5 HCP</span></div>
@@ -444,17 +452,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       <div class="card" style="padding:16px 18px;margin-top:12px;cursor:pointer" data-go="drills">
         <div class="h-title" style="font-size:18px">Drills</div>
       </div>
-      <!-- Scoring is its own thing, not a Mental Training session. The Five
-           exists in two places on purpose: the rehearsal script under Mental
-           Training, which is headed for audio, and the plain reference here. -->
-      <div class="card" style="padding:16px 18px;margin-top:12px;cursor:pointer" data-go="scoring">
-        <div class="h-title" style="font-size:18px">Scoring</div>
-      </div>
       <div id="plan-list"></div>
-      <!-- Approach dispersion. Both scopes live here, in one card: the whole
-           season across every course, and any single course pooled across its
-           18 holes. Fed by the round tracker's capture, never by the sheet. -->
-      <div id="disp-card"></div>
     </section>
 
     <!-- Mental Training: one screen per level, the same as everywhere else on
@@ -521,16 +519,11 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       <div id="drill-log-body"></div>
     </section>
 
-    <!-- Scoring: the same card-to-screen chain as everything else on the plan.
-         Reference only - there is nothing to log here. -->
-    <section class="screen" data-screen="scoring">
-      <div class="mtback" data-go="plan">Back</div>
-      <div class="h-title" style="font-size:32px;margin-top:6px">Scoring</div>
-      <div id="scoring-list"></div>
-    </section>
-
+    <!-- Reference behind the Improvement Plan's own Scoring card. There is
+         exactly ONE Scoring section on that screen and this hangs off it; a
+         second card by the same name is the bug this replaced. -->
     <section class="screen" data-screen="scoring-one">
-      <div class="mtback" data-go="scoring">Back</div>
+      <div class="mtback" data-go="plan">Back</div>
       <div class="h-title" style="font-size:26px;margin-top:6px" id="scoring-one-title"></div>
       <div id="scoring-one-body"></div>
     </section>
@@ -1957,6 +1950,10 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
         '<div class="pdetail" hidden>'+
         '<div class="mono" style="font-size:12px;color:var(--steel);margin-top:8px;opacity:.9;line-height:1.8">'+
           SUPPORT['Scoring']+'</div>'+
+        /* The reference that governs these numbers, on the one card that
+           already carries them. The fold handler ignores taps inside
+           .pdetail, so this navigates instead of collapsing the card. */
+        scoringRefRows()+
         '</div>'+
       '</div>':'');
 
@@ -3846,10 +3843,16 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
         return '<p>'+esc(t).replace(/\n/g,' ')+'</p>';
       }).join('');
     }
-    document.getElementById('scoring-list').innerHTML=DOCS.map(function(d,i){
-      return '<div class="card" style="padding:16px 18px;margin-top:12px;cursor:pointer" '+
-        'data-scoring="'+i+'"><div class="h-title" style="font-size:18px">'+esc(d.title)+'</div></div>';
-    }).join('');
+    /* Called by the Improvement Plan while it builds its Scoring card, so the
+       rows sit inside the section that is already named Scoring rather than
+       adding a second one beside it. */
+    window.scoringRefRows=function(){
+      return DOCS.map(function(d,i){
+        return '<div data-scoring="'+i+'" style="cursor:pointer;margin-top:12px;padding-top:12px;'+
+          'border-top:1px solid rgba(143,160,184,.14);font-family:var(--font-body);'+
+          'font-size:13px;color:var(--cream)">'+esc(d.title)+'</div>';
+      }).join('');
+    };
     document.addEventListener('click',function(e){
       var t=e.target.closest('[data-scoring]'); if(!t) return;
       var d=DOCS[+t.getAttribute('data-scoring')]; if(!d) return;
