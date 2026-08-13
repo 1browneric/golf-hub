@@ -4136,18 +4136,32 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
      in this file.
      ===================================================================== */
   /*SCORING:BEGIN*/
-  var SCORING={"docs":[{"slug":"the-five","title":"The Five","text":"# The Five\n\n\nOne. No double bogeys.\n\nDoubles come from playing for birdie where the hole was asking for par or bogey,\nso the count reads your strategy rather than your ball striking. In strokes\ngained a double is six times worse than a bogey. Manage the risk instead of\nforcing the birdie.\n\nTwo. No bogeys on par 5s.\n\nThis one catches aggression dressed up as opportunity, usually after a bad tee\nshot or a bad layup on a hole you had already called a birdie hole. Get as close\nto the green as you can without taking on a hazard.\n\nThree. No three-putts.\n\nSpeed, not read. The ones that hurt come from 20 to 40 feet, trying to make the\nfirst one and running it five feet past. Practice speed uphill and downhill at\nvarying distances: half your putting time on speed, a quarter on five to fifteen\nfooters, a quarter simulating a putting course.\n\nFour. No bogeys with nine iron or less (about 150 yards and in).\n\nBogeys from your scoring clubs mean the target was wrong, not the swing. From 79\nto 76, 82 percent of the improvement is bogeys avoided rather than birdies made.\n\nFive. No double chips.\n\nA blown easy save is forcing something the spot did not allow. Aim for a one to\none ratio: when you are further from the green than the pin is, get it on the\nsurface safely.\n\nFour or fewer. Not perfect golf, fewer disasters.\n"}]};
+  var SCORING={"docs":[{"slug":"the-five","title":"The Five","text":"# The Five\n\n\n## One. No double bogeys.\n\n### Why\n\nDoubles come from playing for birdie where the hole was asking for par or bogey,\nso the count reads your strategy rather than your ball striking. In strokes\ngained a double is six times worse than a bogey.\n\n### What to do\n\nManage the risk instead of forcing the birdie. Avoid undue risk and manage what\nyou expect from a hole.\n\n## Two. No bogeys on par 5s.\n\n### Why\n\nAggression dressed up as opportunity. It usually happens after a bad tee shot or\na bad layup on a hole you had already called a birdie hole, and the mistake is\ntrying to force your way back into position.\n\n### What to do\n\nGet as close to the green as you can without taking on a hazard. Nothing about a\npar five is worth bringing a penalty stroke into play.\n\n## Three. No three-putts.\n\n### Why\n\nSpeed, not read. The ones that hurt come from 20 to 40 feet, trying to make the\nfirst one and running it five feet past.\n\n### What to do\n\nPractice speed uphill and downhill at varying distances. Half your putting time\non speed, a quarter on five to fifteen footers, a quarter simulating a putting\ncourse.\n\n## Four. No bogeys with nine iron or less (about 150 yards and in).\n\n### Why\n\nBogeys from your scoring clubs mean the target was wrong, not the swing.\n\n### What to do\n\nStop being overly aggressive and stop trying to force birdies. From 79 to 76, 82\npercent of the improvement is bogeys avoided rather than birdies made.\n\n## Five. No double chips.\n\n### Why\n\nA blown easy save is forcing something the spot did not allow. If you are\nalready in trouble, the bogey is the good outcome.\n\n### What to do\n\nAim for a one to one ratio. When you are further from the green than the pin is,\nget the ball on the putting surface safely instead of playing the risky shot.\n\n## Four or fewer.\n\nNot perfect golf, fewer disasters.\n"}]};
   /*SCORING:END*/
 
   (function(){
     var DOCS=(SCORING&&SCORING.docs)||[];
     if(!DOCS.length) return;
-    /* The Mental Training script renderer without the cue handling, because
-       reference material has no cues to render. Same .card furniture and the
-       same body type as every other list on the plan. */
+    /* Sections, the way the source sheet lays them out: a heading per stat,
+       then WHY and WHAT TO DO. Rendered flat as paragraphs it was a wall of
+       text (Eric, 2026-08-13: "now it just looks like words and words and
+       words"). Typography is the hub's own and nothing here is invented -
+       `## ` takes the .h-title used by every card on the plan, and `### `
+       takes groupLabel(), the same small caps the charts and THIS ROUND use.
+       A rule above each stat but the first does the sectioning. */
     function docHtml(md){
+      var first=true;
       return md.replace(/^#\s+.+$/m,'').trim().split(/\n\s*\n/).map(function(b){
         var t=b.trim(); if(!t) return '';
+        var h2=t.match(/^##\s+(.+)$/);
+        if(h2){
+          var rule=first?'':'border-top:1px solid rgba(143,160,184,.14);padding-top:18px;';
+          first=false;
+          return '<div style="'+rule+'margin-top:18px"><div class="h-title" '+
+                 'style="font-size:17px;line-height:1.35">'+esc(h2[1])+'</div></div>';
+        }
+        var h3=t.match(/^###\s+(.+)$/);
+        if(h3) return groupLabel(esc(h3[1]).toUpperCase());
         return '<p>'+esc(t).replace(/\n/g,' ')+'</p>';
       }).join('');
     }
