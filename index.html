@@ -3720,7 +3720,14 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
         document.getElementById('drill-log-body').innerHTML=h;
         return;
       }
-      var plan=carryBlockPlan();
+      /* ONE ladder for the whole screen, resolved here and reused by both
+         phases. The block plan used to be built with NO ladder argument, which
+         silently fell back to the chipping ladder and drew the wedge ladder's
+         block phase as 5/7/9/11/15/20/30. The pure scorer was right the whole
+         time - only the render was wrong, which is why every headless test
+         still passed. tests/test_drills.py pins the argument. */
+      var L=ladderOf(CLOG);
+      var plan=carryBlockPlan(L);
       h+='<div class="dspplate" style="padding:14px 12px;margin-top:14px">'+
         '<div style="font-family:Georgia,serif;font-size:11px;color:#0F2F45;text-align:center;margin-bottom:10px">'+
           'Block phase - three balls at each number, ascending. Carry only.</div>'+
@@ -3730,7 +3737,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
             '<div style="font-family:Georgia,serif;font-size:9.5px;letter-spacing:.08em;color:#5C6B82;margin-bottom:4px;text-align:center">'+
               (i+1)+' &middot; '+t+' YD</div>'+carryCell(i)+'</div>';
         }).join('')+'</div></div>';
-      var L=ladderOf(CLOG), step=CLOG.step, rIdx=ladderNBlock(L)+step;
+      var step=CLOG.step, rIdx=ladderNBlock(L)+step;
       h+='<div class="dspplate" style="padding:14px 12px;margin-top:14px">'+
         '<div style="font-family:Georgia,serif;font-size:11px;color:#0F2F45;text-align:center;margin-bottom:6px">'+
           'Random phase - one ball at each number, one at a time</div>';
