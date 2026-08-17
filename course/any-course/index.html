@@ -104,12 +104,16 @@ input,textarea,select{font-family:inherit}
 .puttfield input{width:100%;padding:10px 4px;border:1.5px solid rgba(12,35,64,.25);border-radius:10px;
   background:#fff;font-size:16px;font-weight:700;color:#16243A;text-align:center}
 .puttfield input:focus{outline:2px solid var(--gold-deep)}
-.puttmiss{align-items:flex-start;padding-top:9px}
-.misspair{display:flex;gap:6px}
-.misspair select{flex:1;min-width:0;padding:8px 2px;border:1.5px solid rgba(12,35,64,.25);border-radius:10px;
-  background:#fff;font-size:14px;font-weight:600;color:#16243A;text-align:center}
-.misspair select:focus{outline:2px solid var(--gold-deep)}
-.misshint{flex:1;font-family:var(--mono);font-size:9.5px;line-height:1.5;color:#8792A4;letter-spacing:.03em}
+.puttmiss{display:block;padding:10px 16px 12px;border-bottom:1px solid rgba(12,35,64,.12)}
+.pmrow{display:flex;align-items:center;gap:7px;margin-top:7px}
+.pmlbl{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;
+  color:#5C6B82;width:52px;flex:0 0 auto}
+.pmchip{font-family:var(--sans);font-size:12px;line-height:1;padding:9px 10px;border-radius:999px;
+  border:1.5px solid rgba(12,35,64,.25);background:#F4EFE4;color:#0C2340;cursor:pointer;
+  flex:1 1 auto;text-align:center;white-space:nowrap}
+.pmchip.on{background:#0C2340;border-color:#0C2340;color:#F4EFE4;font-weight:600}
+.pmhint{font-family:var(--mono);font-size:9.5px;line-height:1.5;color:#8792A4;
+  letter-spacing:.03em;margin-top:8px}
 .putttot{flex:none;display:flex;flex-direction:column;align-items:center;gap:4px}
 .putttot .lbl{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:#5C6B82}
 .putttot b{font-size:22px;color:#0C2340}
@@ -676,15 +680,8 @@ let puttIn = { len:null, slope:"2", stimp:"10", ud:"flat", out:"" };
    line from speed. "C" is centre - struck on line and left short or run past,
    which is the pure speed miss. Left blank when the putt was holed. Mirrors
    the approach capture, which is also two axes rather than one word. */
-const MISS_SIDE  = ["L", "C", "R"];
-const MISS_DEPTH = ["Short", "Past"];
 /* shotEditor() has its own local `sel`; this one is module level because the
    hole render needs it too. Blank is a real choice here - it means holed. */
-function missSel(id, opts, cur){
-  return `<select id="${id}"><option value=""${cur ? "" : " selected"}>&mdash;</option>` +
-    opts.map(o => `<option value="${o}"${o === cur ? " selected" : ""}>${o}</option>`).join("") +
-    `</select>`;
-}
 
 /* ---------- state ----------
    cells: "f.<hole>.<key>" score,p1,p2,p3,putts,pen,fir,gir,note
@@ -857,6 +854,37 @@ function paintRecoveryHint(){
   box.innerHTML = `That went <b>${r.went} yd</b> on a club that carries <b>${r.carry}</b>. ` +
     `If you had no swing at it, set Type to <b>Punch Out</b> or <b>Layup</b> - ` +
     `otherwise it is scored as an approach you missed.`;
+}
+
+/* Putt miss, two axes, first two putts only - a third putt is scored by none
+   of Eric's metrics. SIDE separates a read from a stroke; DEPTH separates line
+   from speed. Every chip is optional and they are independent: tap one, both or
+   neither, and tap again to clear. Blank means it went in, or that he did not
+   look. Chips rather than dropdowns because the whole tracker is tap targets
+   and four selects is slow with a glove on (Eric, 2026-08-16). */
+const MISS_SIDE  = ["L", "C", "R"];
+const MISS_DEPTH = ["Short", "Past"];
+
+function puttMissBlock(f){
+  const row = (i, axis, opts, label) => `<div class="pmrow">
+      <span class="pmlbl">${label}</span>
+      ${opts.map(o => `<button type="button" class="pmchip${
+        (f["m" + i + axis] === o) ? " on" : ""}" data-pm="${i}${axis}" data-pmv="${o}">${o}</button>`).join("")}
+    </div>`;
+  return `<div class="puttmiss">
+    ${[1, 2].map(i => row(i, "s", MISS_SIDE, "P" + i + " side") +
+                      row(i, "d", MISS_DEPTH, "P" + i + " depth")).join("")}
+    <div class="pmhint">Optional. Blank means it went in. C is on line, so C plus Short
+      or Past is pure speed. Tap a chip again to clear it.</div>
+  </div>`;
+}
+
+function commitMiss(key, val){
+  /* Tapping the chip that is already on clears it - the same toggle the strike
+     and finish chips use. Nothing here is ever required. */
+  const f = F(hole);
+  setCell(`f.${hole}.m${key}`, f["m" + key] === val ? null : val);
+  render();
 }
 
 function puttCount(hn){
@@ -1383,14 +1411,7 @@ function viewHole(){
         <button class="stmini" data-act="puttinc">+</button>
       </div>
     </div>
-    <div class="puttrow puttmiss">
-      ${[1,2].map(i => `<div class="puttfield"><label>P${i} miss</label>
-        <div class="misspair">
-          ${missSel("miss-"+i+"-s", MISS_SIDE, f["m"+i+"s"])}
-          ${missSel("miss-"+i+"-d", MISS_DEPTH, f["m"+i+"d"])}
-        </div></div>`).join("")}
-      <div class="misshint">Leave blank if it went in. C is on line - short or past is pure speed.</div>
-    </div>` : ""}
+    ${puttMissBlock(f)}</div>` : ""}
 
     ${adv && confirm ? `<div class="confirmrow">${confirm}</div>` : ""}
 
@@ -1548,10 +1569,6 @@ function viewOverview(){
 }
 
 /* ---------- events ---------- */
-function commitMiss(i, axis, val){
-  setCell(`f.${hole}.m${i}${axis}`, val === "" ? null : val);
-  render();
-}
 
 function commitPutt(i, raw){
   const v = raw === "" ? null : Math.max(0, Math.min(120, Math.round(+raw)));
@@ -1693,6 +1710,9 @@ function bind(){
     const el = document.getElementById(`miss-${i}-${axis}`);
     if (el) el.onchange = () => commitMiss(i, axis, el.value);
   }));
+  document.querySelectorAll("[data-pm]").forEach(el => {
+    el.onclick = () => commitMiss(el.dataset.pm, el.dataset.pmv);
+  });
   document.querySelectorAll("[data-putt]").forEach(el => {
     el.onchange = () => commitPutt(+el.dataset.putt, el.value.trim());
   });
