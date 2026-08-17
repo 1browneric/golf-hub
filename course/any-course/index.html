@@ -455,7 +455,7 @@ var SCALE = {"scratch": 0.0, "5hcp": 0.28, "9hcp": 0.5};
    that file; the functions below mirror it line for line so a round scored on
    a phone produces the same numbers the VM would. Verified differentially —
    see scripts/verify_sg_port.py. */
-var SG_KEYS = ["driver","p176","p101","p100","putting","ball_strike"];
+var SG_KEYS = ["driver","p176","p101","p100","putting","ball_strike","excluded"];
 
 /* Python's round() is correctly-rounded decimal with ties-to-even. The naive
    JS idiom Math.round(x*1000)/1000 disagrees on ~0.5% of holes because the
@@ -514,6 +514,23 @@ function sgEPutts(feet, baseline){
   return PUTTING[PUTTING.length-1][2 + BASE_IDX[baseline]];
 }
 
+/* A shot Eric had no swing at, or chose not to advance with. EXCLUDED from
+   strokes gained entirely - Eric, 2026-08-16: "i dont want a new category...
+   just leave it off. dont add it into my SG calculations."
+
+   Marked by the shot TYPE ("Punch Out" / "Layup") or a `Layup` result tag -
+   NOT by the lie, which records where the ball WAS. A ball behind a tree in
+   the rough has a Rough lie. Mirrors is_recovery() in pull_round.py.
+
+   The opening tee ball is never a recovery whatever it was for: it is Driver. */
+var RECOVERY_TYPES = ["Layup", "Punch Out"];
+
+function sgIsRecovery(shot, idx){
+  if (idx === 0 && String(shot.lie || "").trim() === "Tee") return false;
+  if (RECOVERY_TYPES.indexOf(String(shot.type || "").trim()) !== -1) return true;
+  return accTags(shot.acc).indexOf("Layup") !== -1;
+}
+
 function sgCategory(shot, idx){
   var club = String(shot.club || "").trim().toLowerCase();
   if (idx === 0 && shot.type === "Drive" &&
@@ -531,7 +548,11 @@ function sgNextLie(shots, i){
 /* SG per category for one hole, for one baseline (default 9hcp). */
 function holeSG(hole, baseline){
   baseline = baseline || "9hcp";
-  var out = {driver:0, p176:0, p101:0, p100:0, putting:0, ball_strike:0};
+  /* `excluded` holds the recovery shots. Not a category, never displayed:
+     it exists so the conservation identity still balances, because every
+     stroke must be accounted for somewhere even when it is kept out of the
+     four buckets and out of ball_strike. */
+  var out = {driver:0, p176:0, p101:0, p100:0, putting:0, ball_strike:0, excluded:0};
   var shots = hole.shots || [];
   var p1 = (hole.p1_ft === undefined) ? null : hole.p1_ft;
   var putts = hole.putts_tm || 0;
@@ -565,8 +586,9 @@ function holeSG(hole, baseline){
          Per-baseline finish inverted p100 across baselines (2026-07-23). */
       fin = (p1 !== null) ? sgEPutts(p1, "scratch") : 1.0;
     }
-    out[cat] += start - (1 + fin);
-    if (penal) out[cat] += -1.0;
+    var key = sgIsRecovery(s, i) ? "excluded" : cat;
+    out[key] += start - (1 + fin);
+    if (penal) out[key] += -1.0;
   }
   if (p1 !== null && putts) out.putting = sgEPutts(p1, baseline) - putts;
   out.ball_strike = out.driver + out.p176 + out.p101 + out.p100;
@@ -576,7 +598,7 @@ function holeSG(hole, baseline){
 
 /* Round totals: sum every hole, same six categories. */
 function roundSG(holes, baseline){
-  var tot = {driver:0, p176:0, p101:0, p100:0, putting:0, ball_strike:0};
+  var tot = {driver:0, p176:0, p101:0, p100:0, putting:0, ball_strike:0, excluded:0};
   (holes || []).forEach(function(h){
     var s = holeSG(h, baseline);
     SG_KEYS.forEach(function(k){ tot[k] += s[k]; });

@@ -475,7 +475,7 @@ var SCALE = {"scratch": 0.0, "5hcp": 0.28, "9hcp": 0.5};
    that file; the functions below mirror it line for line so a round scored on
    a phone produces the same numbers the VM would. Verified differentially —
    see scripts/verify_sg_port.py. */
-var SG_KEYS = ["driver","p176","p101","p100","putting","ball_strike"];
+var SG_KEYS = ["driver","p176","p101","p100","putting","ball_strike","excluded"];
 
 /* The tracker's "Result" field is a multi-select: a shot carries any number of
    these tags, stored comma-separated ("Fat, Left, Sand"). Rounds logged before
@@ -501,6 +501,23 @@ function sgAccTags(value){
 
 function sgIsPenalty(value){
   return sgAccTags(value).some(function(t){ return PENALTY_TAGS.indexOf(t) !== -1; });
+}
+
+/* A shot he had no swing at, or chose not to advance with. EXCLUDED from
+   strokes gained entirely - Eric, 2026-08-16: "i dont want a new category...
+   just leave it off. dont add it into my SG calculations."
+
+   Marked by the shot TYPE ("Punch Out" / "Layup") or a `Layup` result tag -
+   NOT by the lie, which records where the ball WAS. A ball behind a tree in
+   the rough has a Rough lie. Mirrors is_recovery() in pull_round.py.
+
+   The opening tee ball is never a recovery whatever it was for: it is Driver. */
+var RECOVERY_TYPES = ["Layup", "Punch Out"];
+
+function sgIsRecovery(shot, idx){
+  if (idx === 0 && String(shot.lie || "").trim() === "Tee") return false;
+  if (RECOVERY_TYPES.indexOf(String(shot.type || "").trim()) !== -1) return true;
+  return sgAccTags(shot.acc).indexOf("Layup") !== -1;
 }
 
 /* Python's round() is correctly-rounded decimal with ties-to-even. The naive
@@ -577,7 +594,11 @@ function sgNextLie(shots, i){
 /* SG per category for one hole, for one baseline (default 9hcp). */
 function holeSG(hole, baseline){
   baseline = baseline || "9hcp";
-  var out = {driver:0, p176:0, p101:0, p100:0, putting:0, ball_strike:0};
+  /* `excluded` holds the recovery shots. Not a category, never displayed:
+     it exists so the conservation identity still balances, because every
+     stroke must be accounted for somewhere even when it is kept out of the
+     four buckets and out of ball_strike. */
+  var out = {driver:0, p176:0, p101:0, p100:0, putting:0, ball_strike:0, excluded:0};
   var shots = hole.shots || [];
   var p1 = (hole.p1_ft === undefined) ? null : hole.p1_ft;
   var putts = hole.putts_tm || 0;
@@ -611,8 +632,9 @@ function holeSG(hole, baseline){
          Per-baseline finish inverted p100 across baselines (2026-07-23). */
       fin = (p1 !== null) ? sgEPutts(p1, "scratch") : 1.0;
     }
-    out[cat] += start - (1 + fin);
-    if (penal) out[cat] += -1.0;
+    var key = sgIsRecovery(s, i) ? "excluded" : cat;
+    out[key] += start - (1 + fin);
+    if (penal) out[key] += -1.0;
   }
   if (p1 !== null && putts) out.putting = sgEPutts(p1, baseline) - putts;
   out.ball_strike = out.driver + out.p176 + out.p101 + out.p100;
@@ -622,7 +644,7 @@ function holeSG(hole, baseline){
 
 /* Round totals: sum every hole, same six categories. */
 function roundSG(holes, baseline){
-  var tot = {driver:0, p176:0, p101:0, p100:0, putting:0, ball_strike:0};
+  var tot = {driver:0, p176:0, p101:0, p100:0, putting:0, ball_strike:0, excluded:0};
   (holes || []).forEach(function(h){
     var s = holeSG(h, baseline);
     SG_KEYS.forEach(function(k){ tot[k] += s[k]; });
@@ -874,12 +896,21 @@ function dispValidate(input) {
   var u = input.unit === "yd" ? "yards" : "feet";
   var hasLong = !(input.long_ft === null || input.long_ft === undefined || input.long_ft === "");
   var hasRight = !(input.right_ft === null || input.right_ft === undefined || input.right_ft === "");
-  if (!hasLong) errs.push("Short/long distance in " + u);
-  else if (dispSignedLong(input.long_ft, input.long_dir) === null) {
+  /* ONE LEG IS ENOUGH (Eric, 2026-08-16: "i wasnt allowed to hit submit unless
+     i had both filled in. i dont like that... the google sheet will auto
+     calcuate the missing one if i put one in since it has the putt distance").
+     The sheet's DISPERSION AUTO-COMPLETE trigger solves the right triangle
+     BT^2 = BR^2 + BS^2 from the first putt distance, so typing the leg he
+     actually paced off is all the information the system needs. Requiring both
+     made him measure a number the sheet was about to compute anyway.
+
+     Still required: a direction chip for whichever box he DID fill, because a
+     magnitude with no side is unplottable and cannot be recovered later. */
+  if (!hasLong && !hasRight) errs.push("A short/long OR left/right distance in " + u);
+  if (hasLong && dispSignedLong(input.long_ft, input.long_dir) === null) {
     errs.push(Number(input.long_ft) > 0 ? "the SHORT or LONG chip" : "a valid short/long distance");
   }
-  if (!hasRight) errs.push("Left/right distance in " + u);
-  else if (dispSignedRight(input.right_ft, input.right_dir) === null) {
+  if (hasRight && dispSignedRight(input.right_ft, input.right_dir) === null) {
     errs.push(Number(input.right_ft) > 0 ? "the LEFT or RIGHT chip" : "a valid left/right distance");
   }
   if (DISP_LIES.indexOf(input.lie) === -1) errs.push("Lie");
@@ -2884,8 +2915,8 @@ function bind(){
                it silently or storing half a shot. The shot itself is not saved
                yet, so nothing he typed is lost. */
             alert("Approach dispersion needs: " + derrs.join(", ") +
-                  ".\n\nFill it in, or clear the two boxes under Miss to save the "
-                  + "shot without it.");
+                  ".\n\nOne box is enough - the sheet works the other one out from "
+                  + "your first putt. Or clear both to save the shot without it.");
             return;
           }
         }
