@@ -104,6 +104,12 @@ input,textarea,select{font-family:inherit}
 .puttfield input{width:100%;padding:10px 4px;border:1.5px solid rgba(12,35,64,.25);border-radius:10px;
   background:#fff;font-size:16px;font-weight:700;color:#16243A;text-align:center}
 .puttfield input:focus{outline:2px solid var(--gold-deep)}
+.puttmiss{align-items:flex-start;padding-top:9px}
+.misspair{display:flex;gap:6px}
+.misspair select{flex:1;min-width:0;padding:8px 2px;border:1.5px solid rgba(12,35,64,.25);border-radius:10px;
+  background:#fff;font-size:14px;font-weight:600;color:#16243A;text-align:center}
+.misspair select:focus{outline:2px solid var(--gold-deep)}
+.misshint{flex:1;font-family:var(--mono);font-size:9.5px;line-height:1.5;color:#8792A4;letter-spacing:.03em}
 .putttot{flex:none;display:flex;flex-direction:column;align-items:center;gap:4px}
 .putttot .lbl{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:#5C6B82}
 .putttot b{font-size:22px;color:#0C2340}
@@ -643,9 +649,24 @@ const BREAK_UD = {
 const UD_LABELS = [["flat","Flat putt"],["u1","1% uphill"],["u2","2% uphill"],["u3","3% uphill"],
                    ["d1","1% downhill"],["d2","2% downhill"],["d3","3% downhill"]];
 let puttIn = { len:null, slope:"2", stimp:"10", ud:"flat", out:"" };
+/* Putt miss, two axes, first two putts only (a third putt is not scored by any
+   of Eric's metrics). SIDE separates a read from a stroke; DEPTH separates
+   line from speed. "C" is centre - struck on line and left short or run past,
+   which is the pure speed miss. Left blank when the putt was holed. Mirrors
+   the approach capture, which is also two axes rather than one word. */
+const MISS_SIDE  = ["L", "C", "R"];
+const MISS_DEPTH = ["Short", "Past"];
+/* shotEditor() has its own local `sel`; this one is module level because the
+   hole render needs it too. Blank is a real choice here - it means holed. */
+function missSel(id, opts, cur){
+  return `<select id="${id}"><option value=""${cur ? "" : " selected"}>&mdash;</option>` +
+    opts.map(o => `<option value="${o}"${o === cur ? " selected" : ""}>${o}</option>`).join("") +
+    `</select>`;
+}
 
 /* ---------- state ----------
    cells: "f.<hole>.<key>" score,p1,p2,p3,putts,pen,fir,gir,note
+          m1s,m1d,m2s,m2d  putt miss side/depth for the first two putts
           "sh.<hole>" shots array   "par.<hole>" 3|4|5
           "course" string   "rdate" YYYY-MM-DD   "rnote" string
           "tmode" basic|advanced */
@@ -774,6 +795,48 @@ function suggestClub(db, isFirst, par){
   }
   return best;
 }
+/* RECOVERY NUDGE (Eric, 2026-08-16).
+   `suggestType` fills Type from the distance alone, so a ball hit sideways out
+   of trees from 250 yards is auto-labelled "Long App (176+)". On 08/16 all four
+   of Eric's tree holes carried an approach type for exactly that reason, and the
+   only honest marker on them was a hand-added `Layup` result tag. Four tee shots
+   into trees cost him +5 of a +9 round while the card charged the damage to his
+   irons.
+
+   So: when a shot travels far less than that club actually carries, say so and
+   offer the two types that describe it. HALF the club's carry is the threshold -
+   deliberately conservative, because a genuine layup or a knockdown should not
+   trip it. Eric's 08/16 punch-outs advanced 25, 65 and 87 yards on a 7 iron that
+   carries 184; every one of them clears the bar by a wide margin.
+
+   It NUDGES, it never rewrites. The type he picks is the type that is stored. */
+const RECOVERY_RATIO = 0.5;
+function recoveryHint(club, db, da){
+  if (!club || db == null || da == null) return null;
+  const spec = CADDY[club];
+  if (!spec || !spec.c) return null;
+  const carry = spec.c[0];
+  const went = db - da;
+  if (!(went > 0) || went >= carry * RECOVERY_RATIO) return null;
+  return { went: Math.round(went), carry: Math.round(carry) };
+}
+
+/* Painted IN PLACE, never by re-rendering. The shot editor deliberately does
+   not re-render while it is open - a re-render would steal focus mid-entry -
+   so it keeps the "Auto: <type>" label current by hand, and this does the
+   same. Called on every club / distance change and once when the editor opens. */
+function paintRecoveryHint(){
+  const box = document.getElementById("ed-recovery");
+  if (!box || !editing) return;
+  const d = editing.draft;
+  const r = recoveryHint(d.club, d.db, d.da);
+  if (!r){ box.hidden = true; box.innerHTML = ""; return; }
+  box.hidden = false;
+  box.innerHTML = `That went <b>${r.went} yd</b> on a club that carries <b>${r.carry}</b>. ` +
+    `If you had no swing at it, set Type to <b>Punch Out</b> or <b>Layup</b> - ` +
+    `otherwise it is scored as an approach you missed.`;
+}
+
 function puttCount(hn){
   const f = F(hn);
   if (f.putts != null) return f.putts;
@@ -857,6 +920,10 @@ function buildRoundJSON(){
       hole: h.n, par: parFor(h.n),
       shots: sh,
       p1_ft: f.p1 ?? null, p2_ft: f.p2 ?? null, p3_ft: f.p3 ?? null,
+      /* Putt miss, first two putts. Sent as '' rather than null when unset so
+         the Apps Script writes a blank cell instead of the word "null". */
+      p1_miss_side: f.m1s ?? "", p1_miss_depth: f.m1d ?? "",
+      p2_miss_side: f.m2s ?? "", p2_miss_depth: f.m2d ?? "",
       putts_tm: puttCount(h.n) ?? 0,
       score: f.score ?? null,
       plus_minus: plusMinus(f.score, parFor(h.n)),
@@ -1201,6 +1268,7 @@ function shotEditor(){
           accTags(d.acc).includes(t) ? " on" : ""}" data-tag="${esc(t)}">${esc(t)}</button>`).join("")}</div>`).join("")}
       </div>`).join("")}
     </div>
+    <div class="edhint" id="ed-recovery" hidden></div>
     <div class="edactions">
       <button class="edsave" data-act="edsave">${editing.idx === -1 ? "Add shot" : "Save shot"}</button>
       <button class="edcancel" data-act="edcancel">Cancel</button>
@@ -1292,6 +1360,14 @@ function viewHole(){
         <button class="stmini" data-act="puttdec">&minus;</button>
         <button class="stmini" data-act="puttinc">+</button>
       </div>
+    </div>
+    <div class="puttrow puttmiss">
+      ${[1,2].map(i => `<div class="puttfield"><label>P${i} miss</label>
+        <div class="misspair">
+          ${missSel("miss-"+i+"-s", MISS_SIDE, f["m"+i+"s"])}
+          ${missSel("miss-"+i+"-d", MISS_DEPTH, f["m"+i+"d"])}
+        </div></div>`).join("")}
+      <div class="misshint">Leave blank if it went in. C is on line - short or past is pure speed.</div>
     </div>` : ""}
 
     ${adv && confirm ? `<div class="confirmrow">${confirm}</div>` : ""}
@@ -1450,6 +1526,11 @@ function viewOverview(){
 }
 
 /* ---------- events ---------- */
+function commitMiss(i, axis, val){
+  setCell(`f.${hole}.m${i}${axis}`, val === "" ? null : val);
+  render();
+}
+
 function commitPutt(i, raw){
   const v = raw === "" ? null : Math.max(0, Math.min(120, Math.round(+raw)));
   setCell(`f.${hole}.p${i}`, Number.isFinite(v) ? v : null);
@@ -1558,10 +1639,11 @@ function bind(){
         document.querySelectorAll(".edtag.on"), x => x.dataset.tag));
     };
   });
+  paintRecoveryHint();
   const edSync = { "ed-club":"club", "ed-lie":"lie", "ed-type":"type" };
   for (const [id, key] of Object.entries(edSync)){
     const el = document.getElementById(id);
-    if (el) el.onchange = () => { editing.draft[key] = el.value || null; };
+    if (el) el.onchange = () => { editing.draft[key] = el.value || null; paintRecoveryHint(); };
   }
   for (const [id, key] of [["ed-db","db"],["ed-da","da"]]){
     const el = document.getElementById(id);
@@ -1573,6 +1655,7 @@ function bind(){
         const opt = document.querySelector("#ed-type option[value='']");
         if (opt) opt.textContent = t ? `Auto: ${t}` : "Auto";
       }
+      paintRecoveryHint();
     };
   }
   document.querySelectorAll("[data-par]").forEach(el => {
@@ -1584,6 +1667,10 @@ function bind(){
   document.querySelectorAll("[data-wind]").forEach(el => {
     el.onclick = () => { windTab = el.dataset.wind; render(); };
   });
+  [1, 2].forEach(i => ["s", "d"].forEach(axis => {
+    const el = document.getElementById(`miss-${i}-${axis}`);
+    if (el) el.onchange = () => commitMiss(i, axis, el.value);
+  }));
   document.querySelectorAll("[data-putt]").forEach(el => {
     el.onchange = () => commitPutt(+el.dataset.putt, el.value.trim());
   });

@@ -1403,10 +1403,19 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
      more that were NOT holed, how many finished within ten percent of the
      distance they started from. A 30 footer passes at 3 feet or closer.
 
-     Made first putts are OUT OF THE SAMPLE ENTIRELY, numerator and
-     denominator both: this measures the quality of a lag, not a make rate,
-     and counting holed putts as passes would make a good putting day look
-     like a good lagging day.
+     A HOLED first putt COUNTS AS A PASS. It finished zero feet from the
+     hole, which is inside any tolerance the rule can name.
+
+     Changed 2026-08-16 (Eric: "add those 3 that i holed bc the 2nd putt
+     would be 0 my metric looks better"). The original rule dropped made
+     putts from the sample entirely, on the theory that this measures lag
+     quality rather than a make rate. That was biased, not conservative:
+     removing a guaranteed pass from the numerator means HOLING a long putt
+     LOWERS your rate. Every round whose number moved under the new rule
+     moved up, never down, which is the signature of the bias. Eric's
+     08/16/2026 round was the clearest case - he holed 21, 15 and 12 feet,
+     his best long-putting day of the season, and the old rule scored all
+     three as nothing, reading 38% where the honest number is 55%.
 
      NOT A BUG, do not "fix" it: standard_ft carries a max(..., 1.0) floor
      that can never bind, because qualifying already requires p1 >= 10 and
@@ -1422,16 +1431,17 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
      benchmark - none exists for this rule, and the Stagner corpus has no
      lag-quality table (the nearest is three-putt rate by first-putt distance,
      which is the outcome this rule prevents rather than the rule itself).
-     He picked 50 knowing what it costs: 62 passes of 123 against the 40 he
-     has, and only 16 of his 83 misses are within a foot of passing. Change
-     the number here and the line and its label both follow. */
+     He picked 50 knowing what it costs. Under the corrected rule (holed
+     first putts count) his season stands at 51 of 139; the target asks for
+     70 of 139. Change the number here and the line and its label both
+     follow. */
   var TEN_PCT_TARGET = 50;
 
   function tenPct(sel){
     var n=0,d=0,gaps=0;
     sel.forEach(function(h){
       if(h.p1==null||h.p1<10) return;      // not a qualifying first putt
-      if(!(h.putts>1)) return;             // holed it - out of the sample
+      if(!(h.putts>1)){ d++; n++; return; }// holed it - finished 0 ft away, a pass
       if(h.p2==null){ gaps++; return; }    // took another putt, distance not logged
       d++;
       if(h.p2<=Math.max(0.10*h.p1,1.0)) n++;
@@ -3070,6 +3080,31 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
           'Calibrate your step to three feet, or measure with a tape.'
         ]
       },{
+        /* THE THIRD LADDER. Same drill shape and the same scorer as the two
+           yardage ladders, moved onto the green - and the first one measured
+           in FEET, which is why `unit` is now a registry field.
+
+           It exists because Eric named the gap and the season data agreed
+           with him from the other direction. He owns a stroke at 10, 15 and
+           30 feet and has nothing between; 18-24 ft is the only band that
+           performs WORSE than the band beyond it - 3.8 ft left from 18-24
+           against 4.2 ft from 25-34, and an 11% three-putt rate against 10%
+           from further away. His 08/16 tournament round is the pattern in
+           miniature: two 24-footers to a foot each, then 21 ft to 6 and 18 ft
+           to 6, and the two six-footers that followed decided the event. */
+        slug:'putt-ladder',
+        kind:'carry',
+        name:'Putt Ladder',
+        protocol:[
+          'Three distances: 18, 21 and 24 feet. This is the gap between the 10 and 15 foot strokes you own and the 30 foot one you own.',
+          'Block phase: five balls at each distance, ascending. 15 putts.',
+          'Random phase: one ball at each distance, in an order the app shuffles and shows one at a time. 3 putts.',
+          'Pace or tape the distance and mark it. A stroke reference is worthless if the number under it drifts.',
+          'The band is your own 10% rule, the same standard your rounds are scored against: 1.8 ft at 18, 2.1 ft at 21, 2.4 ft at 24.',
+          'Do not aim at a hole you can make. This drill builds a distance, not a make rate - finish the putt inside the band and the make rate follows.',
+          'Entry mode is chosen at the start and stored with the session - a measured finish distance in feet, or short / in / long against a marker.'
+        ]
+      },{
         slug:'twenty-at-twenty',
         name:'Twenty at Twenty',
         bucket:'Speed',
@@ -3361,11 +3396,40 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
        which is as tight as a full wedge is worth judging. Widen one here and
        every session ever logged re-scores. */
     var WEDGE_TOL={40:3,50:4,60:4,75:5,90:6};
+    /* ---- THE THIRD LADDER: PUTTING, AND IT IS IN FEET ----
+       Eric, 2026-08-16: "i just dont have a spot for my putting. I have a
+       known distance at 10 ft. 15 ft. and 30ft." The season data says the same
+       thing from the other side - 18-24 ft is the ONLY band that performs
+       worse than the band beyond it. Over 35 putts he leaves 3.8 ft from
+       18-24 and 4.2 ft from 25-34, so a third further away costs him almost
+       nothing extra, and he three-putts MORE often from 18-24 (11%) than from
+       25-34 (10%). Distance left should scale with distance; at 18-24 it stops
+       scaling. That is what a missing reference looks like, and it sits
+       exactly in the gap between the 15 and the 30 he already owns.
+
+       UNIT. These rungs are FEET, not yards. Every other ladder is yards, so
+       `unit` is now a registry field and the screens read it - do not print a
+       bare "yd" anywhere a ladder's number is shown.
+
+       TOLERANCE IS HIS OWN 10% RULE, not a new invention: the same standard
+       the 10% Putts stat scores rounds against, applied to the rung. A putt
+       from 18 ft passes at 1.8 ft or closer. Keeping the two definitions
+       identical means a good ladder session and a good round measure the same
+       thing.
+
+       Five balls a rung rather than three - a putt is cheap to repeat, and 9
+       block putts would be too thin to calibrate anything. */
+    var PUTT_DISTS=[18,21,24];
+    var PUTT_TOL={18:1.8,21:2.1,24:2.4};
+    var PUTT_BALLS=5;
     var LADDERS={
       'carry-ladder':{slug:'carry-ladder',dists:CARRY_DISTS,tol:CARRY_TOL,
-                      tab:'drills-carry',cache:'gh_carry_cache_v1'},
+                      unit:'yd',tab:'drills-carry',cache:'gh_carry_cache_v1'},
       'wedge-ladder':{slug:'wedge-ladder',dists:WEDGE_DISTS,tol:WEDGE_TOL,
-                      tab:'drills-wedge',cache:'gh_wedge_cache_v1'}
+                      unit:'yd',tab:'drills-wedge',cache:'gh_wedge_cache_v1'},
+      'putt-ladder' :{slug:'putt-ladder', dists:PUTT_DISTS, tol:PUTT_TOL,
+                      unit:'ft',balls:PUTT_BALLS,
+                      tab:'drills-putt', cache:'gh_putt_cache_v1'}
     };
     /* A session carries its own slug. Anything without one is the chipping
        ladder - which is what every session logged before the wedge ladder
@@ -3375,13 +3439,15 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     function ladderOf(s){
       return (s&&(LADDERS[s.drill]||LADDERS[s.slug]))||LADDERS['carry-ladder'];
     }
-    function ladderNBlock(L){ return L.dists.length*CARRY_BALLS; }
+    function ladderNBlock(L){ return L.dists.length*(L.balls||CARRY_BALLS); }
     function ladderN(L){ return ladderNBlock(L)+L.dists.length; }
     /* Disjoint rungs mean ONE lookup answers for both ladders. CARRY_TOL is
        read first and in place, so the chipping ladder's band stays mutable -
        which is what the verifier leans on to prove the band is data. */
     function carryTol(target){
-      return CARRY_TOL[target]!=null?CARRY_TOL[target]:WEDGE_TOL[target];
+      if(CARRY_TOL[target]!=null) return CARRY_TOL[target];
+      if(WEDGE_TOL[target]!=null) return WEDGE_TOL[target];
+      return PUTT_TOL[target];
     }
     var CARRY_CACHE='gh_carry_cache_v1';
     var CSESS=[];                 // ladder sessions, both ladders, newest first
@@ -3394,7 +3460,8 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     function carryBlockPlan(L){
       L=L||LADDERS['carry-ladder'];
       var out=[];
-      L.dists.forEach(function(d){ for(var i=0;i<CARRY_BALLS;i++) out.push(d); });
+      var B=L.balls||CARRY_BALLS;
+      L.dists.forEach(function(d){ for(var i=0;i<B;i++) out.push(d); });
       return out;
     }
     function carryShuffle(L){
@@ -3423,7 +3490,11 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       }
       var n=dNum(val); if(n==null) return null;
       var e=n-target;
-      return {hit:Math.abs(e)<=tol, dir:e<0?'short':(e>0?'long':''), err:e, tol:tol};
+      /* The epsilon is not decoration. Bands were whole yards until the putt
+         ladder arrived with 1.8 / 2.1 / 2.4 ft, and 23.1-21 evaluates to
+         2.1000000000000014 in binary floating point - so a putt exactly ON
+         its band scored as a miss. Integer bands are unaffected. */
+      return {hit:Math.abs(e)<=tol+1e-9, dir:e<0?'short':(e>0?'long':''), err:e, tol:tol};
     }
     /* Per-distance aggregates for ONE mode and ONE phase. phase is 'block',
        'random' or null for both. Callers never mix modes into one call. */
@@ -3456,11 +3527,11 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
        a consistent positive is over-hitting, and the difference has to survive
        being read by someone who cannot use a red/green cue - so the word is
        the encoding and the sign is only there to back it up. */
-    function carryMean(o){
+    function carryMean(o,unit){
       if(!o.errN) return '-';
       var m=o.errSum/o.errN;
       var w=Math.abs(m)<0.05?'on the number':(m<0?'short':'long');
-      return (m>=0?'+':'')+m.toFixed(1)+' yd '+w;
+      return (m>=0?'+':'')+m.toFixed(1)+' '+(unit||'yd')+' '+w;
     }
     function carrySessLabel(s){
       return (CARRY_MODES[s.mode]||s.mode)+
@@ -3529,14 +3600,14 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
        session cards that open, rolling tables, trend. What differs is that
        everything below the session list is rendered once PER MODE, under its
        own heading, because the two modes are not the same measurement. */
-    function carryTable(st,label,mode){
+    function carryTable(st,label,mode,unit){
       var rows=(st.dists||CARRY_DISTS).map(function(d){
         var o=st.dist[d];
         if(!o.n) return '';
         var third=mode==='zone'
           ? (o.short+' short · '+o.long+' long')
-          : carryMean(o);
-        return '<tr><td style="text-align:left;font-weight:700;color:#1F4E9D;padding:6px 4px;border-bottom:1px solid rgba(12,35,64,.1)">'+d+' yd</td>'+
+          : carryMean(o,unit);
+        return '<tr><td style="text-align:left;font-weight:700;color:#1F4E9D;padding:6px 4px;border-bottom:1px solid rgba(12,35,64,.1)">'+d+' '+(unit||'yd')+'</td>'+
           '<td style="text-align:center;padding:6px 4px;border-bottom:1px solid rgba(12,35,64,.1)">'+
             Math.round(o.hits/o.n*100)+'% ('+o.hits+' of '+o.n+')</td>'+
           '<td style="text-align:center;padding:6px 4px;border-bottom:1px solid rgba(12,35,64,.1)">'+third+'</td></tr>';
@@ -3612,15 +3683,16 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     function carryModeBlock(sess,mode){
       var mine=sess.filter(function(s){return s.mode===mode;});
       if(!mine.length) return '';
+      var U=ladderOf(mine[0]).unit;
       var name=CARRY_MODES[mode].toUpperCase();
       var out=groupLabel(name+' - '+mine.length+(mine.length===1?' SESSION':' SESSIONS'));
       out+='<div style="margin-top:8px">'+carryPhaseRows(mine,mode)+'</div>';
-      out+=carryTable(carryStats(mine,null),name+' - ALL LIES BY CARRY',mode);
+      out+=carryTable(carryStats(mine,null),name+' - ALL LIES BY CARRY',mode,U);
       Object.keys(CARRY_LIES).forEach(function(lie){
         var byLie=mine.filter(function(s){return s.lie===lie;});
         if(!byLie.length) return;
         out+=carryTable(carryStats(byLie,null),
-          name+' - '+CARRY_LIES[lie].toUpperCase()+' ONLY',mode);
+          name+' - '+CARRY_LIES[lie].toUpperCase()+' ONLY',mode,U);
       });
       out+=carryChart(mine,mode);
       return out;
@@ -3636,7 +3708,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
             'padding:8px 0'+(last?'':';border-bottom:1px solid rgba(143,160,184,.14)')+'">'+esc(p)+'</div>';
         }).join('')+
         '<div style="font-family:var(--font-body);font-size:12.5px;color:var(--steel);line-height:1.6;padding:10px 0 0;border-top:1px solid rgba(143,160,184,.14);margin-top:4px">'+
-        'Bands: '+ladderOf(d).dists.map(function(x){return x+' yd plus or minus '+carryTol(x);}).join(', ')+'.</div>'+
+        'Bands: '+ladderOf(d).dists.map(function(x){return x+' '+ladderOf(d).unit+' plus or minus '+carryTol(x);}).join(', ')+'.</div>'+
       '</div>';
       var hist='';
       if(sess.length){
@@ -3651,8 +3723,8 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
               '<div class="mono" style="font-size:11px;color:var(--steel);margin-top:2px">'+st.hits+' of '+st.n+' in band</div></div>'+
             '</div>'+
             '<div class="cdetail" hidden><div style="margin-top:8px">'+carryPhaseRows([s],s.mode)+'</div>'+
-              carryTable(carryStats([s],'block'),'THIS SESSION - BLOCK PHASE',s.mode)+
-              carryTable(carryStats([s],'random'),'THIS SESSION - RANDOM PHASE',s.mode)+
+              carryTable(carryStats([s],'block'),'THIS SESSION - BLOCK PHASE',s.mode,ladderOf(s).unit)+
+              carryTable(carryStats([s],'random'),'THIS SESSION - RANDOM PHASE',s.mode,ladderOf(s).unit)+
               (s.notes?'<div style="font-family:var(--font-body);font-size:12px;color:var(--steel);margin-top:10px;line-height:1.6">'+esc(s.notes)+'</div>':'')+
             '</div>'+
           '</div>';
@@ -3698,7 +3770,9 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
           return carryChip(k,CARRY_MODES[k],'data-cmode',CLOG.mode===k);
         }).join('')+'</div>';
       h+='<div style="font-family:var(--font-body);font-size:11.5px;color:var(--steel);margin-top:6px;line-height:1.6">'+
-        'Launch monitor: type the carry the MLM2Pro read, in yards. Landing zone: tees mark the number and you record short, in or long.</div>';
+        (L.unit==='ft'
+          ? 'Measured: pace or tape how far past or short the ball finished, in feet. Landing zone: mark the hole and record short, in or long.'
+          : 'Launch monitor: type the carry the MLM2Pro read, in yards. Landing zone: tees mark the number and you record short, in or long.')+'</div>';
       h+=groupLabel('LIE - OPTIONAL');
       h+='<div style="display:flex;gap:8px;margin-top:8px">'+
         Object.keys(CARRY_LIES).map(function(k){
@@ -3809,7 +3883,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       for(var i=0;i<NS;i++){
         var t=carryTarget(CLOG,i), sc=carryScore(t,CLOG.shots[i],CLOG.mode);
         if(!sc){
-          msg('Shot '+(i+1)+' ('+t+' yd, '+(i<NBS?'block':'random')+' phase) is not recorded. All '+NS+' shots are required.');
+          msg('Shot '+(i+1)+' ('+t+' '+LS.unit+', '+(i<NBS?'block':'random')+' phase) is not recorded. All '+NS+' shots are required.');
           return;
         }
       }
@@ -3828,7 +3902,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
         out.innerHTML='<div style="font-family:var(--font-body);font-size:12.5px;color:var(--cream);padding:10px 2px">Session saved to the sheet.</div>'+
           '<div style="margin-top:8px">'+carryPhaseRows([saved],CLOG.mode)+
           statRow('Inside band, whole session',st.hits+' of '+st.n)+'</div>'+
-          carryTable(carryStats([saved],null),'THIS SESSION BY CARRY',CLOG.mode);
+          carryTable(carryStats([saved],null),'THIS SESSION BY CARRY',CLOG.mode,ladderOf(CLOG).unit);
         if(btn){btn.textContent='SAVED';}
         CLOG=null;
         return loadCarry();
