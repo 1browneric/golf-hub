@@ -104,16 +104,14 @@ input,textarea,select{font-family:inherit}
 .puttfield input{width:100%;padding:10px 4px;border:1.5px solid rgba(12,35,64,.25);border-radius:10px;
   background:#fff;font-size:16px;font-weight:700;color:#16243A;text-align:center}
 .puttfield input:focus{outline:2px solid var(--gold-deep)}
-.puttmiss{display:block;padding:10px 16px 12px;border-bottom:1px solid rgba(12,35,64,.12)}
-.pmrow{display:flex;align-items:center;gap:7px;margin-top:7px}
+.puttmiss{display:flex;align-items:center;gap:7px;padding:10px 16px 12px;
+  border-bottom:1px solid rgba(12,35,64,.12)}
 .pmlbl{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;
   color:#5C6B82;width:52px;flex:0 0 auto}
-.pmchip{font-family:var(--sans);font-size:12px;line-height:1;padding:9px 10px;border-radius:999px;
+.pmchip{font-family:var(--sans);font-size:12px;line-height:1;padding:10px 12px;border-radius:999px;
   border:1.5px solid rgba(12,35,64,.25);background:#F4EFE4;color:#0C2340;cursor:pointer;
   flex:1 1 auto;text-align:center;white-space:nowrap}
 .pmchip.on{background:#0C2340;border-color:#0C2340;color:#F4EFE4;font-weight:600}
-.pmhint{font-family:var(--mono);font-size:9.5px;line-height:1.5;color:#8792A4;
-  letter-spacing:.03em;margin-top:8px}
 .putttot{flex:none;display:flex;flex-direction:column;align-items:center;gap:4px}
 .putttot .lbl{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:#5C6B82}
 .putttot b{font-size:22px;color:#0C2340}
@@ -675,216 +673,79 @@ const BREAK_UD = {
 const UD_LABELS = [["flat","Flat putt"],["u1","1% uphill"],["u2","2% uphill"],["u3","3% uphill"],
                    ["d1","1% downhill"],["d2","2% downhill"],["d3","3% downhill"]];
 let puttIn = { len:null, slope:"2", stimp:"10", ud:"flat", out:"" };
-/* Putt miss, two axes, first two putts only (a third putt is not scored by any
-   of Eric's metrics). SIDE separates a read from a stroke; DEPTH separates
-   line from speed. "C" is centre - struck on line and left short or run past,
-   which is the pure speed miss. Left blank when the putt was holed. Mirrors
-   the approach capture, which is also two axes rather than one word. */
-/* shotEditor() has its own local `sel`; this one is module level because the
-   hole render needs it too. Blank is a real choice here - it means holed. */
+/* Putt miss - ONE row, four chips, FIRST PUTT ONLY (Eric, 2026-08-16: "Just
+   put it on one line under. It needs to be like the miss like within the shot.
+   just simple. mostly wanting to know for a miss on the first putt. dont care
+   about a miss on the second shot right now.").
 
-/* ---------- state ----------
-   cells: "f.<hole>.<key>" score,p1,p2,p3,putts,pen,fir,gir,note
-          m1s,m1d,m2s,m2d  putt miss side/depth for the first two putts
-          "sh.<hole>" shots array   "par.<hole>" 3|4|5
-          "course" string   "rdate" YYYY-MM-DD   "rnote" string
-          "tmode" basic|advanced */
-let state = { cells: {}, resetAt: 0 };
-let fields = {};
-let shots = {};
-let parOv = {};
-let course = "";
-let rdate = "";
-let rnote = "";
-let trackMode = "basic";   // "basic" | "advanced" — how this round is being kept
-let tab = "hole";
-let hole = 1;
-let editing = null;
-let mode = "connecting";
-let lastExport = null;
-let caddyIn = { dist:null, cap:null, mph:null, dir:"calm", out:"" };
-let caddyTab = "swing";
-let windTab = "into";
+   Deliberately the same four words and the same row shape as the shot MISS
+   chips, so there is one thing to learn rather than two. Left/Right and
+   Short/Long are independent: tap either, both, or neither, and tap a lit chip
+   to clear it. Blank means it went in, or that he did not look.
 
-const validShotArr = v => Array.isArray(v) && v.every(s => s && typeof s === "object");
-const validCell = (k, c) => {
-  if (!c || typeof c.t !== "number") return false;
-  if (k.startsWith("sh.")) return validShotArr(c.v);
-  return c.v === null || typeof c.v === "number" || typeof c.v === "string";
-};
+   Left/Right answers "was the read wrong". Short/Long answers "was the speed
+   wrong". Those are the two questions his 08/16 round could not settle - he
+   knew his line "didnt match my eye" over the first five holes and the log had
+   no field to confirm it. */
+const MISS_SIDE  = {Left: "L", Right: "R"};
+const MISS_DEPTH = {Short: "Short", Long: "Long"};
 
-function derive(){
-  fields = {}; shots = {}; parOv = {}; course = ""; rdate = ""; rnote = ""; trackMode = "basic";
-  for (const [k, c] of Object.entries(state.cells)){
-    if (c.t <= state.resetAt) continue;
-    if (k.startsWith("sh.")){ shots[k.slice(3)] = c.v; continue; }
-    if (k.startsWith("par.")){ if ([3,4,5].includes(c.v)) parOv[k.slice(4)] = c.v; continue; }
-    if (k === "course"){ course = typeof c.v === "string" ? c.v : ""; continue; }
-    if (k === "rdate"){ rdate = typeof c.v === "string" ? c.v : ""; continue; }
-    if (k === "rnote"){ rnote = typeof c.v === "string" ? c.v : ""; continue; }
-    if (k === "tmode"){ if (c.v === "basic" || c.v === "advanced") trackMode = c.v; continue; }
-    if (k.startsWith("f.")){
-      const [, hn, key] = k.split(".");
-      if (!fields[hn]) fields[hn] = {};
-      fields[hn][key] = c.v;
-    }
-  }
-}
-function merge(incoming){
-  if (!incoming || typeof incoming !== "object" || !incoming.cells) return false;
-  let changed = false;
-  if ((incoming.resetAt||0) > state.resetAt){ state.resetAt = incoming.resetAt; changed = true; }
-  for (const [k, c] of Object.entries(incoming.cells || {})){
-    if (!validCell(k, c)) continue;
-    if (!state.cells[k] || c.t > state.cells[k].t){ state.cells[k] = c; changed = true; }
-  }
-  if (changed) derive();
-  return changed;
-}
-function lsLoad(){ try{ const s = JSON.parse(localStorage.getItem(LS_KEY)); if (s && s.cells) state = s; }catch(e){} derive(); }
-function lsSave(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){} }
-
-/* ---------- writes ----------
-   ntfy.sh truncates/attaches bodies over ~4 KB, so NEVER post the whole
-   state: publish only the cells dirtied since the last successful send,
-   and re-seed the channel in small chunks. */
-let pubTimer = null;
-const dirty = new Set();
-async function postMsg(payload){
-  await fetch(`${NTFY}/${TOPIC}`, { method:"POST", body: JSON.stringify(payload) });
-}
-function publish(){
-  clearTimeout(pubTimer);
-  pubTimer = setTimeout(async () => {
-    const keys = [...dirty];
-    const payload = { cells:{}, resetAt: state.resetAt };
-    for (const k of keys) if (state.cells[k]) payload.cells[k] = state.cells[k];
-    try {
-      await postMsg(payload);
-      keys.forEach(k => dirty.delete(k));
-      if (mode !== "live") { mode = "live"; render(); }
-    } catch(e){ mode = "offline"; render(); }
-  }, 350);
-}
-async function seedChannel(){
-  /* replay everything we hold, 12 cells per message to stay under the cap */
-  const keys = Object.keys(state.cells);
-  for (let i = 0; i < keys.length; i += 12){
-    const payload = { cells:{}, resetAt: state.resetAt };
-    for (const k of keys.slice(i, i+12)) payload.cells[k] = state.cells[k];
-    try { await postMsg(payload); } catch(e){ return; }
-  }
-}
-function setCell(key, val){
-  state.cells[key] = { v: val, t: Date.now() };
-  dirty.add(key);
-  derive(); lsSave(); publish();
-}
-const setField = (hn, key, val) => { setCell(`f.${hn}.${key}`, val); render(); };
-const setShots = (hn, arr) => { setCell(`sh.${hn}`, arr); render(); };
-function clearRound(){
-  if (!confirm("Wipe this round from every device?")) return;
-  state = { cells: {}, resetAt: Date.now() };
-  dirty.clear();
-  hole = 1; editing = null; derive(); lsSave();
-  postMsg({ cells:{}, resetAt: state.resetAt }).catch(()=>{});
-  render(); syncMeta();
+function puttMissBlock(f){
+  const chip = (label, axis, val) => `<button type="button" class="pmchip${
+    f["m1" + axis] === val ? " on" : ""}" data-pm="${axis}" data-pmv="${val}">${label}</button>`;
+  return `<div class="puttmiss"><span class="pmlbl">P1 miss</span>` +
+    Object.keys(MISS_SIDE).map(k => chip(k, "s", MISS_SIDE[k])).join("") +
+    Object.keys(MISS_DEPTH).map(k => chip(k, "d", MISS_DEPTH[k])).join("") +
+    `</div>`;
 }
 
-/* ---------- helpers ---------- */
-const F = hn => fields[hn] || {};
-const SH = hn => shots[hn] || [];
-const parFor = hn => parOv[hn] || 4;
-const roundPar = () => HOLES.reduce((a,h)=>a+parFor(h.n),0);
-const fwPossible = () => HOLES.filter(h=>parFor(h.n)!==3).length;
-const todayISO = () => { const d=new Date(); const p=n=>String(n).padStart(2,"0");
-  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; };
-const suggestType = (isFirst, db) => isFirst ? "Drive"
-  : db == null ? null : db >= 176 ? "Long App (176+)" : db >= 101 ? "Mid App (101-175)" : "Short App (100&In)";
-function suggestClub(db, isFirst, par){
-  if (db == null) return isFirst && par !== 3 ? "D" : null;
-  if (isFirst && par !== 3) return "D";
-  let best = null, bestScore = 1e9;
-  for (const c of CLUBS){
-    const spec = CADDY[c];
-    if (!spec) continue;
-    const carry = spec.c[0];
-    const score = carry < db ? (db - carry) * 1.25 : carry - db;
-    if (score < bestScore){ bestScore = score; best = c; }
-  }
-  return best;
+function commitMiss(axis, val){
+  /* Tapping the lit chip clears it - the same toggle the strike and finish
+     chips use. Nothing here is ever required. */
+  const f = F(hole);
+  setCell(`f.${hole}.m1${axis}`, f["m1" + axis] === val ? null : val);
+  render();
 }
+
 /* RECOVERY NUDGE (Eric, 2026-08-16).
    `suggestType` fills Type from the distance alone, so a ball hit sideways out
    of trees from 250 yards is auto-labelled "Long App (176+)". On 08/16 all four
-   of Eric's tree holes carried an approach type for exactly that reason, and the
-   only honest marker on them was a hand-added `Layup` result tag. Four tee shots
-   into trees cost him +5 of a +9 round while the card charged the damage to his
-   irons.
+   of Eric's tree holes carried an approach type for exactly that reason, and
+   the only honest marker on them was a hand-added `Layup` tag.
 
-   So: when a shot travels far less than that club actually carries, say so and
-   offer the two types that describe it. HALF the club's carry is the threshold -
-   deliberately conservative, because a genuine layup or a knockdown should not
-   trip it. Eric's 08/16 punch-outs advanced 25, 65 and 87 yards on a 7 iron that
-   carries 184; every one of them clears the bar by a wide margin.
+   Recovery shots are now EXCLUDED from strokes gained, so this tag decides
+   whether a shot is scored at all - which makes getting it right at entry time
+   matter more, not less.
+
+   HALF the club's carry is the threshold, deliberately conservative so a
+   genuine layup or knockdown does not trip it. Eric's 08/16 punch-outs
+   advanced 25, 65 and 87 yards on a 7 iron that carries 184.
 
    It NUDGES, it never rewrites. The type he picks is the type that is stored. */
-const RECOVERY_RATIO = 0.5;
+var RECOVERY_RATIO = 0.5;
 function recoveryHint(club, db, da){
   if (!club || db == null || da == null) return null;
-  const spec = CADDY[club];
+  var spec = CADDY[club];
   if (!spec || !spec.c) return null;
-  const carry = spec.c[0];
-  const went = db - da;
+  var carry = spec.c[0];
+  var went = db - da;
   if (!(went > 0) || went >= carry * RECOVERY_RATIO) return null;
   return { went: Math.round(went), carry: Math.round(carry) };
 }
 
-/* Painted IN PLACE, never by re-rendering. The shot editor deliberately does
-   not re-render while it is open - a re-render would steal focus mid-entry -
-   so it keeps the "Auto: <type>" label current by hand, and this does the
-   same. Called on every club / distance change and once when the editor opens. */
+/* Painted IN PLACE, never by re-rendering: the shot editor deliberately does
+   not re-render while open because that steals focus mid-entry, which is why
+   the "Auto: <type>" label is also kept current by hand. */
 function paintRecoveryHint(){
-  const box = document.getElementById("ed-recovery");
+  var box = document.getElementById("ed-recovery");
   if (!box || !editing) return;
-  const d = editing.draft;
-  const r = recoveryHint(d.club, d.db, d.da);
+  var d = editing.draft;
+  var r = recoveryHint(d.club, d.db, d.da);
   if (!r){ box.hidden = true; box.innerHTML = ""; return; }
   box.hidden = false;
-  box.innerHTML = `That went <b>${r.went} yd</b> on a club that carries <b>${r.carry}</b>. ` +
-    `If you had no swing at it, set Type to <b>Punch Out</b> or <b>Layup</b> - ` +
-    `otherwise it is scored as an approach you missed.`;
-}
-
-/* Putt miss, two axes, first two putts only - a third putt is scored by none
-   of Eric's metrics. SIDE separates a read from a stroke; DEPTH separates line
-   from speed. Every chip is optional and they are independent: tap one, both or
-   neither, and tap again to clear. Blank means it went in, or that he did not
-   look. Chips rather than dropdowns because the whole tracker is tap targets
-   and four selects is slow with a glove on (Eric, 2026-08-16). */
-const MISS_SIDE  = ["L", "C", "R"];
-const MISS_DEPTH = ["Short", "Past"];
-
-function puttMissBlock(f){
-  const row = (i, axis, opts, label) => `<div class="pmrow">
-      <span class="pmlbl">${label}</span>
-      ${opts.map(o => `<button type="button" class="pmchip${
-        (f["m" + i + axis] === o) ? " on" : ""}" data-pm="${i}${axis}" data-pmv="${o}">${o}</button>`).join("")}
-    </div>`;
-  return `<div class="puttmiss">
-    ${[1, 2].map(i => row(i, "s", MISS_SIDE, "P" + i + " side") +
-                      row(i, "d", MISS_DEPTH, "P" + i + " depth")).join("")}
-    <div class="pmhint">Optional. Blank means it went in. C is on line, so C plus Short
-      or Past is pure speed. Tap a chip again to clear it.</div>
-  </div>`;
-}
-
-function commitMiss(key, val){
-  /* Tapping the chip that is already on clears it - the same toggle the strike
-     and finish chips use. Nothing here is ever required. */
-  const f = F(hole);
-  setCell(`f.${hole}.m${key}`, f["m" + key] === val ? null : val);
-  render();
+  box.innerHTML = "That went <b>" + r.went + " yd</b> on a club that carries <b>" +
+    r.carry + "</b>. If you had no swing at it, set Type to <b>Punch Out</b> or " +
+    "<b>Layup</b> - otherwise it is scored as an approach you missed.";
 }
 
 function puttCount(hn){
@@ -973,7 +834,6 @@ function buildRoundJSON(){
       /* Putt miss, first two putts. Sent as '' rather than null when unset so
          the Apps Script writes a blank cell instead of the word "null". */
       p1_miss_side: f.m1s ?? "", p1_miss_depth: f.m1d ?? "",
-      p2_miss_side: f.m2s ?? "", p2_miss_depth: f.m2d ?? "",
       putts_tm: puttCount(h.n) ?? 0,
       score: f.score ?? null,
       plus_minus: plusMinus(f.score, parFor(h.n)),

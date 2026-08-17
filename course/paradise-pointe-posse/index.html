@@ -86,16 +86,14 @@ input,textarea,select{font-family:inherit}
 .puttfield input{width:100%;padding:10px 4px;border:1.5px solid rgba(12,35,64,.25);border-radius:10px;
   background:#fff;font-family:var(--mono);font-size:16px;font-weight:700;color:#16243A;text-align:center}
 .puttfield input:focus{outline:2px solid var(--gold-deep)}
-.puttmiss{display:block;padding:10px 16px 12px;border-bottom:1px solid rgba(12,35,64,.12)}
-.pmrow{display:flex;align-items:center;gap:7px;margin-top:7px}
+.puttmiss{display:flex;align-items:center;gap:7px;padding:10px 16px 12px;
+  border-bottom:1px solid rgba(12,35,64,.12)}
 .pmlbl{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;
   color:#5C6B82;width:52px;flex:0 0 auto}
-.pmchip{font-family:var(--sans);font-size:12px;line-height:1;padding:9px 10px;border-radius:999px;
+.pmchip{font-family:var(--sans);font-size:12px;line-height:1;padding:10px 12px;border-radius:999px;
   border:1.5px solid rgba(12,35,64,.25);background:#F4EFE4;color:#0C2340;cursor:pointer;
   flex:1 1 auto;text-align:center;white-space:nowrap}
 .pmchip.on{background:#0C2340;border-color:#0C2340;color:#F4EFE4;font-weight:600}
-.pmhint{font-family:var(--mono);font-size:9.5px;line-height:1.5;color:#8792A4;
-  letter-spacing:.03em;margin-top:8px}
 .putttot{flex:none;display:flex;flex-direction:column;align-items:center;gap:4px}
 .putttot .lbl{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:#5C6B82}
 .putttot b{font-family:var(--mono);font-size:22px;color:#0C2340}
@@ -1535,34 +1533,37 @@ function suggestClub(db, isFirst, par){
   }
   return best;
 }
-/* Putt miss, two axes, first two putts only - a third putt is scored by none
-   of Eric's metrics. SIDE separates a read from a stroke; DEPTH separates line
-   from speed. Every chip is optional and they are independent: tap one, both or
-   neither, and tap again to clear. Blank means it went in, or that he did not
-   look. Chips rather than dropdowns because the whole tracker is tap targets
-   and four selects is slow with a glove on (Eric, 2026-08-16). */
-const MISS_SIDE  = ["L", "C", "R"];
-const MISS_DEPTH = ["Short", "Past"];
+/* Putt miss - ONE row, four chips, FIRST PUTT ONLY (Eric, 2026-08-16: "Just
+   put it on one line under. It needs to be like the miss like within the shot.
+   just simple. mostly wanting to know for a miss on the first putt. dont care
+   about a miss on the second shot right now.").
+
+   Deliberately the same four words and the same row shape as the shot MISS
+   chips, so there is one thing to learn rather than two. Left/Right and
+   Short/Long are independent: tap either, both, or neither, and tap a lit chip
+   to clear it. Blank means it went in, or that he did not look.
+
+   Left/Right answers "was the read wrong". Short/Long answers "was the speed
+   wrong". Those are the two questions his 08/16 round could not settle - he
+   knew his line "didnt match my eye" over the first five holes and the log had
+   no field to confirm it. */
+const MISS_SIDE  = {Left: "L", Right: "R"};
+const MISS_DEPTH = {Short: "Short", Long: "Long"};
 
 function puttMissBlock(f){
-  const row = (i, axis, opts, label) => `<div class="pmrow">
-      <span class="pmlbl">${label}</span>
-      ${opts.map(o => `<button type="button" class="pmchip${
-        (f["m" + i + axis] === o) ? " on" : ""}" data-pm="${i}${axis}" data-pmv="${o}">${o}</button>`).join("")}
-    </div>`;
-  return `<div class="puttmiss">
-    ${[1, 2].map(i => row(i, "s", MISS_SIDE, "P" + i + " side") +
-                      row(i, "d", MISS_DEPTH, "P" + i + " depth")).join("")}
-    <div class="pmhint">Optional. Blank means it went in. C is on line, so C plus Short
-      or Past is pure speed. Tap a chip again to clear it.</div>
-  </div>`;
+  const chip = (label, axis, val) => `<button type="button" class="pmchip${
+    f["m1" + axis] === val ? " on" : ""}" data-pm="${axis}" data-pmv="${val}">${label}</button>`;
+  return `<div class="puttmiss"><span class="pmlbl">P1 miss</span>` +
+    Object.keys(MISS_SIDE).map(k => chip(k, "s", MISS_SIDE[k])).join("") +
+    Object.keys(MISS_DEPTH).map(k => chip(k, "d", MISS_DEPTH[k])).join("") +
+    `</div>`;
 }
 
-function commitMiss(key, val){
-  /* Tapping the chip that is already on clears it - the same toggle the strike
-     and finish chips use. Nothing here is ever required. */
+function commitMiss(axis, val){
+  /* Tapping the lit chip clears it - the same toggle the strike and finish
+     chips use. Nothing here is ever required. */
   const f = F(hole);
-  setCell(`f.${hole}.m${key}`, f["m" + key] === val ? null : val);
+  setCell(`f.${hole}.m1${axis}`, f["m1" + axis] === val ? null : val);
   render();
 }
 
@@ -1570,12 +1571,11 @@ function commitMiss(key, val){
    `suggestType` fills Type from the distance alone, so a ball hit sideways out
    of trees from 250 yards is auto-labelled "Long App (176+)". On 08/16 all four
    of Eric's tree holes carried an approach type for exactly that reason, and
-   the only honest marker on them was a hand-added `Layup` tag. Four tee shots
-   into trees cost him +5 of a +9 round while the card charged his irons.
+   the only honest marker on them was a hand-added `Layup` tag.
 
-   Since recovery shots are now EXCLUDED from strokes gained, the tag is what
-   decides whether a shot is scored at all - which makes getting it right at
-   entry time matter more, not less.
+   Recovery shots are now EXCLUDED from strokes gained, so this tag decides
+   whether a shot is scored at all - which makes getting it right at entry time
+   matter more, not less.
 
    HALF the club's carry is the threshold, deliberately conservative so a
    genuine layup or knockdown does not trip it. Eric's 08/16 punch-outs
@@ -1698,7 +1698,6 @@ function buildRoundJSON(){
       /* Putt miss, first two putts. '' rather than null when unset so the
          Apps Script writes a blank cell instead of the word "null". */
       p1_miss_side: f.m1s ?? "", p1_miss_depth: f.m1d ?? "",
-      p2_miss_side: f.m2s ?? "", p2_miss_depth: f.m2d ?? "",
       putts_tm: puttCount(h.n) ?? 0,
       score: f.score ?? null,
       plus_minus: plusMinus(f.score, h.par),
