@@ -1473,6 +1473,48 @@ function commitMiss(key, val){
   render();
 }
 
+/* RECOVERY NUDGE (Eric, 2026-08-16).
+   `suggestType` fills Type from the distance alone, so a ball hit sideways out
+   of trees from 250 yards is auto-labelled "Long App (176+)". On 08/16 all four
+   of Eric's tree holes carried an approach type for exactly that reason, and
+   the only honest marker on them was a hand-added `Layup` tag. Four tee shots
+   into trees cost him +5 of a +9 round while the card charged his irons.
+
+   Since recovery shots are now EXCLUDED from strokes gained, the tag is what
+   decides whether a shot is scored at all - which makes getting it right at
+   entry time matter more, not less.
+
+   HALF the club's carry is the threshold, deliberately conservative so a
+   genuine layup or knockdown does not trip it. Eric's 08/16 punch-outs
+   advanced 25, 65 and 87 yards on a 7 iron that carries 184.
+
+   It NUDGES, it never rewrites. The type he picks is the type that is stored. */
+var RECOVERY_RATIO = 0.5;
+function recoveryHint(club, db, da){
+  if (!club || db == null || da == null) return null;
+  var spec = CADDY[club];
+  if (!spec || !spec.c) return null;
+  var carry = spec.c[0];
+  var went = db - da;
+  if (!(went > 0) || went >= carry * RECOVERY_RATIO) return null;
+  return { went: Math.round(went), carry: Math.round(carry) };
+}
+
+/* Painted IN PLACE, never by re-rendering: the shot editor deliberately does
+   not re-render while open because that steals focus mid-entry, which is why
+   the "Auto: <type>" label is also kept current by hand. */
+function paintRecoveryHint(){
+  var box = document.getElementById("ed-recovery");
+  if (!box || !editing) return;
+  var d = editing.draft;
+  var r = recoveryHint(d.club, d.db, d.da);
+  if (!r){ box.hidden = true; box.innerHTML = ""; return; }
+  box.hidden = false;
+  box.innerHTML = "That went <b>" + r.went + " yd</b> on a club that carries <b>" +
+    r.carry + "</b>. If you had no swing at it, set Type to <b>Punch Out</b> or " +
+    "<b>Layup</b> - otherwise it is scored as an approach you missed.";
+}
+
 function puttCount(hn){
   const f = F(hn);
   if (f.putts != null) return f.putts;
@@ -2259,6 +2301,7 @@ function shotEditor(){
         ${label === "Miss" ? dispMissFields(d) : ""}
       </div>`).join("")}
     </div>
+    <div class="edhint" id="ed-recovery" hidden></div>
     <div class="edactions">
       <button class="edsave" data-act="edsave">${editing.idx === -1 ? "Add shot" : "Save shot"}</button>
       <button class="edcancel" data-act="edcancel">Cancel</button>
@@ -2919,11 +2962,13 @@ function bind(){
       }
     };
   });
+  paintRecoveryHint();
   const edSync = { "ed-club":"club", "ed-lie":"lie", "ed-type":"type" };
   for (const [id, key] of Object.entries(edSync)){
     const el = document.getElementById(id);
     if (el) el.onchange = () => {
       editing.draft[key] = el.value || null;
+      paintRecoveryHint();   /* the club changes the answer */
     };
   }
   for (const [id, key] of [["ed-db","db"],["ed-da","da"]]){
@@ -2937,6 +2982,7 @@ function bind(){
         const opt = document.querySelector("#ed-type option[value='']");
         if (opt) opt.textContent = t ? `Auto: ${t}` : "Auto";
       }
+      paintRecoveryHint();
     };
   }
   /* the two Miss distances — the only dispersion inputs, and they write to
