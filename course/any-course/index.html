@@ -112,6 +112,11 @@ input,textarea,select{font-family:inherit}
   border:1.5px solid rgba(12,35,64,.25);background:#F4EFE4;color:#0C2340;cursor:pointer;
   flex:1 1 auto;text-align:center;white-space:nowrap}
 .pmchip.on{background:#0C2340;border-color:#0C2340;color:#F4EFE4;font-weight:600}
+/* approach dispersion — TWO NUMBER BOXES UNDER THE MISS CHIPS, and nothing
+   else. The chip above already says which way it missed, so the box only says
+   how far, in feet. They reuse .edrow / .edfield / .edlbl unchanged, so the
+   editor stays one thing rather than growing a second styled region. */
+.dspmiss{margin-top:10px}
 .putttot{flex:none;display:flex;flex-direction:column;align-items:center;gap:4px}
 .putttot .lbl{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:#5C6B82}
 .putttot b{font-size:22px;color:#0C2340}
@@ -707,6 +712,368 @@ function commitMiss(axis, val){
   render();
 }
 
+/* Approach dispersion — the shared, pure core.
+ *
+ * Loaded by BOTH surfaces and nowhere else:
+ *   - the round tracker (skills/round-tracker/template.html, inlined by
+ *     skills/osm-course-book/build_tracker.py) — capture;
+ *   - the Golf Hub (design/golf-hub/index.html) — the two maps.
+ * The Hub embeds this file verbatim between the DISP-MODULE markers;
+ * tests/test_dispersion.py fails if the two copies drift.
+ *
+ * Pure functions only: no DOM, no storage, no fetch. Everything that decides a
+ * sign, a band or a distance lives here so the tracker and the Hub can never
+ * disagree about what a logged shot means.
+ *
+ * HARD BOUNDARIES (do not relax):
+ *   - This module never reads or writes the putt-distance field (p1/p2/p3).
+ *     Putting strokes gained depends on exactly one logged number and that
+ *     stays true.
+ *   - Dispersion is its own store, keyed by round date + course + hole. It is
+ *     never part of the round record, buildRoundJSON, the Apps Script payload
+ *     or the Google Sheet.
+ *   - NO BACKFILL. Nothing here estimates, infers or reconstructs a component
+ *     from putt distance or any other proxy. A round logged before these
+ *     fields existed has no dispersion data and never will. Both maps start
+ *     empty and fill going forward. That is intended.
+ */
+
+var DISP_VERSION = 1;
+
+/* ---------- capture vocabulary ---------- */
+
+/* Lie the approach was played FROM. A 40 yard shot from fairway and one from
+   thick rough are different populations, so this is a filter, not a label. */
+var DISP_LIES = ["Fairway", "Rough", "Sand", "Other"];
+
+/* Where the ball finished relative to the putting surface. Encoded as dot
+   SHAPE on the map, never as colour. */
+var DISP_FINISH = ["On green", "Off green"];
+
+/* The unsigned direction words Eric actually taps. He never types a minus
+   sign; the sign is derived here, once, at import. */
+var DISP_LONG_DIRS  = ["long", "short"];
+var DISP_RIGHT_DIRS = ["right", "left"];
+
+/* ---------- distance bands (yards played from) ----------
+   Toggles, not separate fixed charts. min inclusive, max exclusive, so a
+   shot from exactly 25 yards lands in "25-50" and 50 lands in "50-75". */
+var DISP_BANDS = [
+  { key: "u25",     label: "Inside 25", min: 0,   max: 25,       rep: 15  },
+  { key: "25-50",   label: "25-50",     min: 25,  max: 50,       rep: 37  },
+  { key: "50-75",   label: "50-75",     min: 50,  max: 75,       rep: 62  },
+  { key: "75-100",  label: "75-100",    min: 75,  max: 100,      rep: 87  },
+  { key: "100-125", label: "100-125",   min: 100, max: 125,      rep: 112 },
+  { key: "125-175", label: "125-175",   min: 125, max: 175,      rep: 150 },
+  { key: "175-200", label: "175-200",   min: 175, max: 200,      rep: 187 },
+  { key: "200+",    label: "200+",      min: 200, max: Infinity, rep: 215 }
+];
+
+function dispBandFor(yards) {
+  if (yards == null || !isFinite(yards) || yards < 0) return null;
+  for (var i = 0; i < DISP_BANDS.length; i++) {
+    var b = DISP_BANDS[i];
+    if (yards >= b.min && yards < b.max) return b.key;
+  }
+  return null;
+}
+
+function dispBand(key) {
+  for (var i = 0; i < DISP_BANDS.length; i++) {
+    if (DISP_BANDS[i].key === key) return DISP_BANDS[i];
+  }
+  return null;
+}
+
+/* The tracker's own Lie list is finer-grained than the four dispersion flags.
+   Folding happens here so the tracker and the Hub agree, and so the block can
+   prefill from the shot Eric already logged instead of asking twice.
+   Deep Rough folds into Rough; Tee and Recovery into Other. */
+function dispLieFromShotLie(lie) {
+  switch (String(lie || "").trim().toLowerCase()) {
+    case "fairway":    return "Fairway";
+    case "rough":
+    case "deep rough": return "Rough";
+    case "sand":       return "Sand";
+    case "tee":
+    case "recovery":
+    case "other":      return "Other";
+    default:           return null;
+  }
+}
+
+/* Which shots get a dispersion block offered without being asked. The three
+   App types are approaches by definition; a par-3 tee shot is one too, and the
+   tracker types it "Drive", so the caller passes par and isFirst. Any other
+   shot can still be opened by hand — this decides the DEFAULT, not the limit. */
+function dispIsApproach(type, par, isFirst) {
+  if (isFirst && par === 3) return true;
+  return ["Long App (176+)", "Mid App (101-175)", "Short App (100&In)"].indexOf(type) !== -1;
+}
+
+/* ---------- the unit he is typing in ----------
+   The two boxes under the Miss chips change unit with where the ball finished:
+   ON THE GREEN he measures in FEET, anywhere else in YARDS. Nobody says "my
+   ball is nine feet into the rough" or "I was six yards past the pin".
+
+   Storage stays in FEET always, so the maps, the green reference and the
+   proximity ramp all speak one unit and never have to ask. The conversion
+   happens once, here, at import — the same place the sign is decided. */
+var DISP_FT_PER_YD = 3;
+
+function dispUnit(onGreen) { return onGreen ? "ft" : "yd"; }
+
+function dispToFeet(value, unit) {
+  if (value === null || value === undefined || value === "") return null;
+  var n = typeof value === "number" ? value : Number(value);
+  if (!isFinite(n)) return null;
+  return unit === "yd" ? n * DISP_FT_PER_YD : n;
+}
+
+/* The way back out, for re-opening a saved shot. Storage is feet; the box has
+   to show the number he actually typed, in the unit he typed it in. Without
+   this a shot entered as 20 yards re-opened reading 60 against a "yd" label,
+   and saving it again stored 180 — wrong by 3x, then 9x, silently. */
+function dispFromFeet(feet, unit) {
+  if (feet === null || feet === undefined || feet === "") return null;
+  var n = typeof feet === "number" ? feet : Number(feet);
+  if (!isFinite(n)) return null;
+  return unit === "yd" ? n / DISP_FT_PER_YD : n;
+}
+
+/* Which way it missed, from the Miss chips.
+   The chips are a MULTI-SELECT describing the shape of the shot, so nothing
+   stops both ends of an axis being on at once. When they are, the direction is
+   genuinely ambiguous and this returns "" — which makes the distance
+   unresolvable and puts it in front of him, rather than quietly taking
+   whichever one happened to be tested first. That silent guess once stored a
+   short miss as +60 long. */
+function dispDirFrom(tags, positiveWord, negativeWord) {
+  var list = tags || [];
+  var cap = function (w) { return w.charAt(0).toUpperCase() + w.slice(1); };
+  var pos = list.indexOf(cap(positiveWord)) !== -1;
+  var neg = list.indexOf(cap(negativeWord)) !== -1;
+  if (pos && neg) return "";          // ambiguous — refuse, do not pick
+  if (pos) return positiveWord;
+  if (neg) return negativeWord;
+  return "";
+}
+
+/* ---------- sign derivation ----------
+   The one place a direction word becomes a sign.
+     short -> negative leave_long_ft      long  -> positive
+     left  -> negative leave_right_ft     right -> positive
+   A ZERO component is zero whatever the direction says, and the direction may
+   be blank — pin high is leave_long_ft = 0, and dead on line is
+   leave_right_ft = 0. Zero is a real, complete answer, not a missing one.
+
+   Anything else that cannot be resolved returns null rather than a guess: a
+   non-zero distance with no direction tapped, a negative number (he never
+   types one, so a minus is a bug or a paste, not an intent), or junk. Callers
+   treat null as "not plottable yet" and dispValidate() says why. */
+
+function dispSignedComponent(ft, dir, negativeWord) {
+  if (ft === null || ft === undefined || ft === "") return null;
+  var n = typeof ft === "number" ? ft : Number(ft);
+  if (!isFinite(n)) return null;
+  if (n < 0) return null;              // unsigned input only — never flip it silently
+  if (n === 0) return 0;               // direction is irrelevant and may be blank
+  if (!dir) return null;               // non-zero needs a side
+  var d = String(dir).trim().toLowerCase();
+  if (d === negativeWord) return -n;
+  return n;
+}
+
+function dispSignedLong(ft, dir) {
+  /* dir: "long" | "short" | blank when ft is 0 */
+  if (dir && DISP_LONG_DIRS.indexOf(String(dir).trim().toLowerCase()) === -1) return null;
+  return dispSignedComponent(ft, dir, "short");
+}
+
+function dispSignedRight(ft, dir) {
+  /* dir: "right" | "left" | blank when ft is 0 */
+  if (dir && DISP_RIGHT_DIRS.indexOf(String(dir).trim().toLowerCase()) === -1) return null;
+  return dispSignedComponent(ft, dir, "left");
+}
+
+/* ---------- the computed leave ----------
+   NEVER logged. Always computed from the two components, so there is exactly
+   one representation of the miss and no second number to drift. */
+function dispLeaveFt(leaveLongFt, leaveRightFt) {
+  if (leaveLongFt === null || leaveLongFt === undefined) return null;
+  if (leaveRightFt === null || leaveRightFt === undefined) return null;
+  if (!isFinite(leaveLongFt) || !isFinite(leaveRightFt)) return null;
+  return Math.sqrt(leaveLongFt * leaveLongFt + leaveRightFt * leaveRightFt);
+}
+
+/* ---------- import ----------
+   Turns one raw capture into the stored record. This is "import" in the sense
+   the spec means it: the moment unsigned taps become signed fields. Both
+   leave fields are optional in storage so a round logged without dispersion
+   stays valid — a record missing them simply never reaches a map. */
+function dispDerive(input) {
+  input = input || {};
+  /* `unit` is what the boxes were showing when he typed: "ft" on the green,
+     "yd" anywhere else. Convert first, then take the sign, so the stored
+     fields are always feet no matter which way he entered them. */
+  var unit = input.unit === "yd" ? "yd" : "ft";
+  var lng = dispSignedLong(dispToFeet(input.long_ft, unit), input.long_dir);
+  var rgt = dispSignedRight(dispToFeet(input.right_ft, unit), input.right_dir);
+  var yards = input.played_from_yds;
+  var y = (yards === null || yards === undefined || yards === "") ? null : Number(yards);
+  if (y !== null && (!isFinite(y) || y < 0)) y = null;
+  var rec = {
+    v: DISP_VERSION,
+    played_from_yds: y,
+    lie: DISP_LIES.indexOf(input.lie) !== -1 ? input.lie : null,
+    finish: DISP_FINISH.indexOf(input.finish) !== -1 ? input.finish : null,
+    /* provenance: which unit the boxes were showing. The stored leaves are
+       always feet, but knowing he typed yards is what makes a wrong-looking
+       dot debuggable later instead of a mystery. */
+    entered_unit: unit
+  };
+  /* Optional by design — omitted entirely rather than written as null, so an
+     older record and a partial one are the same shape. */
+  if (lng !== null) rec.leave_long_ft = lng;
+  if (rgt !== null) rec.leave_right_ft = rgt;
+  return rec;
+}
+
+/* What is still missing before this capture can be plotted. Returns [] when
+   the record is complete. The UI shows these; nothing is inferred. */
+function dispValidate(input) {
+  input = input || {};
+  var errs = [];
+  /* Name the unit he is actually typing in, so an alert never tells him
+     "in feet" while the box above it says yards. */
+  var u = input.unit === "yd" ? "yards" : "feet";
+  var hasLong = !(input.long_ft === null || input.long_ft === undefined || input.long_ft === "");
+  var hasRight = !(input.right_ft === null || input.right_ft === undefined || input.right_ft === "");
+  /* ONE LEG IS ENOUGH (Eric, 2026-08-16: "i wasnt allowed to hit submit unless
+     i had both filled in. i dont like that... the google sheet will auto
+     calcuate the missing one if i put one in since it has the putt distance").
+     The sheet's DISPERSION AUTO-COMPLETE trigger solves the right triangle
+     BT^2 = BR^2 + BS^2 from the first putt distance, so typing the leg he
+     actually paced off is all the information the system needs. Requiring both
+     made him measure a number the sheet was about to compute anyway.
+
+     Still required: a direction chip for whichever box he DID fill, because a
+     magnitude with no side is unplottable and cannot be recovered later. */
+  if (!hasLong && !hasRight) errs.push("A short/long OR left/right distance in " + u);
+  if (hasLong && dispSignedLong(input.long_ft, input.long_dir) === null) {
+    errs.push(Number(input.long_ft) > 0 ? "the SHORT or LONG chip" : "a valid short/long distance");
+  }
+  if (hasRight && dispSignedRight(input.right_ft, input.right_dir) === null) {
+    errs.push(Number(input.right_ft) > 0 ? "the LEFT or RIGHT chip" : "a valid left/right distance");
+  }
+  if (DISP_LIES.indexOf(input.lie) === -1) errs.push("Lie");
+  if (DISP_FINISH.indexOf(input.finish) === -1) errs.push("On or off green");
+  var y = Number(input.played_from_yds);
+  if (input.played_from_yds === null || input.played_from_yds === undefined ||
+      input.played_from_yds === "" || !isFinite(y) || y < 0) {
+    errs.push("Distance played from, in yards");
+  }
+  return errs;
+}
+
+/* A stored record is plottable only when BOTH components survived derivation.
+   No half-shots on the map. */
+function dispIsPlottable(rec) {
+  return !!rec &&
+    typeof rec.leave_long_ft === "number" && isFinite(rec.leave_long_ft) &&
+    typeof rec.leave_right_ft === "number" && isFinite(rec.leave_right_ft) &&
+    typeof rec.played_from_yds === "number" && isFinite(rec.played_from_yds);
+}
+
+/* ---------- the store key ----------
+   Round date + course + hole, exactly as the spec requires, so the dispersion
+   store stands on its own and never has to be joined through the round record.
+   Shot index disambiguates two approaches on one hole. */
+function dispKey(date, course, hole) {
+  return [String(date || ""), String(course || ""), String(hole == null ? "" : hole)].join("|");
+}
+
+/* ---------- proximity ramp ----------
+   Blue to orange, never red to green. Every band carries its own text label so
+   the map reads without colour at all. */
+var DISP_PROXIMITY = [
+  { key: "p0",  label: "Inside 5 ft",  min: 0,  max: 5,        color: "#1F4E9D" },
+  { key: "p5",  label: "5-15 ft",      min: 5,  max: 15,       color: "#3E7CC4" },
+  { key: "p15", label: "15-30 ft",     min: 15, max: 30,       color: "#7FA9D8" },
+  { key: "p30", label: "30-60 ft",     min: 30, max: 60,       color: "#E0A35A" },
+  { key: "p60", label: "Over 60 ft",   min: 60, max: Infinity, color: "#C2701B" }
+];
+
+function dispProximity(leaveFt) {
+  if (leaveFt == null || !isFinite(leaveFt) || leaveFt < 0) return null;
+  for (var i = 0; i < DISP_PROXIMITY.length; i++) {
+    var p = DISP_PROXIMITY[i];
+    if (leaveFt >= p.min && leaveFt < p.max) return p;
+  }
+  return null;
+}
+
+/* ---------- reference ring ----------
+   A REFERENCE SHAPE, not a boundary. A 21 ft circle around the pin — Eric's
+   pick (2026-08-03, replacing the 90x66 ft median-green ellipse: "make it
+   more of a circle and being at 21ft"). Equal semi-axes ARE the circle;
+   nothing else changes shape when these two numbers agree. */
+var DISP_GREEN_REF = { semi_long_ft: 21, semi_right_ft: 21 };
+
+/* ---------- axis auto-scale ----------
+   The axis follows the dots that are actually switched on, symmetric about the
+   pin so the centre stays the centre, with headroom past the widest one.
+
+   It deliberately does NOT floor on the green reference. Flooring there meant a
+   set of wedge shots inside 10 ft still drew on a +/-60 ft axis and collapsed
+   into the middle — exactly the squashing the band toggles exist to prevent.
+   The green ellipse simply runs past the frame when he is well inside it,
+   which is itself the right reading. DISP_AXIS_MIN only stops a card of
+   tap-ins zooming to nothing. Returns feet. */
+var DISP_AXIS_MIN = 15;
+
+function dispAxisRange(records) {
+  var maxAbs = 0;
+  (records || []).forEach(function (r) {
+    if (!dispIsPlottable(r)) return;
+    maxAbs = Math.max(maxAbs, Math.abs(r.leave_long_ft), Math.abs(r.leave_right_ft));
+  });
+  var span = Math.max(maxAbs * 1.15, DISP_AXIS_MIN);
+  /* round up to a readable tick so the printed range is a number he can hold */
+  var step = span <= 30 ? 5 : span <= 60 ? 10 : span <= 150 ? 25 : 50;
+  return Math.ceil(span / step) * step;
+}
+
+/* ---------- wide-selection warning ----------
+   Long shots squash the wedge dots into the centre. Warn when the switched-on
+   bands span a wide range of distances played from — measured as the ratio of
+   the longest to the shortest representative yardage in the selection. */
+var DISP_SPAN_RATIO = 3;
+
+function dispSpanWarning(bandKeys) {
+  var reps = (bandKeys || []).map(dispBand).filter(Boolean).map(function (b) { return b.rep; });
+  if (reps.length < 2) return null;
+  var lo = Math.min.apply(null, reps), hi = Math.max.apply(null, reps);
+  if (hi / lo < DISP_SPAN_RATIO) return null;
+  return "Wide selection: " + Math.round(hi / lo) + "x span from the shortest band to the " +
+         "longest. The long shots will squash the wedge dots into the centre — " +
+         "switch bands off to read them.";
+}
+
+/* ---------- selection ---------- */
+function dispSelect(records, bandKeys, lies) {
+  return (records || []).filter(function (r) {
+    if (!dispIsPlottable(r)) return false;
+    if (bandKeys && bandKeys.length) {
+      if (bandKeys.indexOf(dispBandFor(r.played_from_yds)) === -1) return false;
+    }
+    if (lies && lies.length) {
+      if (lies.indexOf(r.lie) === -1) return false;
+    }
+    return true;
+  });
+}
+
 /* RECOVERY NUDGE (Eric, 2026-08-16).
    `suggestType` fills Type from the distance alone, so a ball hit sideways out
    of trees from 250 yards is auto-labelled "Long App (176+)". On 08/16 all four
@@ -1119,6 +1486,168 @@ function puttBody(){
     ${puttChart()}`;
 }
 
+/* ================= round state — cells, sync, persistence =================
+   RESTORED 2026-08-20. This page shipped WITHOUT this block and has never
+   worked in production: `lsLoad()` at the bottom of the boot IIFE was a call
+   into nothing, so the page printed LOADING and stopped. It went unnoticed
+   because it is the one tracker Eric never opens — every named course has its
+   own page, and this is the fallback for a course that does not.
+
+   Ported from `course/lake-shawnee/` and adapted to THIS page's namespace,
+   which differs in three ways: there is no course book, so no `pin.`/`ball.`/
+   `tee.` cells; the par of each hole is TAPPED rather than read from a
+   scorecard (`par.<n>`); and the course name and date are TYPED, so they are
+   round state (`course`, `rdate`) instead of build-time constants.
+
+   The model is the same one every course page uses: one flat map of cells,
+   last-write-wins per cell by timestamp, relayed through ntfy and mirrored to
+   localStorage. Namespaces:
+     "f.<hole>.<key>"  score,p1,p2,p3,putts,pen (numbers|null), fir,gir
+                       ("Y"|"N"|null), m1s,m1d (putt miss), note (string)
+     "sh.<hole>"       the hole's shots ARRAY (single cell, whole-array writes)
+     "par.<hole>"      3 | 4 | 5, tapped on the hole card
+     "tmode"           "basic" | "advanced"
+     "course" "rdate" "rnote"                                       */
+let state = { cells: {}, resetAt: 0 };
+let fields = {};   // derived {hole:{score,p1,p2,p3,putts,pen,fir,gir,m1s,m1d,note}}
+let shots = {};    // derived {hole:[{club,lie,db,da,type,acc}]}
+let pars = {};     // derived {hole:3|4|5}
+let course = "";
+let rdate = "";
+let rnote = "";
+let trackMode = "basic";   // Basic is the documented default; Advanced is a superset
+let tab = "hole";
+let hole = 1;
+let editing = null;        // null | {idx, draft:{...}}  idx===-1 -> new shot
+let mode = "connecting";
+let lastExport = null;
+let caddyIn = { dist:null, cap:null, mph:null, dir:"calm", out:"" };
+let caddyTab = "swing";    // swing | dist | wind | putt
+let windTab = "into";      // into | down  (inside the Wind chart)
+
+const PARS = [3, 4, 5];
+const TRACK_MODES = ["basic", "advanced"];
+const DEFAULT_PAR = 4;     // an untouched card reads par 72, the sane blank slate
+
+/* A cell arriving over the wire is untrusted: another device, an old build, or
+   a replayed message. Validate the SHAPE per namespace before it can overwrite
+   anything, so a malformed payload cannot corrupt a round in progress. */
+const validShotArr = v => Array.isArray(v) && v.every(s => s && typeof s === "object");
+const validCell = (k, c) => {
+  if (!c || typeof c.t !== "number") return false;
+  if (k.startsWith("sh.")) return validShotArr(c.v);
+  if (k.startsWith("par.")) return PARS.includes(c.v);
+  if (k === "tmode") return TRACK_MODES.includes(c.v);
+  return c.v === null || typeof c.v === "number" || typeof c.v === "string";
+};
+
+function derive(){
+  fields = {}; shots = {}; pars = {};
+  course = ""; rdate = ""; rnote = ""; trackMode = "basic";
+  for (const [k, c] of Object.entries(state.cells)){
+    if (c.t <= state.resetAt) continue;
+    if (k.startsWith("sh.")){ shots[k.slice(3)] = c.v; continue; }
+    if (k.startsWith("par.")){ if (PARS.includes(c.v)) pars[k.slice(4)] = c.v; continue; }
+    if (k === "tmode"){ if (TRACK_MODES.includes(c.v)) trackMode = c.v; continue; }
+    if (k === "course"){ course = typeof c.v === "string" ? c.v : ""; continue; }
+    if (k === "rdate"){ rdate = typeof c.v === "string" ? c.v : ""; continue; }
+    if (k === "rnote"){ rnote = typeof c.v === "string" ? c.v : ""; continue; }
+    if (k.startsWith("f.")){
+      const [, hn, key] = k.split(".");
+      if (!fields[hn]) fields[hn] = {};
+      fields[hn][key] = c.v;
+    }
+  }
+}
+function merge(incoming){
+  if (!incoming || typeof incoming !== "object" || !incoming.cells) return false;
+  let changed = false;
+  if ((incoming.resetAt||0) > state.resetAt){ state.resetAt = incoming.resetAt; changed = true; }
+  for (const [k, c] of Object.entries(incoming.cells || {})){
+    if (!validCell(k, c)) continue;
+    if (!state.cells[k] || c.t > state.cells[k].t){ state.cells[k] = c; changed = true; }
+  }
+  if (changed) derive();
+  return changed;
+}
+function lsLoad(){ try{ const s = JSON.parse(localStorage.getItem(LS_KEY)); if (s && s.cells) state = s; }catch(e){} derive(); }
+function lsSave(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){} }
+
+const F = hn => fields[hn] || {};
+const SH = hn => shots[hn] || [];
+const parFor = hn => pars[hn] ?? DEFAULT_PAR;
+const roundPar = () => HOLES.reduce((t, h) => t + parFor(h.n), 0);
+
+/* ---------- writes ----------
+   ntfy.sh truncates/attaches bodies over ~4 KB, so NEVER post the whole
+   state: publish only the cells dirtied since the last successful send,
+   and re-seed the channel in small chunks. */
+let pubTimer = null;
+const dirty = new Set();
+async function postMsg(payload){
+  await fetch(`${NTFY}/${TOPIC}`, { method:"POST", body: JSON.stringify(payload) });
+}
+function publish(){
+  clearTimeout(pubTimer);
+  pubTimer = setTimeout(async () => {
+    const keys = [...dirty];
+    const payload = { cells:{}, resetAt: state.resetAt };
+    for (const k of keys) if (state.cells[k]) payload.cells[k] = state.cells[k];
+    try {
+      await postMsg(payload);
+      keys.forEach(k => dirty.delete(k));
+      if (mode !== "live") { mode = "live"; render(); }
+    } catch(e){ mode = "offline"; render(); }
+  }, 350);
+}
+async function seedChannel(){
+  /* replay everything we hold, 12 cells per message to stay under the cap */
+  const keys = Object.keys(state.cells);
+  for (let i = 0; i < keys.length; i += 12){
+    const payload = { cells:{}, resetAt: state.resetAt };
+    for (const k of keys.slice(i, i+12)) payload.cells[k] = state.cells[k];
+    try { await postMsg(payload); } catch(e){ return; }
+  }
+}
+function setCell(key, val){
+  state.cells[key] = { v: val, t: Date.now() };
+  dirty.add(key);
+  derive(); lsSave(); publish();
+}
+const setField = (hn, key, val) => { setCell(`f.${hn}.${key}`, val); render(); };
+const setShots = (hn, arr) => { setCell(`sh.${hn}`, arr); render(); };
+function clearRound(){
+  if (!confirm("Wipe this round from every device?")) return;
+  state = { cells: {}, resetAt: Date.now() };
+  dirty.clear();
+  hole = 1; editing = null; derive(); lsSave();
+  postMsg({ cells:{}, resetAt: state.resetAt }).catch(()=>{});
+  render(); syncMeta();
+}
+
+/* ---------- helpers ----------
+   `fwPossible` and `todayISO` exist only on this page: a named course knows its
+   par-3 count from the scorecard and carries a build-time round date, while
+   here both are round state. */
+const fwPossible = () => HOLES.filter(h => parFor(h.n) !== 3).length;
+const todayISO = () => { const d=new Date(); const p=n=>String(n).padStart(2,"0");
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; };
+const suggestType = (isFirst, db) => isFirst ? "Drive"
+  : db == null ? null : db >= 176 ? "Long App (176+)" : db >= 101 ? "Mid App (101-175)" : "Short App (100&In)";
+function suggestClub(db, isFirst, par){
+  if (db == null) return isFirst && par !== 3 ? "D" : null;
+  if (isFirst && par !== 3) return "D";
+  let best = null, bestScore = 1e9;
+  for (const c of CLUBS){
+    const spec = CADDY[c];
+    if (!spec) continue;
+    const carry = spec.c[0];
+    const score = carry < db ? (db - carry) * 1.25 : carry - db;
+    if (score < bestScore){ bestScore = score; best = c; }
+  }
+  return best;
+}
+
 /* ---------- rendering ---------- */
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");
@@ -1148,10 +1677,195 @@ function shotLine(s){
   return `<b>${esc(s.club)}</b> &middot; ${esc(s.lie)} &middot; ${dist} &middot; <span class="${accCls}">${esc(s.acc)}</span>`;
 }
 
+/* ================= approach dispersion — its own store =================
+   Keyed by round date + course + hole, plus the shot index so two approaches
+   on one hole stay distinct.
+
+   Deliberately NOT in `state.cells`. Cells ARE the round record: they seed the
+   ntfy channel, clearRound wipes them, and buildRoundJSON reads them. Keeping
+   dispersion outside them is what guarantees it can never reach the round
+   record, the Apps Script or the Google Sheet, and that a round logged with no
+   dispersion saves byte-identically to before this feature existed.
+
+   The store is origin-scoped localStorage, and the Golf Hub is on the same
+   origin, so the maps read it with no server and no sheet column. The trade is
+   that it is per-device: nothing syncs it between his phone and his iPad, and
+   clearing site data clears it. Round data is untouched either way.
+
+   NO BACKFILL. Only a capture Eric actually taps writes a record. Nothing here
+   reads putt distance, leave, or any other field to reconstruct a component
+   for a round logged before these fields existed. Those rounds have no
+   dispersion data and never will — the maps start empty and fill going
+   forward, by design. */
+/* any-course has no hardcoded ROUND: the course name and date are typed into
+   the header, so the store keys off the live `course` / `rdate` values rather
+   than a per-course constant. Everything else in this block is identical to the
+   named course pages. Ported verbatim otherwise (2026-08-16). */
+const DISP_STORE_KEY = "gh_dispersion_v1";
+
+function dispLoadAll(){
+  try {
+    const raw = JSON.parse(localStorage.getItem(DISP_STORE_KEY));
+    return raw && Array.isArray(raw.shots) ? raw.shots : [];
+  } catch(e){ return []; }
+}
+function dispSaveAll(shotsArr){
+  try {
+    localStorage.setItem(DISP_STORE_KEY, JSON.stringify({ v: DISP_VERSION, shots: shotsArr }));
+    return true;
+  } catch(e){ return false; }
+}
+const dispRowId = (hn, idx) => dispKey(rdate, course, hn) + "|" + idx;
+function dispGet(hn, idx){
+  const id = dispRowId(hn, idx);
+  return dispLoadAll().find(r => r.id === id) || null;
+}
+/* Upsert on the same id, so re-editing a shot corrects its record rather than
+   stacking a second dot on the map. */
+function dispUpsert(hn, idx, rec){
+  const all = dispLoadAll();
+  const id = dispRowId(hn, idx);
+  const row = Object.assign({
+    id, date: rdate, course: course, hole: hn, shot_idx: idx, t: Date.now()
+  }, rec);
+  const at = all.findIndex(r => r.id === id);
+  if (at === -1) all.push(row); else all[at] = row;
+  return dispSaveAll(all);
+}
+/* The hole's leave, for the ROUND PAYLOAD (Eric, 2026-08-02: "Yes will need
+   that for the future. starting with my round tomorrow").
+
+   This deliberately REVERSES the 2026-07-31 decision to keep dispersion out of
+   the round record. That design made the capture per-device and per-browser:
+   clear the site data and the numbers are gone, and they never reach the sheet
+   where every other stat he owns lives. He asked for Hole Log columns, so the
+   two signed leaves now travel with the round.
+
+   ONLY these two fields cross over, and only as EXTRA keys. Nothing existing in
+   the payload changes shape or value, so an Apps Script that predates the new
+   columns simply ignores them and writes exactly what it wrote before.
+
+   A hole can hold more than one capture. The LAST one (highest shot index) is
+   the approach that actually determined the leave, so that is the one that
+   travels. Returns {} when the hole has no capture, which keeps the key absent
+   rather than null -- an un-captured hole and an older round look identical. */
+function dispForHole(hn){
+  const recs = dispLoadAll()
+    .filter(r => r.hole === hn && r.date === rdate && r.course === course)
+    .sort((a, b) => (a.shot_idx || 0) - (b.shot_idx || 0));
+  const r = recs[recs.length - 1];
+  if (!r) return {};
+  const out = {};
+  if (typeof r.leave_long_ft === "number") out.leave_long_ft = r.leave_long_ft;
+  if (typeof r.leave_right_ft === "number") out.leave_right_ft = r.leave_right_ft;
+  return out;
+}
+
+/* Deleting shot i drops its record and slides every later shot on that hole
+   down one, so the ids keep matching the shots they describe. Without this a
+   deleted shot would leave its dot attached to whatever shot inherited the
+   index. */
+function dispShiftAfterDelete(hn, idx){
+  const prefix = dispKey(rdate, course, hn) + "|";
+  const all = dispLoadAll().filter(r => r.id !== prefix + idx);
+  all.forEach(r => {
+    if (r.hole === hn && r.date === rdate && r.course === course &&
+        typeof r.shot_idx === "number" && r.shot_idx > idx){
+      r.shot_idx -= 1;
+      r.id = prefix + r.shot_idx;
+    }
+  });
+  dispSaveAll(all);
+}
+
+/* The editor's dispersion inputs live on `editing.disp`, never on
+   `editing.draft` — draft is spread into the shot object, and nothing from
+   here may ride along into it. */
+function dispDraftFor(idx){
+  const saved = idx === -1 ? null : dispGet(hole, idx);
+  if (!saved) return {};
+  /* Re-open a saved record in the same unsigned terms he typed it in. The sign
+     is a storage detail; he never sees one and never types one. */
+  /* Storage is feet. Show him the number he TYPED, in the unit he typed it
+     in — otherwise a 20 yard miss re-opens reading 60 against a "yd" label,
+     and saving it again stores 180. */
+  const u = saved.entered_unit === "yd" ? "yd" : "ft";
+  const lf = saved.leave_long_ft, rf = saved.leave_right_ft;
+  return {
+    long_ft:  lf == null ? "" : dispFromFeet(Math.abs(lf), u),
+    long_dir: lf == null || lf === 0 ? "" : (lf < 0 ? "short" : "long"),
+    right_ft: rf == null ? "" : dispFromFeet(Math.abs(rf), u),
+    right_dir: rf == null || rf === 0 ? "" : (rf < 0 ? "left" : "right"),
+    lie: saved.lie, finish: saved.finish,
+    played_from_yds: saved.played_from_yds == null ? "" : saved.played_from_yds,
+    _saved: true
+  };
+}
+
+/* What he typed, over what the shot ALREADY SAYS.
+   `editing.disp` holds only the two distances he types. Everything else is
+   read off the shot he is logging right now, because it is all already on the
+   screen and he should never enter the same fact twice:
+
+     direction  <- the Miss chips (Left / Right / Short / Long)
+     lie        <- the shot's own Lie select, folded to the four flags
+     finished   <- no finish distance means it finished on the green
+     played from<- the shot's own Start (yd)
+
+   Nothing is inferred for the two distances themselves. Those are his. */
+function dispEffective(d){
+  const v = editing.disp || {};
+  const tags = accTags(d.acc);
+  /* ON THE GREEN he measures in FEET, anywhere else in YARDS — the Green chip
+     in Finish is what says which. Until he taps a Finish chip the boxes read
+     feet, because an approach that reaches the green is the ordinary case and
+     the label flips the instant he says otherwise. The unit is resolved again
+     at save, so a number typed before the chip was tapped still stores with
+     the unit he ended on. */
+  const onGreen = tags.includes("Green") ||
+    (!tags.some(t => ["Fairway","Rough","Deep Rough","Sand","Water","OB","Unplayable","Layup","Other"].includes(t)));
+  return {
+    long_ft:  v.long_ft  === undefined ? "" : v.long_ft,
+    right_ft: v.right_ft === undefined ? "" : v.right_ft,
+    long_dir:  dispDirFrom(tags, "long", "short"),
+    right_dir: dispDirFrom(tags, "right", "left"),
+    unit: dispUnit(onGreen),
+    lie: dispLieFromShotLie(d.lie),
+    finish: onGreen ? "On green" : "Off green",
+    played_from_yds: d.db == null ? "" : d.db
+  };
+}
+
+/* The capture, in full: two number boxes under the Miss chips.
+   The chip above says which way it missed, so the box only has to say how far.
+   Feet, unsigned, exactly as he would say it out loud. Blank means he is not
+   logging dispersion for this shot, and 0 is a real answer - 0 long is pin
+   high, 0 right is dead on line, and neither needs a chip. */
+function dispMissFields(d){
+  const v = dispEffective(d);
+  const u = v.unit === "yd" ? "yd" : "ft";
+  return `<div class="edrow dspmiss">
+    <div class="edfield"><div class="edlbl">Left / right (${u})</div>
+      <input type="number" inputmode="numeric" min="0" id="dsp-right"
+        value="${esc(String(v.right_ft ?? ""))}"></div>
+    <div class="edfield"><div class="edlbl">Short / long (${u})</div>
+      <input type="number" inputmode="numeric" min="0" id="dsp-long"
+        value="${esc(String(v.long_ft ?? ""))}"></div>
+  </div>`;
+}
+
 function shotEditor(){
   const d = editing.draft;
   const isFirst = editing.idx === -1 ? SH(hole).length === 0 : editing.idx === 0;
   const autoType = suggestType(isFirst, d.db);
+  /* The two typed distances load once per editing session, not once per
+     render — the editor re-renders on every sync event and must not throw away
+     what he has half-typed. There is nothing to open or close: the boxes live
+     under the Miss chips and are always there. */
+  if (!editing._dispInit){
+    editing._dispInit = true;
+    editing.disp = dispDraftFor(editing.idx);
+  }
   const sel = (id, opts, cur, blankLabel) => `<select id="${id}">
     <option value=""${cur==null?" selected":""}>${blankLabel}</option>
     ${opts.map(o => `<option value="${esc(o)}"${o===cur?" selected":""}>${esc(o)}</option>`).join("")}
@@ -1176,6 +1890,7 @@ function shotEditor(){
         <div class="edlbl">${label}</div>
         ${rows.map(tags => `<div class="edtagrow">${tags.map(t => `<button type="button" class="edtag${
           accTags(d.acc).includes(t) ? " on" : ""}" data-tag="${esc(t)}">${esc(t)}</button>`).join("")}</div>`).join("")}
+        ${label === "Miss" ? dispMissFields(d) : ""}
       </div>`).join("")}
     </div>
     <div class="edhint" id="ed-recovery" hidden></div>
@@ -1512,9 +2227,26 @@ function bind(){
         if (!d.club || !d.lie || !d.acc || d.db == null){
           alert("Need club, lie, result and a start distance."); return;
         }
+        /* Dispersion is read and written HERE, off `editing.disp`, and never
+           off `d`. `d` is spread into the shot object below and from there
+           into buildRoundJSON and the sheet; nothing from the dispersion block
+           may ride along. */
+        const dv = dispEffective(d);
+        const dTyped = String(dv.long_ft) !== "" || String(dv.right_ft) !== "";
+        if (dTyped){
+          const derrs = dispValidate(dv);
+          if (derrs.length){
+            alert("Approach dispersion needs: " + derrs.join(", ") +
+                  ".\n\nOne box is enough - the sheet works the other one out from "
+                  + "your first putt. Or clear both to save the shot without it.");
+            return;
+          }
+        }
         const arr = SH(hole).slice();
         const wasNew = editing.idx === -1;
         if (wasNew) arr.push({...d}); else arr[editing.idx] = {...d};
+        const dIdx = wasNew ? arr.length - 1 : editing.idx;
+        if (dTyped) dispUpsert(hole, dIdx, dispDerive(dv));
         if (wasNew && d.da != null){
           const nb = d.da;
           editing = { idx:-1, draft:{ club: suggestClub(nb, false, parFor(hole)),
@@ -1556,6 +2288,13 @@ function bind(){
       }
       paintRecoveryHint();
     };
+  }
+  for (const [id, key] of [["dsp-long","long_ft"],["dsp-right","right_ft"]]){
+    const el = document.getElementById(id);
+    if (!el) continue;
+    /* keep the value on every keystroke so a sync re-render cannot eat it */
+    el.oninput  = () => { editing.disp = editing.disp || {}; editing.disp[key] = el.value; };
+    el.onchange = () => { editing.disp = editing.disp || {}; editing.disp[key] = el.value; };
   }
   document.querySelectorAll("[data-par]").forEach(el => {
     el.onclick = () => { setCell(`par.${hole}`, +el.dataset.par); render(); };
