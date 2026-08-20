@@ -186,6 +186,16 @@ input,textarea,select{font-family:inherit}
   font-family:var(--mono);font-size:10.5px;line-height:1.6;color:#8F1B2A;text-align:center}
 /* per-hole tee override */
 .teeovrow{display:flex;gap:6px;padding:10px 14px;border-bottom:1px solid rgba(12,35,64,.12)}
+.parovrow{display:flex;align-items:center;gap:7px;padding:10px 14px 12px;
+  border-bottom:1px solid rgba(12,35,64,.12)}
+.povlbl{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;
+  color:#5C6B82;flex:0 0 auto}
+.povchip{flex:1;font-family:var(--sans);font-size:12px;line-height:1;padding:10px 8px;
+  border-radius:999px;border:1.5px solid rgba(12,35,64,.25);background:#F4EFE4;color:#0C2340;
+  cursor:pointer;text-align:center;white-space:nowrap}
+.povchip.on{background:#0C2340;border-color:#0C2340;color:#F4EFE4;font-weight:600}
+.povcard{font-family:var(--mono);font-size:8px;letter-spacing:.12em;text-transform:uppercase;
+  opacity:.65;margin-left:5px}
 .teechip{flex:1;font-family:var(--mono);font-size:10px;letter-spacing:.08em;padding:8px 4px;
   border-radius:999px;border:1.5px solid rgba(12,35,64,.25);color:#5C6B82;text-align:center}
 .teechip.on{font-weight:700;border-width:2px}
@@ -1075,6 +1085,16 @@ const LS_KEY = "rt_charleston_national_v1";
 
 const ROUND = { date:"2026-08-01", course:"Charleston National Golf Club", par:72 };
 const EMAIL = "1brown.eric@gmail.com";
+/* Holes whose par is NOT settled, and the values Eric may pick on the day.
+   Rewritten per course by build_tracker.py from `par_options` in
+   courses/<slug>.json; `{}` for a course where every hole is fixed.
+
+   Falcon Lakes hole 1 (2026-08-20) is the case this exists for: construction
+   turned the old par 5 into a par 4, and which one is in play is not known
+   until he is standing on the tee. Guessing either way corrupts the card, and
+   making EVERY hole tappable would mean a stray thumb could silently rescore a
+   round -- so the flexibility is declared per hole, per course. */
+const PAR_OPTIONS = {};
 const TEES = ["black","blue","white"];   // Blue = the anchor (all book distances)
 const HOLES = [
   {n:1, par:4,si:3, yds:{black:423,blue:403,white:380}},
@@ -1252,7 +1272,7 @@ const ACC_GROUPS = [
 /* A Finish tag names the lie the next shot is played from, so saving a shot
    prefills it and Eric never types the same fact twice. Green/Water/OB/
    Unplayable are deliberately absent: the green means putting, and a penalty
-   drop can be anywhere. */
+   drop can be anywhere. Layup and Other name no lie either. */
 const ACC_LIE = {Fairway:"Fairway", Rough:"Rough", "Deep Rough":"Deep Rough",
                  Sand:"Sand"};
 function accLie(v){
@@ -1301,6 +1321,7 @@ let balls = {};    // derived {hole:{x,y}} — where the putt is from, for the b
 let greenTap = "pin";   // what the next tap on the green sets: pin | ball
 let tee = "blue";  // default tee (header); per-hole overrides in teeOv
 let teeOv = {};    // derived {hole: "blue"|"red"|"yellow"}
+let parOv = {};    // derived {hole: par} — only for holes in PAR_OPTIONS
 let rnote = "";
 let tab = "hole";
 let hole = 1;
@@ -1326,7 +1347,7 @@ const validCell = (k, c) => {
 };
 
 function derive(){
-  fields = {}; shots = {}; pins = {}; balls = {}; teeOv = {}; tee = "blue"; rnote = "";
+  fields = {}; shots = {}; pins = {}; balls = {}; teeOv = {}; parOv = {}; tee = "blue"; rnote = "";
   for (const [k, c] of Object.entries(state.cells)){
     if (c.t <= state.resetAt) continue;
     if (k.startsWith("ball.")){ if (c.v) balls[k.slice(5)] = c.v; continue; }
@@ -1334,6 +1355,16 @@ function derive(){
     if (k.startsWith("sh.")){ shots[k.slice(3)] = c.v; continue; }
     if (k === "tee"){ if (TEES.includes(c.v)) tee = c.v; continue; }
     if (k.startsWith("tee.")){ if (TEES.includes(c.v)) teeOv[k.slice(4)] = c.v; continue; }
+    /* A par override is honoured ONLY for a hole the course file declared
+       flexible, and only for a value it offered. The cell arrives over a public
+       ntfy topic from another device; without this, anything could rescore any
+       hole. An override for a hole that is no longer flexible is ignored, so
+       rebuilding the course with the par settled retires the old cell. */
+    if (k.startsWith("par.")){
+      const hn = k.slice(4);
+      if ((PAR_OPTIONS[hn] || []).includes(c.v)) parOv[hn] = c.v;
+      continue;
+    }
     if (k === "rnote"){ rnote = typeof c.v === "string" ? c.v : ""; continue; }
     if (k.startsWith("f.")){
       const [, hn, key] = k.split(".");
@@ -1420,6 +1451,12 @@ function clearRound(){
 }
 
 /* ---------- helpers ---------- */
+/* THE ONE PLACE a hole's par is decided. Everything -- scoring, GIR, FIR,
+   the strategy card, the club suggestion, the scorecard table and the payload
+   that reaches the sheet -- reads par through here, so a hole declared flexible
+   cannot be par 5 in the header and par 4 in the strokes-gained card. */
+const parFor = hn => parOv[hn] ?? HOLES[hn - 1].par;
+const parIsPicked = hn => parOv[hn] != null;
 const F = hn => fields[hn] || {};
 const SH = hn => shots[hn] || [];
 const clubPick = {};                      // hole -> {x,y}, local only
@@ -1529,7 +1566,7 @@ function puttCount(hn){
    skills/round-tracker/pull_round.py. */
 const FINISH_TAGS = new Set([].concat(...ACC_GROUPS.find(g => g[0] === "Finish")[1]));
 function autoFir(h){
-  if (h.par === 3) return null;
+  if (parFor(h.n) === 3) return null;
   const sh = SH(h.n);
   if (!sh.length) return null;
   const fin = accTags(sh[0].acc).filter(t => FINISH_TAGS.has(t));
@@ -1544,7 +1581,7 @@ function autoGir(h){
   const score = F(h.n).score;
   const putts = puttCount(h.n);
   if (score == null || putts == null) return null;
-  return (score - putts) <= (h.par - 2) ? "Y" : "N";
+  return (score - putts) <= (parFor(h.n) - 2) ? "Y" : "N";
 }
 const effFir = h => { const v = F(h.n).fir; return v ? v : autoFir(h); };
 const effGir = h => { const v = F(h.n).gir; return v ? v : autoGir(h); };
@@ -1564,10 +1601,10 @@ function totals(){
   for (const h of HOLES){
     const f = F(h.n);
     if (f.score == null) continue;
-    thru++; score += f.score; par += h.par;
+    thru++; score += f.score; par += parFor(h.n);
     if (h.n <= 9) f9 += f.score; else b9 += f.score;
     const fir = effFir(h), gir = effGir(h);
-    if (h.par !== 3 && (fir === "Y" || fir === "N")){ fwP++; if (fir === "Y") fwH++; }
+    if (parFor(h.n) !== 3 && (fir === "Y" || fir === "N")){ fwP++; if (fir === "Y") fwH++; }
     if (gir === "Y" || gir === "N"){ girP++; if (gir === "Y") girH++; }
     putts += puttCount(h.n) || 0;
     pen += f.pen || 0;
@@ -1578,7 +1615,7 @@ function totals(){
       const last = sh[sh.length - 1];
       if (last && last.db != null && last.db <= 50){
         udX++;
-        if ((puttCount(h.n) || 0) <= 1 && f.score <= h.par) udC++;
+        if ((puttCount(h.n) || 0) <= 1 && f.score <= parFor(h.n)) udC++;
       }
     }
   }
@@ -1599,7 +1636,7 @@ function buildRoundJSON(){
       acc: s.acc
     }));
     return {
-      hole: h.n, par: h.par, yds: holeYds(h),
+      hole: h.n, par: parFor(h.n), yds: holeYds(h),
       shots: sh,
       p1_ft: f.p1 ?? null, p2_ft: f.p2 ?? null, p3_ft: f.p3 ?? null,
       /* Putt miss, first two putts. '' rather than null when unset so the
@@ -1607,8 +1644,8 @@ function buildRoundJSON(){
       p1_miss_side: f.m1s ?? "", p1_miss_depth: f.m1d ?? "",
       putts_tm: puttCount(h.n) ?? 0,
       score: f.score ?? null,
-      plus_minus: plusMinus(f.score, h.par),
-      fir: h.par === 3 ? null : effFir(h),
+      plus_minus: plusMinus(f.score, parFor(h.n)),
+      fir: parFor(h.n) === 3 ? null : effFir(h),
       gir: effGir(h),
       penalty: f.pen || 0,
       notes: f.note || "",
@@ -1618,7 +1655,10 @@ function buildRoundJSON(){
   const yardage = HOLES.reduce((a,h)=>a+holeYds(h),0);  // per-hole effective tees
   return {
     round: {
-      date: ROUND.date, course: ROUND.course, par: ROUND.par,
+      /* the round's par follows the holes actually played, so a flexible
+         hole picked as a 5 makes this a 72 rather than the card's 71 */
+      date: ROUND.date, course: ROUND.course,
+      par: HOLES.reduce((a, x) => a + parFor(x.n), 0),
       tees: tee, yardage,
       score: t.score, front_9: t.f9, back_9: t.b9,
       fairways_hit: t.fwH, fairways_possible: 14,
@@ -2312,7 +2352,7 @@ function viewHole(){
   const h = HOLES[hole-1];
   const f = F(h.n);
   const sh = SH(h.n);
-  const par3 = h.par === 3;
+  const par3 = parFor(h.n) === 3;
   const pc = puttCount(h.n);
   const sum = shotSum(h.n);
 
@@ -2345,20 +2385,32 @@ function viewHole(){
   const pinBadge = pins[h.n] ? " &middot;" : "";
   const teeChips = TEES.map(x =>
     `<button class="teechip ${teeFor(h.n)===x?"on":""} tee-${x}" data-teeov="${x}">${x.toUpperCase()} ${h.yds[x]} yds</button>`).join("");
+
+  /* Only rendered for a hole the course file declared unsettled. The card's own
+     par is marked so he can always see which one the scorecard believes, and
+     nothing is preselected beyond that -- the lit chip IS the card's par until
+     he taps otherwise, rather than a blank row daring him to guess. */
+  const opts = PAR_OPTIONS[h.n] || [];
+  const parChips = opts.length ? `<div class="parovrow">
+      <span class="povlbl">Playing as</span>
+      ${opts.map(p => `<button class="povchip ${parFor(h.n)===p?"on":""}" data-parov="${p}">Par ${p}${
+        p === h.par ? `<span class="povcard">card</span>` : ""}</button>`).join("")}
+    </div>` : "";
   return `
   ${holeNav("top", h)}
   <section class="holecard">
     <div class="holehead">
       <div class="holenum">No. ${h.n}</div>
-      <div class="holemeta" style="font-size:16px;line-height:1.5">PAR <b>${h.par}</b> &middot; HDCP <b>${h.si}</b></div>
+      <div class="holemeta" style="font-size:16px;line-height:1.5">PAR <b>${parFor(h.n)}</b>${parIsPicked(h.n) ? `<span class="autotag">your call</span>` : ""} &middot; HDCP <b>${h.si}</b></div>
     </div>
     <div class="teeovrow">${teeChips}</div>
+    ${parChips}
 
     <div class="scorerow">
-      <div class="scorelbl">Score<span class="pm">${plusMinus(f.score, h.par) || "&mdash;"}</span></div>
+      <div class="scorelbl">Score<span class="pm">${plusMinus(f.score, parFor(h.n)) || "&mdash;"}</span></div>
       <div class="step">
         <button class="stepbtn" data-act="dec" aria-label="decrease score">&minus;</button>
-        <div class="gross ${scoreClass(f.score, h.par)}">${f.score ?? "&mdash;"}</div>
+        <div class="gross ${scoreClass(f.score, parFor(h.n))}">${f.score ?? "&mdash;"}</div>
         <button class="stepbtn" data-act="inc" aria-label="increase score">+</button>
       </div>
     </div>
@@ -2756,13 +2808,13 @@ function viewOverview(){
   </div>`;
   const rows = HOLES.map(h => {
     const f = F(h.n);
-    const d = f.score==null ? null : f.score - h.par;
+    const d = f.score==null ? null : f.score - parFor(h.n);
     const mk = d==null ? "&middot;"
       : `<span class="mk ${d<=-2?"eag":d===-1?"brd":d===0?"parr":d===1?"bgy":"dbl"}">${f.score}</span>`;
     const yn = v => v==="Y" ? `<span class="ok">&#10003;</span>` : v==="N" ? `<span class="miss">&#10007;</span>` : "&middot;";
-    return `<tr><td class="hn">${h.n}</td><td>${h.par}</td>
+    return `<tr><td class="hn">${h.n}</td><td>${parFor(h.n)}</td>
       <td>${mk}</td>
-      <td>${h.par===3 ? "&mdash;" : yn(effFir(h))}</td><td>${yn(effGir(h))}</td>
+      <td>${parFor(h.n)===3 ? "&mdash;" : yn(effFir(h))}</td><td>${yn(effGir(h))}</td>
       <td>${puttCount(h.n) ?? "&middot;"}</td><td>${f.pen || "&middot;"}</td></tr>`;
   }).join("");
   const sum = `<tr class="sumrow"><td colspan="2">TOT</td><td>${t.thru?t.score:"&middot;"}</td>
@@ -2834,7 +2886,7 @@ function bind(){
       else if (act==="next"){ hole=Math.min(18,hole+1); editing=null; render(); }
       else if (act==="inc"||act==="dec"){
         const cur = f.score;
-        if (cur==null) setField(hole,"score",h.par);
+        if (cur==null) setField(hole,"score",parFor(hole));
         else setField(hole,"score",Math.max(1,Math.min(15,cur+(act==="inc"?1:-1))));
       }
       else if (act==="setsum"){ const s = shotSum(hole); if (s!=null) setField(hole,"score",s); }
@@ -2855,7 +2907,7 @@ function bind(){
         const db = sh.length ? (prev && prev.da != null ? prev.da : null) : holeYds(h);
         /* caddy prefills: club by yardage, type by distance (both changeable);
            lie=Tee on the opening shot; result stays a deliberate pick */
-        editing = { idx:-1, draft:{ club: suggestClub(db, sh.length===0, h.par),
+        editing = { idx:-1, draft:{ club: suggestClub(db, sh.length===0, parFor(hole)),
           lie: sh.length? null : "Tee", db, da:null, type:null, acc:null } };
         render();
         const ed = document.querySelector(".editor");
@@ -2926,7 +2978,7 @@ function bind(){
            one prefilled from this finish — no second "Add shot" tap */
         if (wasNew && d.da != null){
           const nb = d.da;
-          editing = { idx:-1, draft:{ club: suggestClub(nb, false, h.par),
+          editing = { idx:-1, draft:{ club: suggestClub(nb, false, parFor(hole)),
             lie: accLie(d.acc), db:nb, da:null, type:null, acc:null } };
         } else {
           editing = null;
@@ -2993,6 +3045,12 @@ function bind(){
     el.oninput  = () => { editing.disp = editing.disp || {}; editing.disp[key] = el.value; };
     el.onchange = () => { editing.disp = editing.disp || {}; editing.disp[key] = el.value; };
   }
+  document.querySelectorAll("[data-parov]").forEach(el => {
+    /* Stored as round state, not a page setting: the pick belongs to THIS round,
+       rides the sync channel to any other device, and a new round starts from
+       the card again. */
+    el.onclick = () => { setCell(`par.${hole}`, +el.dataset.parov); render(); };
+  });
   document.querySelectorAll("[data-teeov]").forEach(el => {
     el.onclick = () => { setCell(`tee.${hole}`, el.dataset.teeov); render(); };
   });
