@@ -579,9 +579,9 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
   var CLUBS=[
     {name:'Driver',spec:'GT3 11° (C2 10g)',carry:'275',total:'295'},
     {name:'Mini Driver',spec:'GT280 13°',carry:'240',total:'265'},
-    {name:'7 Wood',spec:'GT2 21° (A1)',carry:'225',total:'245'},
-    {name:'3 Hybrid',spec:'18°',carry:'220',total:'235'},
-    {name:'4 Iron',spec:'',carry:'215',total:'225'},
+    {name:'3 Hybrid',spec:'18°',carry:'227',total:'245'},
+    {name:'7 Wood',spec:'GT2 21° (A1)',carry:'220',total:'230'},
+    {name:'4 Iron',spec:'',carry:'210',total:'220'},
     {name:'5 Hybrid',spec:'23°',carry:'200',total:'215'},
     {name:'6 Iron',spec:'27°',carry:'193',total:'207'},
     {name:'7 Iron',spec:'30°',carry:'184',total:'195'},
@@ -601,11 +601,11 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
   // per club: c=[carry,total] calm; h/t/i/d = head, tail, 45-into, 45-down wind
   // [carry,total] at 5/10/20 mph; xl/xr = end-drift yards at 5/10/20 for a full
   // left-to-right / right-to-left crosswind (positive = ball ends RIGHT).
-  var BAG=["D","MD","7w","3H","4i","5H","6i","7i","8i","9i","PW","48","52","56","58"];
+  var BAG=["D","MD","3H","7w","4i","5H","6i","7i","8i","9i","PW","48","52","56","58"];
   var CLUB_EXPORT={MD:"Mini Driver"};
   var BAG_DISPLAY={
     D:{name:"Driver",spec:"GT3 11° (C2 10g)"}, MD:{name:"Mini Driver",spec:"GT280 13°"},
-    "7w":{name:"7 Wood",spec:"GT2 21° (A1)"}, "3H":{name:"3 Hybrid",spec:"18°"},
+    "3H":{name:"3 Hybrid",spec:"18°"}, "7w":{name:"7 Wood",spec:"GT2 21° (A1)"},
     "4i":{name:"4 Iron",spec:""}, "5H":{name:"5 Hybrid",spec:"23°"},
     "6i":{name:"6 Iron",spec:"27°"}, "7i":{name:"7 Iron",spec:"30°"},
     "8i":{name:"8 Iron",spec:"34°"}, "9i":{name:"9 Iron",spec:"38°"},
@@ -619,14 +619,14 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     MD: {c:[240,265], h:[[236,260],[230,253],[220,240]], t:[[244,270],[248,275],[256,285]],
          i:[[237,261],[233,256],[226,248]], d:[[243,269],[246,272],[251,279]],
          xl:[17,23,36], xr:[4.5,-2,-15]},
-    "7w":{c:[225,245], h:[[221,240],[215,233],[205,221]], t:[[229,250],[233,255],[241,264]],
-         i:[[222,241],[218,237],[211,228]], d:[[228,249],[231,252],[236,258]],
-         xl:[17,23,35], xr:[4,-2,-15]},
-    "3H":{c:[220,235], h:[[216,230],[210,223],[200,211]], t:[[224,240],[228,244],[236,254]],
-         i:[[217,231],[213,227],[206,219]], d:[[223,239],[226,242],[231,248]],
+    "3H":{c:[227,245], h:[[223,240],[217,233],[207,221]], t:[[231,250],[235,254],[243,264]],
+         i:[[224,241],[220,237],[213,229]], d:[[230,249],[233,252],[238,258]],
          xl:[16,22,35], xr:[4,-2,-14]},
-    "4i":{c:[215,225], h:[[211,220],[205,213],[195,201]], t:[[219,230],[223,234],[231,244]],
-         i:[[212,221],[208,217],[201,209]], d:[[218,229],[221,232],[226,238]],
+    "7w":{c:[220,230], h:[[216,225],[210,218],[200,206]], t:[[224,235],[228,240],[236,249]],
+         i:[[217,226],[213,222],[206,213]], d:[[223,234],[226,237],[231,243]],
+         xl:[17,23,35], xr:[4,-2,-15]},
+    "4i":{c:[210,220], h:[[206,215],[200,208],[190,196]], t:[[214,225],[218,229],[226,239]],
+         i:[[207,216],[203,212],[196,204]], d:[[213,224],[216,227],[221,233]],
          xl:[15,20,32], xr:[3,-2,-13]},
     "5H":{c:[200,215], h:[[196,210],[192,206],[182,194]], t:[[204,220],[208,224],[214,232]],
          i:[[197,211],[194,208],[187,200]], d:[[203,219],[206,222],[210,227]],
@@ -2436,12 +2436,21 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     var u = input.unit === "yd" ? "yards" : "feet";
     var hasLong = !(input.long_ft === null || input.long_ft === undefined || input.long_ft === "");
     var hasRight = !(input.right_ft === null || input.right_ft === undefined || input.right_ft === "");
-    if (!hasLong) errs.push("Short/long distance in " + u);
-    else if (dispSignedLong(input.long_ft, input.long_dir) === null) {
+    /* ONE LEG IS ENOUGH (Eric, 2026-08-16: "i wasnt allowed to hit submit unless
+       i had both filled in. i dont like that... the google sheet will auto
+       calcuate the missing one if i put one in since it has the putt distance").
+       The sheet's DISPERSION AUTO-COMPLETE trigger solves the right triangle
+       BT^2 = BR^2 + BS^2 from the first putt distance, so typing the leg he
+       actually paced off is all the information the system needs. Requiring both
+       made him measure a number the sheet was about to compute anyway.
+
+       Still required: a direction chip for whichever box he DID fill, because a
+       magnitude with no side is unplottable and cannot be recovered later. */
+    if (!hasLong && !hasRight) errs.push("A short/long OR left/right distance in " + u);
+    if (hasLong && dispSignedLong(input.long_ft, input.long_dir) === null) {
       errs.push(Number(input.long_ft) > 0 ? "the SHORT or LONG chip" : "a valid short/long distance");
     }
-    if (!hasRight) errs.push("Left/right distance in " + u);
-    else if (dispSignedRight(input.right_ft, input.right_dir) === null) {
+    if (hasRight && dispSignedRight(input.right_ft, input.right_dir) === null) {
       errs.push(Number(input.right_ft) > 0 ? "the LEFT or RIGHT chip" : "a valid left/right distance");
     }
     if (DISP_LIES.indexOf(input.lie) === -1) errs.push("Lie");
