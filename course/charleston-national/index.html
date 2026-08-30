@@ -493,7 +493,7 @@ var SCALE = {"scratch": 0.0, "5hcp": 0.28, "9hcp": 0.5};
    that file; the functions below mirror it line for line so a round scored on
    a phone produces the same numbers the VM would. Verified differentially —
    see scripts/verify_sg_port.py. */
-var SG_KEYS = ["driver","p176","p101","p100","putting","ball_strike","excluded"];
+var SG_KEYS = ["off_tee","p176","p101","p100","putting","ball_strike","excluded"];
 
 /* The tracker's "Result" field is a multi-select: a shot carries any number of
    these tags, stored comma-separated ("Fat, Left, Sand"). Rounds logged before
@@ -529,7 +529,7 @@ function sgIsPenalty(value){
    NOT by the lie, which records where the ball WAS. A ball behind a tree in
    the rough has a Rough lie. Mirrors is_recovery() in pull_round.py.
 
-   The opening tee ball is never a recovery whatever it was for: it is Driver. */
+   The opening tee ball is never a recovery whatever it was for: Off the Tee. */
 var RECOVERY_TYPES = ["Layup", "Punch Out"];
 
 function sgIsRecovery(shot, idx){
@@ -595,10 +595,17 @@ function sgEPutts(feet, baseline){
   return PUTTING[PUTTING.length-1][2 + BASE_IDX[baseline]];
 }
 
-function sgCategory(shot, idx){
-  var club = String(shot.club || "").trim().toLowerCase();
-  if (idx === 0 && shot.type === "Drive" &&
-      (club === "d" || club === "driver" || club === "md" || club === "mini driver")) return "driver";
+function sgCategory(shot, idx, par){
+  /* OFF THE TEE = every tee shot on a par 4 or 5, whatever the club (Eric,
+     2026-08-30). It used to be a driver-only bucket, counting a driver-family
+     club off the first swing, which broke both ways at Falcon Lakes: twelve of
+     his fourteen tee balls were a 3H and landed in 176+ beside real approach
+     shots, while the category headed for drivers held five swings and none.
+     The club was never what the bucket measured; the shot is.
+     A re-tee after a penalty is still a tee shot and counts here.
+     Par 3 tee shots stay in their distance bucket -- those are approach shots
+     that happen to start from a tee. */
+  if (String(shot.lie || "").trim() === "Tee" && par !== 3) return "off_tee";
   var d = shot.dist_before || 0;
   if (d >= 176) return "p176";
   if (d >= 101) return "p101";
@@ -616,14 +623,14 @@ function holeSG(hole, baseline){
      it exists so the conservation identity still balances, because every
      stroke must be accounted for somewhere even when it is kept out of the
      four buckets and out of ball_strike. */
-  var out = {driver:0, p176:0, p101:0, p100:0, putting:0, ball_strike:0, excluded:0};
+  var out = {off_tee:0, p176:0, p101:0, p100:0, putting:0, ball_strike:0, excluded:0};
   var shots = hole.shots || [];
   var p1 = (hole.p1_ft === undefined) ? null : hole.p1_ft;
   var putts = hole.putts_tm || 0;
 
   for (var i=0;i<shots.length;i++){
     var s = shots[i];
-    var cat = sgCategory(s, i);
+    var cat = sgCategory(s, i, hole.par);
     var db = (s.dist_before === undefined) ? null : s.dist_before;
     var da = (s.dist_after === undefined) ? null : s.dist_after;
     if (db === null) continue;
@@ -655,14 +662,14 @@ function holeSG(hole, baseline){
     if (penal) out[key] += -1.0;
   }
   if (p1 !== null && putts) out.putting = sgEPutts(p1, baseline) - putts;
-  out.ball_strike = out.driver + out.p176 + out.p101 + out.p100;
+  out.ball_strike = out.off_tee + out.p176 + out.p101 + out.p100;
   for (var k in out) out[k] = sgRound(out[k], 3);
   return out;
 }
 
 /* Round totals: sum every hole, same six categories. */
 function roundSG(holes, baseline){
-  var tot = {driver:0, p176:0, p101:0, p100:0, putting:0, ball_strike:0, excluded:0};
+  var tot = {off_tee:0, p176:0, p101:0, p100:0, putting:0, ball_strike:0, excluded:0};
   (holes || []).forEach(function(h){
     var s = holeSG(h, baseline);
     SG_KEYS.forEach(function(k){ tot[k] += s[k]; });
@@ -672,7 +679,7 @@ function roundSG(holes, baseline){
      their subtotal, so it has to add up in the numbers actually shown.
      Totalling it independently across 18 holes left it off the sum of the
      displayed parts by up to 0.03 -- invisible at 1dp, visible at 2dp. */
-  tot.ball_strike = sgRound(tot.driver + tot.p176 + tot.p101 + tot.p100, 2);
+  tot.ball_strike = sgRound(tot.off_tee + tot.p176 + tot.p101 + tot.p100, 2);
   return tot;
 }
 </script>
@@ -2840,9 +2847,9 @@ function viewOverview(){
    Only holes with logged shots count, so a part-played round reads honestly
    instead of scoring unplayed holes as losses.
    Layout: the four ball-striking categories add DOWN to Ball Striking
-   (ball_strike = driver + p176 + p101 + p100); putting sits below it,
+   (ball_strike = off_tee + p176 + p101 + p100); putting sits below it,
    outside that sum. */
-const SG_LABEL = {driver:"Driver", p176:"176+", p101:"101-175", p100:"100 & In",
+const SG_LABEL = {off_tee:"Off the Tee", p176:"176+", p101:"101-175", p100:"100 & In",
                   putting:"Putting", ball_strike:"Ball Striking"};
 function sgCard(){
   const holes = buildRoundJSON().holes.filter(h => (h.shots || []).length);
@@ -2858,7 +2865,7 @@ function sgCard(){
   };
   return `<div class="sgcard">
     <div class="sghead">Strokes Gained &middot; vs 5 HCP</div>
-    ${["driver","p176","p101","p100"].map(k => row(k)).join("")}
+    ${["off_tee","p176","p101","p100"].map(k => row(k)).join("")}
     ${row("ball_strike", " sgtot")}
     ${row("putting", " sgafter")}
     <div class="sgnote">${holes.length} hole${holes.length === 1 ? "" : "s"} with shots logged</div>

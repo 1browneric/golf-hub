@@ -1129,7 +1129,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
      `i` indexes the sheet's column order, where Putting comes before Ball
      Strike -- do not reorder the data, only the display. */
   var CATS=[
-    {label:'Driver',    i:0},
+    {label:'Off the Tee', i:0},
     {label:'176+',      i:1},
     {label:'101-175',   i:2},
     {label:'100 & In',  i:3},
@@ -1482,7 +1482,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
                   pen:+r[49]||0, shots:shots,
                   /* Per-hole SG vs 5 HCP (cols 56-61), matching the band the
                      hub shows everywhere else. Order in the sheet is
-                     Driver, 176+, 101-175, 100&In, Putting, Ball Strike. */
+                     Off the Tee, 176+, 101-175, 100&In, Putting, Ball Strike. */
                   sg:[56,57,58,59,60,61].map(function(i){var v=parseFloat(r[i]);return isNaN(v)?0:v;})});
     });
     if(!holes.length) return null;
@@ -1659,7 +1659,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     /* Per category, so each Improvement card can answer "am I left or right
        with THIS club" rather than only across the whole bag. The type strings
        are the tracker's own shot Types. */
-    var TYPE_OF={'Driver':'Drive','176+':'Long App (176+)',
+    var TYPE_OF={'Off the Tee':'Drive','176+':'Long App (176+)',
                  '101-175':'Mid App (101-175)','100 & In':'Short App (100&In)'};
     var byCat={};
     Object.keys(TYPE_OF).forEach(function(name){
@@ -1766,7 +1766,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       return (c&&c.reachD)? 'Reached the green '+rate(c.reachN,c.reachD)+'.' : '';
     };
     var SUPPORT={
-      'Driver':   bits([H&&H.firHoles?'Fairways '+rate(H.firHit,H.firHoles)+'.':(fwPct==null?'':'Fairways '+pct(fwPct)+'.'),
+      'Off the Tee': bits([H&&H.firHoles?'Fairways '+rate(H.firHit,H.firHoles)+'.':(fwPct==null?'':'Fairways '+pct(fwPct)+'.'),
                         H&&H.penaltyPer!=null?'Penalties '+H.penaltyPer.toFixed(1)+' a round.':'']),
       '176+':     bits([reachLine('176+')]),
       '101-175':  bits([reachLine('101-175')]),
@@ -2040,7 +2040,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       var out='';
       if(c.dir.length)    out+=groupLabel('WHERE IT MISSES')+bars(c.dir,sumRows(c.dir));
       if(c.strike.length) out+=groupLabel('STRIKE')+bars(c.strike,sumRows(c.strike));
-      if(name==='Driver') out+=costBlock();
+      if(name==='Off the Tee') out+=costBlock();
       return out;
     };
     var ranked=SGBARS.filter(function(a){return !a[2];})   // drop the subtotal
@@ -2961,7 +2961,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
          Only ladders carry a `kind` and a logging path. Everything else here
          is reading material - a drill without a `kind` has no sheet
          round-trip, exactly as with the five text-only putting drills. */
-      'Driver':[{
+      'Off the Tee':[{
         slug:'fairway-width-test',
         name:'Fairway Width Test',
         protocol:[
