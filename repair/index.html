@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>Dispersion Repair</title>
+<style>
+  :root{ --navy:#0f203a; --cream:#f5f2eb; --gold:#d0a469; --line:rgba(255,255,255,.14); }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--navy); color:var(--cream);
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; padding:18px; }
+  h1{ font-size:17px; letter-spacing:.04em; margin:0 0 4px; }
+  .sub{ font-size:12px; opacity:.7; margin:0 0 16px; }
+  .card{ background:rgba(255,255,255,.05); border:1px solid var(--line); border-radius:12px;
+         padding:14px; margin-bottom:14px; }
+  .big{ font-size:26px; font-weight:700; }
+  .k{ font-size:11px; opacity:.65; letter-spacing:.12em; text-transform:uppercase; }
+  table{ width:100%; border-collapse:collapse; font-size:13px; margin-top:8px; }
+  td,th{ text-align:left; padding:4px 6px; border-bottom:1px solid var(--line); }
+  th{ font-size:10px; opacity:.6; letter-spacing:.1em; text-transform:uppercase; }
+  textarea{ width:100%; height:200px; margin-top:8px; background:#0a1830; color:var(--cream);
+            border:1px solid var(--line); border-radius:8px; padding:10px; font-family:ui-monospace,Menlo,monospace;
+            font-size:11px; }
+  button,a.btn{ display:inline-block; width:100%; text-align:center; padding:13px; margin-top:10px;
+          background:var(--gold); color:#20140a; font-weight:700; border:none; border-radius:10px;
+          font-size:15px; text-decoration:none; }
+  .warn{ color:#ffcf9a; font-size:12px; }
+  .empty{ color:#ff9a9a; }
+</style>
+</head>
+<body>
+  <h1>Dispersion Repair</h1>
+  <p class="sub">Reads today's approach-dispersion captures out of this phone so they can be put back in the sheet. It only READS. It changes nothing on your phone.</p>
+
+  <div class="card">
+    <div class="k">Dispersion captures on this device</div>
+    <div class="big" id="count">-</div>
+    <div id="bydate"></div>
+  </div>
+
+  <div class="card">
+    <div class="k">What to do</div>
+    <p style="font-size:13px;line-height:1.5">Tap <b>Copy everything</b> below, then paste it back to Home Base in your chat. That's it. If Copy doesn't work, tap <b>Email it to me</b>, or long-press the box, Select All, Copy.</p>
+    <button id="copy">Copy everything</button>
+    <a class="btn" id="mail" href="#" style="background:#1c3350;color:var(--cream)">Email it to me</a>
+  </div>
+
+  <div class="card">
+    <div class="k">Raw data (for reference)</div>
+    <textarea id="out" readonly onclick="this.select()"></textarea>
+  </div>
+
+<script>
+(function(){
+  // Same origin as the trackers, so this reads the shared per-device stores.
+  function read(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return null; } }
+  var disp = read('gh_dispersion_v1');
+  var shots = (disp && Array.isArray(disp.shots)) ? disp.shots : [];
+
+  // group by date + course so we can see exactly what was captured and when
+  var groups = {};
+  shots.forEach(function(r){
+    var key = (r.date||'?') + ' | ' + (r.course||'?');
+    groups[key] = (groups[key]||0) + 1;
+  });
+
+  document.getElementById('count').textContent = shots.length + ' shots';
+  var rows = Object.keys(groups).sort().map(function(k){
+    return '<tr><td>'+k+'</td><td style="text-align:right">'+groups[k]+'</td></tr>';
+  }).join('');
+  document.getElementById('bydate').innerHTML = shots.length
+    ? '<table><thead><tr><th>Round (date | course)</th><th style="text-align:right">Shots</th></tr></thead><tbody>'+rows+'</tbody></table>'
+    : '<p class="empty">No dispersion captures found on this device.</p>';
+
+  // Bundle BOTH stores so Home Base can rebuild the round exactly.
+  var bundle = {
+    kind: 'dispersion_repair',
+    exported_at_ms: Date.now(),
+    dispersion: disp,
+    round_state: read('rt_tiffany_greens_v1'),
+    round_date_key: localStorage.getItem('rt_tiffany_greens_v1_date') || null
+  };
+  var text = JSON.stringify(bundle);
+  document.getElementById('out').value = text;
+
+  document.getElementById('copy').onclick = function(){
+    var t = document.getElementById('out');
+    t.select();
+    var ok = false;
+    try{ ok = document.execCommand('copy'); }catch(e){}
+    if (navigator.clipboard){ navigator.clipboard.writeText(text).then(function(){ done(); }, function(){ if(ok) done(); }); }
+    else if (ok) done();
+    function done(){ var b=document.getElementById('copy'); b.textContent='Copied - now paste it to Home Base'; }
+  };
+
+  // mailto backup (may truncate on very long bodies; the Copy box is the reliable path)
+  document.getElementById('mail').href =
+    'mailto:1brown.eric@gmail.com?subject=' + encodeURIComponent('Golf dispersion repair export') +
+    '&body=' + encodeURIComponent(text);
+})();
+</script>
+</body>
+</html>
