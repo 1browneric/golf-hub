@@ -1343,6 +1343,11 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
        Scoring shape leads with doubles, the same order Improvement uses. */
     var stats=groupLabel('THIS ROUND')+
       '<div style="margin-top:8px">'+
+      detailStat('The Five', (function(){
+        var f=fiveCount(hs), std=FIVE_STANDARD*hs.length/18;
+        return f.total+'<span style="color:var(--steel);font-weight:400"> &middot; standard '+
+               (std%1?std.toFixed(1):std)+'</span>';
+      })())+
       detailStat('Doubles or worse', cnt(function(h){return h.vsPar!=null&&h.vsPar>=2;}))+
       detailStat('Bogeys',           cnt(function(h){return h.vsPar===1;}))+
       detailStat('Pars',             cnt(function(h){return h.vsPar===0;}))+
@@ -1520,6 +1525,72 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     return {n:n,d:d,gaps:gaps,pct:d?n/d:null};
   }
 
+  /* THE FIVE, counted. The reference under the Scoring card names the five
+     mistakes; this is the tally against it, per round, from the Hole Log.
+     A hole can count in more than one - a three-putt double on a par 5 is
+     three. The standard is FIVE_STANDARD a round, halved for a nine.
+       dbl  double bogey or worse
+       p5   bogey or worse on a par 5
+       tp   three putts or more
+       sc   bogey or worse on a hole where a 9 iron, PW or wedge was hit at
+            the green on a stroke that could still reach it in regulation
+            (penalty strokes count toward the stroke number)
+       dc   two or more shots from FIVE_CHIP_YDS and in on one hole
+     An untyped shot (07/12 logged none) is taken as an approach; a Drive,
+     Layup or Punch Out with a short club is not one. */
+  var FIVE_STANDARD = 4;
+  var FIVE_CHIP_YDS = 50;
+  var FIVE_SHORT = {'9i':1,'pw':1,'44':1,'48':1,'50':1,'52':1,'54':1,'56':1,'58':1,'60':1};
+  function fiveCount(hs){
+    var c={dbl:0,p5:0,tp:0,sc:0,dc:0,total:0};
+    hs.forEach(function(h){
+      var d=h.score-h.par;
+      if(d>=2) c.dbl++;
+      if(h.par===5&&d>=1) c.p5++;
+      if(h.putts>=3) c.tp++;
+      if(d>=1&&h.shots.some(function(s,i){
+        return i+1+h.pen<=h.par-2 && FIVE_SHORT[s.club.toLowerCase()]===1 &&
+               (s.type===''||s.type.indexOf('App')>=0);
+      })) c.sc++;
+      if(h.shots.filter(function(s){return s.db!=null&&s.db<=FIVE_CHIP_YDS;}).length>=2) c.dc++;
+    });
+    c.total=c.dbl+c.p5+c.tp+c.sc+c.dc;
+    return c;
+  }
+  var FIVE_KEYS=['dbl','p5','tp','sc','dc','total'];
+  /* The table under the Scoring card: newest round first, score and to-par
+     beside the five counts, then the season per 18 holes. No colour scale -
+     a round at or under the standard is marked in the hub's blue and bold,
+     everything else is plain. */
+  function fiveTable(H){
+    if(!H||!H.five||!H.five.length) return '';
+    var th='font-family:var(--font-caps);font-weight:700;font-size:9px;letter-spacing:.08em;color:var(--steel);padding:4px 0;text-align:right';
+    var td='font-size:11px;padding:5px 0;text-align:right;border-top:1px solid rgba(143,160,184,.14)';
+    var holes=0, tot={};
+    FIVE_KEYS.forEach(function(k){tot[k]=0;});
+    var rows=H.five.slice().reverse().map(function(r){
+      holes+=r.n; FIVE_KEYS.forEach(function(k){tot[k]+=r.c[k];});
+      var met=r.c.total<=FIVE_STANDARD*r.n/18;
+      return '<tr class="mono">'+
+        '<td style="'+td+';text-align:left;color:var(--steel)">'+r.date+(r.n<18?'&middot;'+r.n:'')+'</td>'+
+        '<td style="'+td+';color:var(--cream);font-weight:600">'+r.score+'</td>'+
+        '<td style="'+td+';color:var(--steel)">'+(r.vp>=0?'+':'')+r.vp+'</td>'+
+        ['dbl','p5','tp','sc','dc'].map(function(k){
+          return '<td style="'+td+';color:var(--cream)">'+r.c[k]+'</td>';}).join('')+
+        '<td style="'+td+';font-weight:700;color:'+(met?'#6FA8DC':'var(--cream)')+'">'+r.c.total+'</td></tr>';
+    }).join('');
+    var per=function(k){return (tot[k]/holes*18).toFixed(1);};
+    return groupLabel('THE FIVE &middot; '+FIVE_STANDARD+' OR FEWER A ROUND')+
+      '<table data-five style="width:100%;border-collapse:collapse;margin-top:6px">'+
+      '<tr>'+['DATE','SCORE','+/-','DBL','P5','3P','9I','CHIP','TOT'].map(function(t,i){
+        return '<td style="'+th+(i?'':';text-align:left')+'">'+t+'</td>';}).join('')+'</tr>'+
+      rows+
+      '<tr class="mono"><td colspan="3" style="'+td+';text-align:left;color:var(--steel)">Per 18</td>'+
+        FIVE_KEYS.map(function(k){
+          return '<td style="'+td+';font-weight:700;color:var(--cream)">'+per(k)+'</td>';}).join('')+'</tr>'+
+      '</table>';
+  }
+
   function parseHoles(rows){
     var holes=[];
     (rows||[]).slice(3).forEach(function(r){
@@ -1613,6 +1684,11 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     };
     return {
       rounds:nRounds,
+      five: rorder.map(function(k){
+        var g=rby[k], sc=0, pr=0;
+        g.hs.forEach(function(h){ sc+=h.score; pr+=h.par; });
+        return {date:g.date, n:g.n, score:sc, vp:sc-pr, c:fiveCount(g.hs)};
+      }),
       scramblePct: missed.length? saved.length/missed.length : null,
       scrambleN: saved.length, scrambleD: missed.length,
       threePuttPer: holes.filter(function(h){return h.putts>=3;}).length/nRounds,
@@ -2160,6 +2236,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
         '<div class="pdetail" hidden>'+
         '<div class="mono" style="font-size:12px;color:var(--steel);margin-top:8px;opacity:.9;line-height:1.8">'+
           SUPPORT['Scoring']+'</div>'+
+        fiveTable(H)+
         /* The reference that governs these numbers, on the one card that
            already carries them. The fold handler ignores taps inside
            .pdetail, so this navigates instead of collapsing the card. */
@@ -2230,7 +2307,12 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
     /* Hole Log first so the Improvement stats are present on the first paint;
        a failure here must never stop the rounds themselves rendering. */
     try{var hc=JSON.parse(localStorage.getItem(HOLE_CACHE)); if(hc&&hc.rows) HOLESTATS=parseHoles(hc.rows);}catch(e){}
-    fetch(HOOK+'?tab=holes').then(function(r){return r.json();}).then(function(j){
+    /* Cache-bust every feed read. Without a unique query param, iOS/Safari
+       serves a CACHED response for the Apps Script GET, so a round that is
+       already in the sheet never reaches the phone and the hub shows the old
+       rounds no matter how many times it is reopened (Tiffany Greens,
+       2026-09-23). A fresh _ts and no-store force the live sheet every open. */
+    fetch(HOOK+'?tab=holes&_ts='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){
       if(j&&j.ok&&j.rows){
         try{localStorage.setItem(HOLE_CACHE,JSON.stringify({rows:j.rows,t:Date.now()}));}catch(e){}
         HOLESTATS=parseHoles(j.rows);
@@ -2240,7 +2322,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
         if(typeof renderDispersion==='function') renderDispersion();
       }
     }).catch(function(){}).then(function(){
-      return fetch(HOOK).then(function(r){return r.json();}).then(function(j){
+      return fetch(HOOK+'?_ts='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){
         if(j&&j.ok&&j.rows){
           try{localStorage.setItem(CACHE_KEY,JSON.stringify({rows:j.rows,t:Date.now()}));}catch(e){}
           renderRounds(parseRounds(j.rows));
