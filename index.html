@@ -1591,6 +1591,35 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
       '</table>';
   }
 
+  /* PRIORITIES - the three of the five that move Eric's score, in the order
+     he was given them 2026-10-01 ("add those three priorities to the golf
+     hub"). The order and the cue are his and fixed; the rate beside each is
+     live, per 18 holes, from the same counts as the table below. Doubles
+     first because they track score to par almost one for one (0.93 over
+     twelve full rounds); three-putts are the same ~3 every round; the
+     scoring-club bogeys are what is left between 81 and the mid 70s. */
+  var FIVE_PRIORITIES=[
+    {k:'dbl', name:'No doubles',               hold:'hold to 1', cue:'After trouble, play for bogey.'},
+    {k:'tp',  name:'No three-putts',           hold:'hold to 1', cue:'From 20 ft and out, leave it inside 3 ft.'},
+    {k:'sc',  name:'No bogeys, 9 iron or less', hold:'cut in half', cue:'Middle of the green, two-putt par.'}
+  ];
+  function fivePriorities(H){
+    if(!H||!H.five||!H.five.length) return '';
+    var holes=0, tot={dbl:0,tp:0,sc:0};
+    H.five.forEach(function(r){ holes+=r.n; for(var k in tot) tot[k]+=r.c[k]; });
+    return groupLabel('PRIORITIES')+
+      '<div data-five-priorities style="margin-top:6px">'+
+      FIVE_PRIORITIES.map(function(p,i){
+        return '<div style="padding:7px 0;border-top:1px solid rgba(143,160,184,.14)">'+
+          '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">'+
+            '<span style="font-family:var(--font-body);font-size:13px;font-weight:600;color:var(--cream)">'+(i+1)+'. '+p.name+'</span>'+
+            '<span class="mono" style="font-size:11px;color:var(--steel);white-space:nowrap">'+
+              '<span style="color:var(--cream);font-weight:700">'+(tot[p.k]/holes*18).toFixed(1)+'</span> a round &middot; '+p.hold+'</span></div>'+
+          '<div style="font-family:var(--font-body);font-size:12px;color:var(--steel);margin-top:2px">'+p.cue+'</div>'+
+        '</div>';
+      }).join('')+'</div>';
+  }
+
   function parseHoles(rows){
     var holes=[];
     (rows||[]).slice(3).forEach(function(r){
@@ -2236,6 +2265,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
         '<div class="pdetail" hidden>'+
         '<div class="mono" style="font-size:12px;color:var(--steel);margin-top:8px;opacity:.9;line-height:1.8">'+
           SUPPORT['Scoring']+'</div>'+
+        fivePriorities(H)+
         fiveTable(H)+
         /* The reference that governs these numbers, on the one card that
            already carries them. The fold handler ignores taps inside
