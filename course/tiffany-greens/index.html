@@ -182,6 +182,13 @@ input,textarea,select{font-family:inherit}
   color:var(--cream);font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:700}
 .gpswait{padding:34px 18px;text-align:center;font-family:var(--mono);font-size:12px;
   line-height:1.8;color:#5C6B82}
+.gpsaim{border-top:1px solid rgba(12,35,64,.12);padding:12px 14px 6px}
+.gpsaim svg{display:block;width:100%;max-width:340px;margin:0 auto}
+.aimrow{display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+  padding:9px 0;border-top:1px solid rgba(12,35,64,.1)}
+.aimrow:first-of-type{border-top:0}
+.aimrow .k{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#5C6B82}
+.aimrow .v{font-family:var(--mono);font-weight:700;font-size:18px;color:#0C2340;text-align:right}
 .gpsflag{padding:11px 14px;border-top:1px solid rgba(12,35,64,.12);
   font-family:var(--mono);font-size:10.5px;line-height:1.6;color:#8F1B2A;text-align:center}
 /* per-hole tee override */
@@ -2419,6 +2426,108 @@ function gpsStopWatch(){
    thumb apart is exactly the duplicate control he has objected to before.
    Returns "" for a course with no baked pack, so nothing renders rather than
    a card that cannot answer. */
+/* ---- Aim: his own shot pattern, drawn to scale on this green ----
+   READ-ONLY like the rest of the card. The shots are the approach leaves he
+   has already logged: the Hole Log rows the Golf Hub caches on this device
+   (same site, so the tracker can read them offline), falling back to this
+   device's own captures when the Hub has never been opened here.
+
+   The column map MUST match DISP_HL in design/golf-hub/index.html;
+   tests/test_gps.py fails if the two disagree. */
+const AIM_HOLE_CACHE = "gh_holes_cache_v1";
+const AIM_HL = {SHOT0:5,SHOT_W:6,SHOTS:6,LONG:69,RIGHT:70};
+function aimNum(v){
+  if (v === null || v === undefined || v === "") return null;
+  const n = typeof v === "number" ? v : Number(v);
+  return isFinite(n) ? n : null;
+}
+function aimRecords(){
+  let rows = null;
+  try { const hc = JSON.parse(localStorage.getItem(AIM_HOLE_CACHE)); if (hc && hc.rows) rows = hc.rows; } catch(e){}
+  const out = [];
+  if (rows){
+    for (let i = 3; i < rows.length; i++){
+      const r = rows[i] || [];
+      const lng = aimNum(r[AIM_HL.LONG]), rgt = aimNum(r[AIM_HL.RIGHT]);
+      if (lng === null || rgt === null) continue;
+      let db = null;
+      for (let k = 0; k < AIM_HL.SHOTS; k++){
+        const d = aimNum(r[AIM_HL.SHOT0 + k * AIM_HL.SHOT_W + 2]);
+        if (d !== null) db = d;
+      }
+      if (db !== null) out.push({ yds: db, right: rgt, long: lng });
+    }
+    return out;
+  }
+  dispLoadAll().forEach(r => {
+    if (dispIsPlottable(r) && r.played_from_yds != null)
+      out.push({ yds: r.played_from_yds, right: r.leave_right_ft, long: r.leave_long_ft });
+  });
+  return out;
+}
+
+/* The grid search is cheap but the card re-renders on every GPS fix, so the
+   answer is kept until the hole, the band, the shot count or his angle into
+   the green (to 5 degrees) changes. */
+let aimMemo = { key: null, val: null };
+function viewAim(h, d){
+  if (!h || !d || typeof gpsGreenLocalFt !== "function") return "";
+  const local = gpsGreenLocalFt(gpsPos.lat, gpsPos.lon, h.green);
+  if (!local) return "";
+  const bandKey = dispBandFor(d.middle);
+  const band = bandKey ? dispBand(bandKey) : null;
+  if (!band) return "";
+  const recs = aimRecords().filter(r => dispBandFor(r.yds) === bandKey);
+  /* The longest band has no top. Do not draw a 210 yard pattern for a man
+     standing on a tee 390 yards out. */
+  if (band.max === Infinity && recs.length){
+    const far = Math.max.apply(null, recs.map(r => r.yds));
+    if (d.middle > far + 10) return "";
+  }
+  const from = `${recs.length}, ${esc(band.label)} yd`;
+  if (recs.length < GPS_AIM_MIN_SHOTS){
+    return `<div class="gpsaim"><div class="aimrow"><span class="k">Shots</span><span class="v">${from}</span></div></div>`;
+  }
+  const offs = recs.map(r => [r.right, r.long]);
+  const p0 = local.points[0];
+  const bearing = Math.round(Math.atan2(p0[0], p0[1]) * 36 / Math.PI);
+  const key = [hole, bandKey, offs.length, bearing].join("|");
+  if (aimMemo.key !== key){
+    aimMemo = { key, val: { aim: gpsBestAim(offs, local.points), ell: gpsShotEllipse(offs) } };
+  }
+  const aim = aimMemo.val.aim, ell = aimMemo.val.ell;
+  if (!aim || !ell) return "";
+
+  /* One scale for both axes, so a foot left is as long on screen as a foot
+     long. The frame holds the whole green and the whole ellipse. */
+  const cx = aim.x + ell.mx, cy = aim.y + ell.my;
+  let R = 0;
+  local.points.forEach(p => { R = Math.max(R, Math.abs(p[0]), Math.abs(p[1])); });
+  R = Math.max(R, Math.abs(cx) + ell.a, Math.abs(cy) + ell.a) * 1.08;
+  const S = 300, C = S / 2;
+  const fx = v => (C + v / R * C).toFixed(1);
+  const fy = v => (C - v / R * C).toFixed(1);
+  const poly = local.points.map(p => fx(p[0]) + "," + fy(p[1])).join(" ");
+  const dots = offs.map(o =>
+    `<circle cx="${fx(aim.x + o[0])}" cy="${fy(aim.y + o[1])}" r="3" fill="#0C2340" fill-opacity=".55"/>`).join("");
+  const deg = (-ell.rot * 180 / Math.PI).toFixed(1);
+  const pct = Math.round(aim.on / aim.n * 100);
+  return `<div class="gpsaim">
+    <svg viewBox="0 0 ${S} ${S}" role="img" aria-label="Your shot pattern on this green">
+      <polygon points="${poly}" fill="#C9D8E6" stroke="#0C2340" stroke-width="1.5"/>
+      <line x1="${C}" y1="${S}" x2="${fx(aim.x)}" y2="${fy(aim.y)}" stroke="#0C2340" stroke-width="1.5" stroke-dasharray="5 5"/>
+      <ellipse cx="${fx(cx)}" cy="${fy(cy)}" rx="${(ell.a / R * C).toFixed(1)}" ry="${(ell.b / R * C).toFixed(1)}"
+        transform="rotate(${deg} ${fx(cx)} ${fy(cy)})" fill="#1F5FBF" fill-opacity=".16" stroke="#1F5FBF" stroke-width="2.5"/>
+      ${dots}
+      <path d="M${fx(0)} ${(+fy(0) - 6).toFixed(1)}v12M${(+fx(0) - 6).toFixed(1)} ${fy(0)}h12" stroke="#0C2340" stroke-width="1.5"/>
+      <circle cx="${fx(aim.x)}" cy="${fy(aim.y)}" r="7" fill="#F2B705" stroke="#0C2340" stroke-width="2"/>
+    </svg>
+    <div class="aimrow"><span class="k">Aim</span><span class="v">${esc(gpsAimWords(aim.x, aim.y))}</span></div>
+    <div class="aimrow"><span class="k">On green</span><span class="v">${pct}% (${aim.on} of ${aim.n})</span></div>
+    <div class="aimrow"><span class="k">Shots</span><span class="v">${from}</span></div>
+  </div>`;
+}
+
 function viewGPS(){
   if (!GPS_PACK) return "";
   const h = gpsHoleData(hole);
@@ -2451,6 +2560,7 @@ function viewGPS(){
       <div class="gpsn"><div class="k">Back</div><div class="v">${d ? gpsYds(d.back) : "&ndash;"}</div></div>
     </div>
     <div class="gpsunit">Yards</div>
+    ${viewAim(h, d)}
     <div class="gpsmeta">
       <span>${esc(gpsAccuracyLabel(gpsPos.acc))}</span>
       <span><b>${esc(GPS_PACK.name)}</b></span>
