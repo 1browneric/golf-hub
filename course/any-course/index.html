@@ -344,7 +344,7 @@ const CLUB_EXPORT = { MD: "Mini Driver" };   // stored short, exported as the sh
 const BAG_DISPLAY = {
   D:{name:"Driver",spec:"GT3 11° (C2 10g)"}, MD:{name:"Mini Driver",spec:"GT280 13°"},
   "3H":{name:"3 Hybrid",spec:"18°"}, "7w":{name:"7 Wood",spec:"GT2 21° (A1)"},
-  "4i":{name:"4 Iron",spec:""}, "5H":{name:"5 Hybrid",spec:"23°"},
+  "4i":{name:"4 Iron",spec:""}, "5H":{name:"5 Hybrid",spec:"GT2 24°"},
   "6i":{name:"6 Iron",spec:"27°"}, "7i":{name:"7 Iron",spec:"30°"},
   "8i":{name:"8 Iron",spec:"34°"}, "9i":{name:"9 Iron",spec:"38°"},
   PW:{name:"PW",spec:"43°"}, "48":{name:"AW",spec:"48°"},
@@ -1666,7 +1666,17 @@ function scoreClass(g, par){
 function render(){
   document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on", b.dataset.tab===tab));
   const main = $("#main");
-  main.innerHTML = tab==="hole" ? viewHole() : viewOverview();
+  /* Save must never be stranded by a view that throws. If a render fails,
+     show an always-working Save/Clear fallback (the round is on the channel
+     regardless). Root cause of the 2026-09-23 Tiffany strand. */
+  try {
+    main.innerHTML = tab==="hole" ? viewHole() : viewOverview();
+  } catch(e){
+    main.innerHTML = '<div class="sgcard"><div class="sghead">Display hiccup</div>'
+      + '<div class="sgnote">This view hit an error, but your round is safe. You can still save.</div></div>'
+      + '<button class="savebtn" data-act="saveround">Save round &middot; send to Home Base</button>'
+      + '<button class="reset" data-act="reset">Clear round</button>';
+  }
   bind();
   const st = $("#savestat");
   st.textContent = mode==="live" ? "Live sync" : mode==="offline" ? "Offline" : "Connecting";

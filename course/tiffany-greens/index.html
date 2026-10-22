@@ -1318,8 +1318,10 @@ if (typeof module !== "undefined" && module.exports) {
     };
     /* With no tap, show the SCORECARD yardage rather than the geometry: the OSM
        tee pad sits short of the card on most of these holes, and the par-3 club
-       targets are already anchored to the card. */
-    var toGreen = p ? dist([p.x,p.y], d.green) : d.blue;
+       targets are already anchored to the card. That yardage is `yd` in the
+       pack (build_layers.hole_layers); this read a `blue` the pack never had,
+       so every course showed "undefined to green" until the first tap. */
+    var toGreen = p ? dist([p.x,p.y], d.green) : d.yd;
     var pill = function(cls, css, s){
       var e = document.createElement("div");
       e.className = "cyd fwpill " + cls;
@@ -1508,7 +1510,7 @@ const CLUB_EXPORT = { MD: "Mini Driver" };   // stored short, exported as the sh
 const BAG_DISPLAY = {
   D:{name:"Driver",spec:"GT3 11° (C2 10g)"}, MD:{name:"Mini Driver",spec:"GT280 13°"},
   "3H":{name:"3 Hybrid",spec:"18°"}, "7w":{name:"7 Wood",spec:"GT2 21° (A1)"},
-  "4i":{name:"4 Iron",spec:""}, "5H":{name:"5 Hybrid",spec:"23°"},
+  "4i":{name:"4 Iron",spec:""}, "5H":{name:"5 Hybrid",spec:"GT2 24°"},
   "6i":{name:"6 Iron",spec:"27°"}, "7i":{name:"7 Iron",spec:"30°"},
   "8i":{name:"8 Iron",spec:"34°"}, "9i":{name:"9 Iron",spec:"38°"},
   PW:{name:"PW",spec:"43°"}, "48":{name:"AW",spec:"48°"},
@@ -2247,7 +2249,7 @@ function clubFor(dist){
   return best;
 }
 const fmtClub = c => `${c} ${CADDY[c].c[0]} (${CADDY[c].c[1]})`;
-const PREV = {"1":[{"date":"Aug 21","score":"5","rel":"0","putts":"2","shots":[{"club":"3H","db":"415","da":"256"},{"club":"7i","db":"256","da":"100"},{"club":"56","db":"100","da":""}]}],"2":[{"date":"Aug 21","score":"4","rel":"0","putts":"2","shots":[{"club":"3H","db":"354","da":"112"},{"club":"52","db":"112","da":""}]}],"3":[{"date":"Aug 21","score":"4","rel":"0","putts":"2","shots":[{"club":"3H","db":"351","da":"86"},{"club":"58","db":"86","da":""}]}],"4":[{"date":"Aug 21","score":"3","rel":"0","putts":"2","shots":[{"club":"9i","db":"151","da":""}]}],"5":[{"date":"Aug 21","score":"4","rel":"0","putts":"2","shots":[{"club":"3H","db":"292","da":"124"},{"club":"48","db":"124","da":""}]}],"6":[{"date":"Aug 21","score":"4","rel":"+1","putts":"2","shots":[{"club":"8i","db":"165","da":""},{"club":"56","db":"18","da":""}]}],"7":[{"date":"Aug 21","score":"5","rel":"+1","putts":"2","shots":[{"club":"3H","db":"312","da":"108"},{"club":"52","db":"108","da":"30"},{"club":"56","db":"30","da":""}]}],"8":[{"date":"Aug 21","score":"4","rel":"0","putts":"2","shots":[{"club":"D","db":"350","da":"100"},{"club":"52","db":"100","da":""}]}],"9":[{"date":"Aug 21","score":"4","rel":"-1","putts":"2","shots":[{"club":"Mini Driver","db":"503","da":"235"},{"club":"7w","db":"235","da":""}]}],"10":[{"date":"Aug 21","score":"3","rel":"0","putts":"2","shots":[{"club":"PW","db":"139","da":""}]}],"11":[{"date":"Aug 21","score":"5","rel":"0","putts":"2","shots":[{"club":"Mini Driver","db":"525","da":"305"},{"club":"7w","db":"305","da":"87"},{"club":"58","db":"87","da":""}]}],"12":[{"date":"Aug 21","score":"5","rel":"+1","putts":"3","shots":[{"club":"D","db":"367","da":"159"},{"club":"9i","db":"159","da":""}]}],"13":[{"date":"Aug 21","score":"5","rel":"+1","putts":"3","shots":[{"club":"3H","db":"358","da":"149"},{"club":"PW","db":"149","da":""}]}],"14":[{"date":"Aug 21","score":"5","rel":"+1","putts":"2","shots":[{"club":"3H","db":"330","da":"71"},{"club":"56","db":"71","da":"51"},{"club":"56","db":"51","da":""}]}],"15":[{"date":"Aug 21","score":"4","rel":"+1","putts":"2","shots":[{"club":"8i","db":"171","da":"25"},{"club":"56","db":"25","da":""}]}],"16":[{"date":"Aug 21","score":"5","rel":"0","putts":"2","shots":[{"club":"3H","db":"499","da":"278"},{"club":"7w","db":"278","da":"71"},{"club":"58","db":"71","da":""}]}],"17":[{"date":"Aug 21","score":"5","rel":"+1","putts":"3","shots":[{"club":"3H","db":"382","da":"140"},{"club":"PW","db":"140","da":""}]}],"18":[{"date":"Aug 21","score":"4","rel":"0","putts":"1","shots":[{"club":"3H","db":"389","da":"191"},{"club":"6i","db":"191","da":"25"},{"club":"56","db":"25","da":""}]}]};
+const PREV = {"1":[{"date":"Sep 23","score":"4","rel":"-1","putts":"1","shots":[{"club":"3H","db":"415","da":"178"},{"club":"7i","db":"178","da":"25"},{"club":"58","db":"25","da":""}]},{"date":"Aug 21","score":"5","rel":"0","putts":"2","shots":[{"club":"3H","db":"415","da":"256"},{"club":"7i","db":"256","da":"100"},{"club":"56","db":"100","da":""}]}],"2":[{"date":"Sep 23","score":"6","rel":"+2","putts":"2","shots":[{"club":"D","db":"354","da":"135"},{"club":"9i","db":"135","da":"35"},{"club":"58","db":"35","da":""}]},{"date":"Aug 21","score":"4","rel":"0","putts":"2","shots":[{"club":"3H","db":"354","da":"112"},{"club":"52","db":"112","da":""}]}],"3":[{"date":"Sep 23","score":"4","rel":"0","putts":"2","shots":[{"club":"3H","db":"351","da":"87"},{"club":"58","db":"87","da":""}]},{"date":"Aug 21","score":"4","rel":"0","putts":"2","shots":[{"club":"3H","db":"351","da":"86"},{"club":"58","db":"86","da":""}]}],"4":[{"date":"Sep 23","score":"4","rel":"+1","putts":"2","shots":[{"club":"9i","db":"148","da":"20"},{"club":"56","db":"20","da":""}]},{"date":"Aug 21","score":"3","rel":"0","putts":"2","shots":[{"club":"9i","db":"151","da":""}]}],"5":[{"date":"Sep 23","score":"6","rel":"+2","putts":"2","shots":[{"club":"3H","db":"292","da":"85"},{"club":"58","db":"85","da":""},{"club":"56","db":"30","da":"25"},{"club":"58","db":"25","da":""}]},{"date":"Aug 21","score":"4","rel":"0","putts":"2","shots":[{"club":"3H","db":"292","da":"124"},{"club":"48","db":"124","da":""}]}],"6":[{"date":"Sep 23","score":"2","rel":"-1","putts":"1","shots":[{"club":"9i","db":"154","da":""}]},{"date":"Aug 21","score":"4","rel":"+1","putts":"2","shots":[{"club":"8i","db":"165","da":""},{"club":"56","db":"18","da":""}]}],"7":[{"date":"Sep 23","score":"4","rel":"0","putts":"2","shots":[{"club":"3H","db":"312","da":"120"},{"club":"52","db":"120","da":""}]},{"date":"Aug 21","score":"5","rel":"+1","putts":"2","shots":[{"club":"3H","db":"312","da":"108"},{"club":"52","db":"108","da":"30"},{"club":"56","db":"30","da":""}]}],"8":[{"date":"Sep 23","score":"4","rel":"0","putts":"2","shots":[{"club":"D","db":"339","da":"83"},{"club":"58","db":"83","da":""}]},{"date":"Aug 21","score":"4","rel":"0","putts":"2","shots":[{"club":"D","db":"350","da":"100"},{"club":"52","db":"100","da":""}]}],"9":[{"date":"Sep 23","score":"6","rel":"+1","putts":"2","shots":[{"club":"D","db":"503","da":"178"},{"club":"7i","db":"178","da":"60"},{"club":"58","db":"60","da":""}]},{"date":"Aug 21","score":"4","rel":"-1","putts":"2","shots":[{"club":"Mini Driver","db":"503","da":"235"},{"club":"7w","db":"235","da":""}]}],"10":[{"date":"Sep 23","score":"3","rel":"0","putts":"2","shots":[{"club":"PW","db":"138","da":""}]},{"date":"Aug 21","score":"3","rel":"0","putts":"2","shots":[{"club":"PW","db":"139","da":""}]}],"11":[{"date":"Sep 23","score":"6","rel":"+1","putts":"3","shots":[{"club":"D","db":"498","da":"207"},{"club":"5H","db":"207","da":"20"},{"club":"58","db":"20","da":""}]},{"date":"Aug 21","score":"5","rel":"0","putts":"2","shots":[{"club":"Mini Driver","db":"525","da":"305"},{"club":"7w","db":"305","da":"87"},{"club":"58","db":"87","da":""}]}],"12":[{"date":"Sep 23","score":"5","rel":"+1","putts":"3","shots":[{"club":"Mini Driver","db":"335","da":"75"},{"club":"58","db":"75","da":""}]},{"date":"Aug 21","score":"5","rel":"+1","putts":"3","shots":[{"club":"D","db":"367","da":"159"},{"club":"9i","db":"159","da":""}]}],"13":[{"date":"Sep 23","score":"5","rel":"+1","putts":"2","shots":[{"club":"D","db":"358","da":"130"},{"club":"48","db":"130","da":"18"},{"club":"58","db":"18","da":""}]},{"date":"Aug 21","score":"5","rel":"+1","putts":"3","shots":[{"club":"3H","db":"358","da":"149"},{"club":"PW","db":"149","da":""}]}],"14":[{"date":"Sep 23","score":"5","rel":"+1","putts":"2","shots":[{"club":"D","db":"337","da":"71"},{"club":"58","db":"71","da":"25"},{"club":"58","db":"25","da":""}]},{"date":"Aug 21","score":"5","rel":"+1","putts":"2","shots":[{"club":"3H","db":"330","da":"71"},{"club":"56","db":"71","da":"51"},{"club":"56","db":"51","da":""}]}],"15":[{"date":"Sep 23","score":"3","rel":"0","putts":"2","shots":[{"club":"PW","db":"138","da":""}]},{"date":"Aug 21","score":"4","rel":"+1","putts":"2","shots":[{"club":"8i","db":"171","da":"25"},{"club":"56","db":"25","da":""}]}],"16":[{"date":"Sep 23","score":"5","rel":"0","putts":"2","shots":[{"club":"3H","db":"476","da":"271"},{"club":"3H","db":"271","da":"99"},{"club":"52","db":"99","da":""}]},{"date":"Aug 21","score":"5","rel":"0","putts":"2","shots":[{"club":"3H","db":"499","da":"278"},{"club":"7w","db":"278","da":"71"},{"club":"58","db":"71","da":""}]}],"17":[{"date":"Sep 23","score":"4","rel":"0","putts":"2","shots":[{"club":"D","db":"338","da":"71"},{"club":"56","db":"71","da":""}]},{"date":"Aug 21","score":"5","rel":"+1","putts":"3","shots":[{"club":"3H","db":"382","da":"140"},{"club":"PW","db":"140","da":""}]}],"18":[{"date":"Sep 23","score":"5","rel":"+1","putts":"2","shots":[{"club":"3H","db":"345","da":"120"},{"club":"48","db":"120","da":"20"},{"club":"56","db":"20","da":""}]},{"date":"Aug 21","score":"4","rel":"0","putts":"1","shots":[{"club":"3H","db":"389","da":"191"},{"club":"6i","db":"191","da":"25"},{"club":"56","db":"25","da":""}]}]};
 function prevShots(s){ const to = s.da==="" ? "G" : s.da; return `${s.club} ${s.db}&rarr;${to}`; }
 function renderPrev(list){
   if (!list || !list.length) return `<div class="stratrow muted">No logged rounds on this hole yet.</div>`;
@@ -2593,7 +2595,18 @@ dEl.addEventListener("change", () => { if(dEl.value){ ROUND.date = dEl.value; lo
 function render(){
   document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on", b.dataset.tab===tab));
   const main = $("#main");
-  main.innerHTML = tab==="hole" ? viewHole() : viewOverview();
+  /* Last-resort guard: a view must never leave a blank screen that also hides
+     the Save/Clear buttons. If a view throws, fall back to an always-working
+     Save/Clear panel so the round is never stranded (the data is on the
+     channel regardless). bind() below wires these buttons. */
+  try {
+    main.innerHTML = tab==="hole" ? viewHole() : viewOverview();
+  } catch(e){
+    main.innerHTML = `<div class="sgcard"><div class="sghead">Display hiccup</div>
+      <div class="sgnote">This view hit an error, but your round is safe on the channel. You can still save.</div></div>
+      <button class="savebtn" data-act="saveround">Save round &middot; send to Home Base</button>
+      <button class="reset" data-act="reset">Clear round</button>`;
+  }
   const zoomEl = $("#zoomroot");
   if (zoomEl) zoomEl.remove();
   if (bookZoom && tab==="hole"){
@@ -3326,29 +3339,40 @@ function viewOverview(){
    Only holes with logged shots count, so a part-played round reads honestly
    instead of scoring unplayed holes as losses.
    Layout: the four ball-striking categories add DOWN to Ball Striking
-   (ball_strike = driver + p176 + p101 + p100); putting sits below it,
+   (ball_strike = off_tee + p176 + p101 + p100); putting sits below it,
    outside that sum. */
-const SG_LABEL = {driver:"Driver", p176:"176+", p101:"101-175", p100:"100 & In",
+const SG_LABEL = {off_tee:"Off the Tee", p176:"176+", p101:"101-175", p100:"100 & In",
                   putting:"Putting", ball_strike:"Ball Striking"};
 function sgCard(){
-  const holes = buildRoundJSON().holes.filter(h => (h.shots || []).length);
-  if (!holes.length){
+  /* The live SG card must NEVER be able to blank the Overview or strand the
+     Save button. The whole compute-and-render is wrapped: if the engine throws
+     on one shot's data (e.g. Tiffany Greens, 2026-09-23), the card degrades to
+     a note and the rest of the Overview - scorecard and Save - renders normally.
+     The round is still recording, on the channel, and recoverable via
+     "pull my round". */
+  try {
+    const holes = buildRoundJSON().holes.filter(h => (h.shots || []).length);
+    if (!holes.length){
+      return `<div class="sgcard"><div class="sghead">Strokes Gained &middot; vs 5 HCP</div>
+        <div class="sgnote">Log a shot and your strokes gained appears here, hole by hole.</div></div>`;
+    }
+    const tot = roundSG(holes, "5hcp");
+    const row = (k, cls) => {
+      const v = tot[k], pos = v >= 0;
+      return `<div class="sgrow${cls || ""}"><div class="nm">${SG_LABEL[k]}</div>
+        <div class="vl" style="color:${pos ? "#1E8E4F" : "#B22234"}">${pos ? "+" : ""}${v.toFixed(2)}</div></div>`;
+    };
+    return `<div class="sgcard">
+      <div class="sghead">Strokes Gained &middot; vs 5 HCP</div>
+      ${["off_tee","p176","p101","p100"].map(k => row(k)).join("")}
+      ${row("ball_strike", " sgtot")}
+      ${row("putting", " sgafter")}
+      <div class="sgnote">${holes.length} hole${holes.length === 1 ? "" : "s"} with shots logged</div>
+    </div>`;
+  } catch(e){
     return `<div class="sgcard"><div class="sghead">Strokes Gained &middot; vs 5 HCP</div>
-      <div class="sgnote">Log a shot and your strokes gained appears here, hole by hole.</div></div>`;
+      <div class="sgnote">Strokes gained is paused for a moment - your round is still recording and saved. Tell Home Base &ldquo;pull my round&rdquo; for the full breakdown.</div></div>`;
   }
-  const tot = roundSG(holes, "5hcp");
-  const row = (k, cls) => {
-    const v = tot[k], pos = v >= 0;
-    return `<div class="sgrow${cls || ""}"><div class="nm">${SG_LABEL[k]}</div>
-      <div class="vl" style="color:${pos ? "#1E8E4F" : "#B22234"}">${pos ? "+" : ""}${v.toFixed(2)}</div></div>`;
-  };
-  return `<div class="sgcard">
-    <div class="sghead">Strokes Gained &middot; vs 5 HCP</div>
-    ${["driver","p176","p101","p100"].map(k => row(k)).join("")}
-    ${row("ball_strike", " sgtot")}
-    ${row("putting", " sgafter")}
-    <div class="sgnote">${holes.length} hole${holes.length === 1 ? "" : "s"} with shots logged</div>
-  </div>`;
 }
 
 /* ---------- events ---------- */

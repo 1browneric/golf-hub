@@ -1545,8 +1545,10 @@ if (typeof module !== "undefined" && module.exports) {
     };
     /* With no tap, show the SCORECARD yardage rather than the geometry: the OSM
        tee pad sits short of the card on most of these holes, and the par-3 club
-       targets are already anchored to the card. */
-    var toGreen = p ? dist([p.x,p.y], d.green) : d.blue;
+       targets are already anchored to the card. That yardage is `yd` in the
+       pack (build_layers.hole_layers); this read a `blue` the pack never had,
+       so every course showed "undefined to green" until the first tap. */
+    var toGreen = p ? dist([p.x,p.y], d.green) : d.yd;
     var pill = function(cls, css, s){
       var e = document.createElement("div");
       e.className = "cyd fwpill " + cls;
@@ -1735,7 +1737,7 @@ const CLUB_EXPORT = { MD: "Mini Driver" };   // stored short, exported as the sh
 const BAG_DISPLAY = {
   D:{name:"Driver",spec:"GT3 11° (C2 10g)"}, MD:{name:"Mini Driver",spec:"GT280 13°"},
   "3H":{name:"3 Hybrid",spec:"18°"}, "7w":{name:"7 Wood",spec:"GT2 21° (A1)"},
-  "4i":{name:"4 Iron",spec:""}, "5H":{name:"5 Hybrid",spec:"23°"},
+  "4i":{name:"4 Iron",spec:""}, "5H":{name:"5 Hybrid",spec:"GT2 24°"},
   "6i":{name:"6 Iron",spec:"27°"}, "7i":{name:"7 Iron",spec:"30°"},
   "8i":{name:"8 Iron",spec:"34°"}, "9i":{name:"9 Iron",spec:"38°"},
   PW:{name:"PW",spec:"43°"}, "48":{name:"AW",spec:"48°"},
@@ -2823,7 +2825,18 @@ dEl.addEventListener("change", () => { if(dEl.value){ ROUND.date = dEl.value; lo
 function render(){
   document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on", b.dataset.tab===tab));
   const main = $("#main");
-  main.innerHTML = tab==="hole" ? viewHole() : viewOverview();
+  /* Last-resort guard: a view must never leave a blank screen that also hides
+     the Save/Clear buttons. If a view throws, fall back to an always-working
+     Save/Clear panel so the round is never stranded (the data is on the
+     channel regardless). bind() below wires these buttons. */
+  try {
+    main.innerHTML = tab==="hole" ? viewHole() : viewOverview();
+  } catch(e){
+    main.innerHTML = `<div class="sgcard"><div class="sghead">Display hiccup</div>
+      <div class="sgnote">This view hit an error, but your round is safe on the channel. You can still save.</div></div>
+      <button class="savebtn" data-act="saveround">Save round &middot; send to Home Base</button>
+      <button class="reset" data-act="reset">Clear round</button>`;
+  }
   const zoomEl = $("#zoomroot");
   if (zoomEl) zoomEl.remove();
   if (bookZoom && tab==="hole"){
@@ -3556,29 +3569,40 @@ function viewOverview(){
    Only holes with logged shots count, so a part-played round reads honestly
    instead of scoring unplayed holes as losses.
    Layout: the four ball-striking categories add DOWN to Ball Striking
-   (ball_strike = driver + p176 + p101 + p100); putting sits below it,
+   (ball_strike = off_tee + p176 + p101 + p100); putting sits below it,
    outside that sum. */
-const SG_LABEL = {driver:"Driver", p176:"176+", p101:"101-175", p100:"100 & In",
+const SG_LABEL = {off_tee:"Off the Tee", p176:"176+", p101:"101-175", p100:"100 & In",
                   putting:"Putting", ball_strike:"Ball Striking"};
 function sgCard(){
-  const holes = buildRoundJSON().holes.filter(h => (h.shots || []).length);
-  if (!holes.length){
+  /* The live SG card must NEVER be able to blank the Overview or strand the
+     Save button. The whole compute-and-render is wrapped: if the engine throws
+     on one shot's data (e.g. Tiffany Greens, 2026-09-23), the card degrades to
+     a note and the rest of the Overview - scorecard and Save - renders normally.
+     The round is still recording, on the channel, and recoverable via
+     "pull my round". */
+  try {
+    const holes = buildRoundJSON().holes.filter(h => (h.shots || []).length);
+    if (!holes.length){
+      return `<div class="sgcard"><div class="sghead">Strokes Gained &middot; vs 5 HCP</div>
+        <div class="sgnote">Log a shot and your strokes gained appears here, hole by hole.</div></div>`;
+    }
+    const tot = roundSG(holes, "5hcp");
+    const row = (k, cls) => {
+      const v = tot[k], pos = v >= 0;
+      return `<div class="sgrow${cls || ""}"><div class="nm">${SG_LABEL[k]}</div>
+        <div class="vl" style="color:${pos ? "#1E8E4F" : "#B22234"}">${pos ? "+" : ""}${v.toFixed(2)}</div></div>`;
+    };
+    return `<div class="sgcard">
+      <div class="sghead">Strokes Gained &middot; vs 5 HCP</div>
+      ${["off_tee","p176","p101","p100"].map(k => row(k)).join("")}
+      ${row("ball_strike", " sgtot")}
+      ${row("putting", " sgafter")}
+      <div class="sgnote">${holes.length} hole${holes.length === 1 ? "" : "s"} with shots logged</div>
+    </div>`;
+  } catch(e){
     return `<div class="sgcard"><div class="sghead">Strokes Gained &middot; vs 5 HCP</div>
-      <div class="sgnote">Log a shot and your strokes gained appears here, hole by hole.</div></div>`;
+      <div class="sgnote">Strokes gained is paused for a moment - your round is still recording and saved. Tell Home Base &ldquo;pull my round&rdquo; for the full breakdown.</div></div>`;
   }
-  const tot = roundSG(holes, "5hcp");
-  const row = (k, cls) => {
-    const v = tot[k], pos = v >= 0;
-    return `<div class="sgrow${cls || ""}"><div class="nm">${SG_LABEL[k]}</div>
-      <div class="vl" style="color:${pos ? "#1E8E4F" : "#B22234"}">${pos ? "+" : ""}${v.toFixed(2)}</div></div>`;
-  };
-  return `<div class="sgcard">
-    <div class="sghead">Strokes Gained &middot; vs 5 HCP</div>
-    ${["driver","p176","p101","p100"].map(k => row(k)).join("")}
-    ${row("ball_strike", " sgtot")}
-    ${row("putting", " sgafter")}
-    <div class="sgnote">${holes.length} hole${holes.length === 1 ? "" : "s"} with shots logged</div>
-  </div>`;
 }
 
 /* ---------- events ---------- */

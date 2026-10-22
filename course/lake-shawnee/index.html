@@ -1073,6 +1073,376 @@ if (typeof module !== "undefined" && module.exports) {
 }
 </script>
 
+<script>
+/* Hole-map layers — the SVG overlay for the tracker's HOLE tab.
+ *
+ * Inlined into the tracker by skills/osm-course-book/build_tracker.py alongside
+ * FW_LAYERS, which skills/osm-course-book/build_layers.py bakes per hole.
+ *
+ * The tracker's baked hole map has its distance rings, tee markers and club
+ * ladder PAINTED INTO the webp, so none of it can be switched off. This swaps
+ * the image for a BARE satellite render of the identical frame and redraws
+ * everything as SVG, which is what makes the layer pills real.
+ *
+ * Four things here were bugs before they were code, so do not "simplify" them:
+ *   - the pill row is built ONCE. Re-inserting it inside the MutationObserver
+ *     moved the node between mousedown and mouseup, which cancels the click and
+ *     made the pills feel dead to a finger while .click() still worked.
+ *   - CLUBS ARE EMITTED LAST. SVG paints in document order, so anything after
+ *     them draws over the labels.
+ *   - club labels lay out top-down by their dot's y, not in club order. The
+ *     de-collision only pushes downward, and on a par 3 the dots run the other
+ *     way (front nearest the tee), so all three stacked onto the first.
+ *   - the SVG viewBox comes from the image's own pixel size. A square viewBox
+ *     stretched onto a tall image distorts every stroke and squashes the text.
+ */
+(function(){
+  var L = (typeof FW_LAYERS !== "undefined") ? FW_LAYERS : null;
+  if(!L || !L.holes || !Object.keys(L.holes).length) return;   // course has no pack
+  var ON = {yardage:true, width:true, clubs:true, slope:true};
+  var HAS = function(k){
+    return Object.keys(L.holes).some(function(h){
+      var d = L.holes[h];
+      return k === "width" ? (d.wins && d.wins.length)
+           : k === "slope" ? (d.arrows && d.arrows.length)
+           : k === "clubs" ? (d.clubs && d.clubs.length)
+           : (d.rings && d.rings.length);
+    });
+  };
+  /* Never offer a pill the course cannot fill — Shoal Creek has one mapped
+     fairway, so Width there would be a control that does nothing. */
+  var ORDER = [["yardage","Yardage"],["width","Width"],["clubs","Clubs"],["slope","Slope"]]
+              .filter(function(kv){ return HAS(kv[0]); });
+  var pick = {};          // hole -> {x,y} tap, local only
+  var busy = false;       // guards the observer against our own writes
+
+  function holeOf(im){
+    var m = (im.getAttribute("alt")||"").match(/Hole (\d+) overview/);
+    return m ? m[1] : null;
+  }
+
+  /* ---------- the SVG layers ---------- */
+  function build(d, W, H){
+    var S = Math.min(W,H)/460;
+    var X = function(p){ return (p[0]*W).toFixed(1); },
+        Y = function(p){ return (p[1]*H).toFixed(1); };
+    var pl = function(a){ return a.map(function(p){ return X(p)+","+Y(p); }).join(" "); };
+    var txt = function(x,y,s,size,fill,anchor){
+      return '<text x="'+x+'" y="'+y+'" text-anchor="'+(anchor||"middle")+'" '+
+        'font-family="ui-monospace,monospace" font-size="'+(size*S)+'" font-weight="700" '+
+        'fill="'+fill+'" stroke="#0B2134" stroke-width="'+(4.5*S)+'" paint-order="stroke">'+s+'</text>';
+    };
+    var o = ['<svg class="fwov" viewBox="0 0 '+W+' '+H+'" style="position:absolute;inset:0;'+
+             'width:100%;height:100%;pointer-events:none">'];
+
+    if(ON.yardage || ON.clubs || ON.width){
+      o.push('<polyline points="'+pl(d.line)+'" fill="none" stroke="#fff" '+
+             'stroke-width="'+(2*S)+'" stroke-dasharray="'+(9*S)+' '+(8*S)+'" opacity=".85"/>');
+    }
+    if(ON.yardage){
+      d.rings.forEach(function(r){
+        r.segs.forEach(function(s){
+          o.push('<polyline points="'+pl(s)+'" fill="none" stroke="#fff" '+
+                 'stroke-width="'+(1.8*S)+'" opacity=".9"/>');
+        });
+        /* Ring labels used to sit at the arc's midpoint, which is mid-fairway —
+           exactly where the club ladder and the width ticks are. Push them to
+           the far LEFT of the frame, which on these holes is houses and rough
+           and carries nothing else. */
+        var best = null;
+        r.segs.forEach(function(sg){
+          sg.forEach(function(q){
+            if(q[0] < 0.04 || q[1] < 0.03 || q[1] > 0.97) return;
+            if(!best || q[0] < best[0]) best = q;
+          });
+        });
+        if(best) o.push(txt(+X(best)+7*S, +Y(best)+6*S, r.yd, 18, "#fff", "start"));
+      });
+      d.tees.forEach(function(t){
+        /* the tee actually in play reads solid; the others are hollow refs */
+        o.push('<circle cx="'+X(t.at)+'" cy="'+Y(t.at)+'" r="'+((t.play?6:5)*S)+'" '+
+               'fill="'+(t.play?"#FF8A1F":"none")+'" stroke="#fff" stroke-width="'+(2*S)+'"/>');
+        o.push(txt(+X(t.at)+14*S, +Y(t.at)+6*S,
+                   t.name.toUpperCase()+" "+t.yd, t.play?19:16,
+                   t.play?"#fff":"#CBD8E4", "start"));
+      });
+    }
+    /* Slope reads like the green map: fall arrows, not sentences. Each arrow
+       points DOWNHILL and its length is the steepness. No text on the map. */
+    if(ON.slope){
+      (d.arrows||[]).forEach(function(a){
+        var x0 = a.at[0]*W, y0 = a.at[1]*H;
+        var len = (7 + Math.min(a.pct, 6)/6 * 11) * S;
+        var ux = a.d[0], uy = a.d[1];
+        var x1 = x0 + ux*len, y1 = y0 + uy*len;
+        var hw = 3.1*S, hl = 4.6*S;
+        var px = -uy, py = ux;                       // perpendicular, for the head
+        var bx = x1 - ux*hl, by = y1 - uy*hl;
+        var head = [x1+","+y1,
+                    (bx+px*hw)+","+(by+py*hw),
+                    (bx-px*hw)+","+(by-py*hw)].join(" ");
+        o.push('<line x1="'+x0.toFixed(1)+'" y1="'+y0.toFixed(1)+'" '+
+               'x2="'+bx.toFixed(1)+'" y2="'+by.toFixed(1)+'" stroke="#0B2134" '+
+               'stroke-width="'+(3.4*S)+'" stroke-linecap="round" opacity=".55"/>');
+        o.push('<polygon points="'+head+'" fill="#0B2134" opacity=".55"/>');
+        o.push('<line x1="'+x0.toFixed(1)+'" y1="'+y0.toFixed(1)+'" '+
+               'x2="'+bx.toFixed(1)+'" y2="'+by.toFixed(1)+'" stroke="#FFFFFF" '+
+               'stroke-width="'+(1.5*S)+'" stroke-linecap="round"/>');
+        o.push('<polygon points="'+head+'" fill="#FFFFFF"/>');
+      });
+    }
+    /* WIDTH as a dimension line, not a bar. A 9px stroke with fat end dots
+       read as heavy and hid the exact edge it was supposed to mark; a hairline
+       with perpendicular end ticks says the same thing and stays out of the way
+       of the club ladder. */
+    if(ON.width){
+      d.wins.forEach(function(w){
+        w.segs.forEach(function(seg){
+          var perp = function(a, b){
+            var vx = b[0]-a[0], vy = b[1]-a[1];
+            var m = Math.hypot(vx*W, vy*H) || 1;
+            return [(-vy*H)/m, (vx*W)/m];      // unit, in pixel space
+          };
+          var tick = function(pt, n){
+            var t = 6.5*S;
+            var x = +X(pt), y = +Y(pt);
+            return '<line x1="'+(x-n[0]*t).toFixed(1)+'" y1="'+(y-n[1]*t).toFixed(1)+'" '+
+                   'x2="'+(x+n[0]*t).toFixed(1)+'" y2="'+(y+n[1]*t).toFixed(1)+'" ';
+          };
+          var n0 = perp(seg[0], seg[1]);
+          var n1 = perp(seg[seg.length-2], seg[seg.length-1]);
+          // dark under-stroke keeps it legible on light sand
+          o.push('<polyline points="'+pl(seg)+'" fill="none" stroke="#0B2134" '+
+                 'stroke-width="'+(4*S)+'" opacity=".45" stroke-linecap="round"/>');
+          o.push(tick(seg[0], n0)+'stroke="#0B2134" stroke-width="'+(4*S)+'" opacity=".45"/>');
+          o.push(tick(seg[seg.length-1], n1)+'stroke="#0B2134" stroke-width="'+(4*S)+'" opacity=".45"/>');
+          o.push('<polyline points="'+pl(seg)+'" fill="none" stroke="#7FB2F0" '+
+                 'stroke-width="'+(1.7*S)+'" stroke-linecap="round"/>');
+          o.push(tick(seg[0], n0)+'stroke="#FF8A1F" stroke-width="'+(2.2*S)+'"/>');
+          o.push(tick(seg[seg.length-1], n1)+'stroke="#FF8A1F" stroke-width="'+(2.2*S)+'"/>');
+        });
+        var last = w.segs[w.segs.length-1];
+        var end = last[last.length-1];
+        o.push(txt(+X(end)+9*S, +Y(end)+6*S, w.w+"y", 20, "#fff", "start"));
+      });
+    }
+    /* PAINT ORDER MATTERS: SVG draws in document order, so whatever is
+       emitted last sits on top. Eric, 2026-08-28: "make sure the clubs are
+       on the top level. and there is nothing on top of them like the arrow."
+       Slope arrows and width bars were being drawn after the club ladder and
+       striking through the labels. Clubs go LAST. */
+    if(ON.clubs){
+      if(d.fstart){
+        var fx = +X(d.fstart.at), fy = +Y(d.fstart.at);
+        o.push('<circle cx="'+fx.toFixed(1)+'" cy="'+fy.toFixed(1)+'" r="'+(4*S)+'" '+
+               'fill="#FF8A1F" stroke="#fff" stroke-width="'+(1.5*S)+'"/>');
+        o.push(txt(fx-13*S, fy+6*S, "FW "+d.fstart.yd, 17, "#FFD9A8", "end"));
+      }
+      /* Par 3s render EXACTLY like every other hole — dot plus label at the
+         point. Only the clubs differ: the normal club for that hole rather than
+         the tee ladder. The separate left-hand block is gone. */
+      /* Lay the labels out TOP-DOWN by their dot's y, not in club order. The
+         de-collision only ever pushes a label downward, and on a par 3 the dots
+         run the other way — front is nearest the tee (low on the frame), back is
+         furthest (high) — so iterating front-to-back shoved all three labels
+         down onto the first one instead of leaving each beside its dot. */
+      var placed = d.clubs.map(function(c){
+        return { c: c, cx: +X(c.at), cy: +Y(c.at) };
+      }).sort(function(a, b){ return a.cy - b.cy; });
+      placed.forEach(function(q){
+        o.push('<circle cx="'+q.cx.toFixed(1)+'" cy="'+q.cy.toFixed(1)+'" r="'+(4*S)+'" '+
+               'fill="#1F4E9D" stroke="#fff" stroke-width="'+(1.5*S)+'"/>');
+      });
+      var lastY = -1e9, gap = 17*S;
+      placed.forEach(function(q){
+        var ly = q.cy + 6*S;
+        if(ly - lastY < gap) ly = lastY + gap;      // nudge, do not overprint
+        lastY = ly;
+        if(Math.abs(ly - (q.cy + 6*S)) > 2*S){       // leader only when nudged
+          o.push('<line x1="'+(q.cx-6*S).toFixed(1)+'" y1="'+q.cy.toFixed(1)+'" '+
+                 'x2="'+(q.cx-11*S).toFixed(1)+'" y2="'+(ly-4*S).toFixed(1)+'" '+
+                 'stroke="#fff" stroke-width="'+(1*S)+'" opacity=".7"/>');
+        }
+        o.push(txt(q.cx-13*S, ly, q.c.club+" "+q.c.yd, 17, "#fff", "end"));
+      });
+    }
+    o.push("</svg>");
+    return o.join("");
+  }
+
+  /* ---------- the pill row, built once ---------- */
+  var row = null;
+  function makeRow(){
+    if(row) return row;
+    row = document.createElement("div");
+    row.id = "fwlayers";
+    row.style.cssText = "display:flex;gap:6px;justify-content:center;flex-wrap:wrap;" +
+      "padding:8px 10px;background:#EDE7DA;border-top:1px solid rgba(11,33,52,.10)";
+    ORDER.forEach(function(kv){
+      var b = document.createElement("button");
+      b.type = "button";
+      b.dataset.k = kv[0];
+      b.textContent = kv[1];
+      b.style.cssText = "font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:11.5px;" +
+        "font-weight:700;padding:6px 14px;border-radius:999px;cursor:pointer;border:1px solid;" +
+        "-webkit-tap-highlight-color:transparent;touch-action:manipulation";
+      b.addEventListener("click", function(e){
+        e.preventDefault(); e.stopPropagation();
+        ON[kv[0]] = !ON[kv[0]];
+        style();
+        draw();
+      });
+      row.appendChild(b);
+    });
+    return row;
+  }
+  function style(){
+    if(!row) return;
+    [].forEach.call(row.children, function(b){
+      var on = ON[b.dataset.k];
+      b.style.background = on ? "#1F4E9D" : "transparent";
+      b.style.color = on ? "#fff" : "#4A5D6E";
+      b.style.borderColor = on ? "#1F4E9D" : "rgba(11,33,52,.26)";
+    });
+  }
+
+  /* ---------- tap to measure, moved over from the club view ---------- */
+  function readout(f, d){
+    var old = f.parentElement.querySelector(".fwread");
+    if(old) old.remove();
+    f.querySelectorAll(".fwpill,.fwdot").forEach(function(n){ n.remove(); });
+    var p = pick[d.hole];
+    var dist = function(a, b){
+      return Math.round(Math.hypot((a[0]-b[0])*d.wyd, (a[1]-b[1])*d.hyd));
+    };
+    /* With no tap, show the SCORECARD yardage rather than the geometry: the OSM
+       tee pad sits short of the card on most of these holes, and the par-3 club
+       targets are already anchored to the card. That yardage is `yd` in the
+       pack (build_layers.hole_layers); this read a `blue` the pack never had,
+       so every course showed "undefined to green" until the first tap. */
+    var toGreen = p ? dist([p.x,p.y], d.green) : d.yd;
+    var pill = function(cls, css, s){
+      var e = document.createElement("div");
+      e.className = "cyd fwpill " + cls;
+      e.style.cssText = css;
+      e.textContent = s;
+      f.appendChild(e);
+    };
+    pill("top", "top:7px", toGreen + " to green");
+    if(p){
+      pill("bot", "bottom:7px", dist([p.x,p.y], d.tee) + " from tee");
+      var dot = document.createElement("div");
+      dot.className = "cdot fwdot";
+      dot.style.left = (p.x*100) + "%";
+      dot.style.top = (p.y*100) + "%";
+      f.appendChild(dot);
+    } else {
+      pill("bot", "bottom:7px", "Tap the fairway");
+    }
+  }
+
+  /* ---------- paint ---------- */
+  var cur = null;
+  function draw(){
+    var f = document.querySelector(".bookframe");
+    if(!f) return;
+    var im = f.querySelector("img");
+    if(!im) return;
+    var d = cur;
+    if(!d) return;
+    busy = true;
+    f.querySelectorAll("svg.fwov").forEach(function(n){ n.remove(); });
+    im.insertAdjacentHTML("afterend", build(d, d.dims[0], d.dims[1]));
+    readout(f, d);
+    busy = false;
+  }
+
+  function paint(){
+    try { paintInner(); }
+    catch(err){ busy = false; console.error("fw paint failed:", err); }
+  }
+  function paintInner(){
+    dropClubTab();
+    if(busy) return;
+    var f = document.querySelector(".bookframe");
+    if(!f){ cur = null; return; }
+    var im = f.querySelector("img");
+    if(!im){ cur = null; return; }
+    var hn = holeOf(im);
+    var d = hn && L.holes[hn];
+    if(!d){
+      cur = null;
+      busy = true;
+      f.querySelectorAll("svg.fwov,.fwpill,.fwdot").forEach(function(n){ n.remove(); });
+      if(row && row.parentElement) row.parentElement.removeChild(row);
+      busy = false;
+      return;
+    }
+    cur = d;
+    busy = true;
+    if(getComputedStyle(f).position === "static") f.style.position = "relative";
+    f.classList.add("greentap");
+    if(im.getAttribute("data-fwbase") !== "1"){
+      im.setAttribute("data-fwbase", "1");
+      im.src = d.base;
+    }
+    // above the image, below the tabs. appendChild/insertBefore MOVE an existing
+    // node, so calling this every paint is both idempotent and self-healing.
+    var seg = document.querySelector(".bookseg");
+    if(seg){
+      var bar = seg.parentElement;
+      var r = makeRow();
+      /* ONLY move it if it is not already sitting right after the tab bar.
+         paint() runs on every DOM mutation, and re-inserting the node between
+         mousedown and mouseup cancels the click — which is exactly why the
+         pills felt dead to a real finger while .click() worked fine. */
+      if(r.parentElement !== bar.parentElement || r.previousElementSibling !== bar){
+        bar.parentElement.insertBefore(r, bar.nextSibling);
+      }
+    }
+    style();
+    busy = false;
+    if(im.complete && im.naturalWidth) draw();
+    else im.addEventListener("load", draw, {once:true});
+  }
+
+  /* tap anywhere on the map that is not a pill */
+  document.addEventListener("click", function(e){
+    var f = e.target.closest && e.target.closest(".bookframe");
+    if(!f || !cur) return;
+    if(e.target.closest("#fwlayers")) return;
+    var r = f.getBoundingClientRect();
+    if(r.width < 50 || r.height < 50) return;
+    var cl = function(v){ return Math.max(0, Math.min(1, v)); };
+    pick[cur.hole] = { x: cl((e.clientX-r.left)/r.width), y: cl((e.clientY-r.top)/r.height) };
+    busy = true; readout(f, cur); busy = false;
+  }, true);
+
+  /* CLUB folds into HOLE, so drop its segment from the book bar */
+  function dropClubTab(){
+    document.querySelectorAll(".bookseg").forEach(function(b){
+      if(b.textContent.trim().toLowerCase() === "club") b.setAttribute("data-fwhide","1");
+    });
+  }
+  var st = document.createElement("style");
+  st.textContent = '.bookseg[data-fwhide="1"]{display:none!important}';
+  document.head.appendChild(st);
+
+  /* debug handle: a silent failure inside paint() is invisible otherwise */
+  window.__FWDBG = { L:L, ON:ON, paint:paint, draw:draw,
+    state:function(){ return {busy:busy, cur: cur && cur.hole, row: !!row,
+      attached: !!(row && row.parentElement)}; } };
+
+  var t;
+  new MutationObserver(function(){
+    if(busy) return;
+    clearTimeout(t);
+    t = setTimeout(function(){ dropClubTab(); paint(); }, 50);
+  }).observe(document.body, {childList:true, subtree:true});
+  document.addEventListener("DOMContentLoaded", function(){ dropClubTab(); paint(); });
+  setTimeout(function(){ dropClubTab(); paint(); }, 400);
+})();
+</script>
 <script type="module">
 /* ================= CONFIG — edit for each new round =================
    1. Masthead HTML above: course name, city, date.
@@ -1139,7 +1509,7 @@ const CLUB_EXPORT = { MD: "Mini Driver" };   // stored short, exported as the sh
 const BAG_DISPLAY = {
   D:{name:"Driver",spec:"GT3 11° (C2 10g)"}, MD:{name:"Mini Driver",spec:"GT280 13°"},
   "3H":{name:"3 Hybrid",spec:"18°"}, "7w":{name:"7 Wood",spec:"GT2 21° (A1)"},
-  "4i":{name:"4 Iron",spec:""}, "5H":{name:"5 Hybrid",spec:"23°"},
+  "4i":{name:"4 Iron",spec:""}, "5H":{name:"5 Hybrid",spec:"GT2 24°"},
   "6i":{name:"6 Iron",spec:"27°"}, "7i":{name:"7 Iron",spec:"30°"},
   "8i":{name:"8 Iron",spec:"34°"}, "9i":{name:"9 Iron",spec:"38°"},
   PW:{name:"PW",spec:"43°"}, "48":{name:"AW",spec:"48°"},
@@ -1316,7 +1686,7 @@ function accJoin(tags){
 /* ---- per-hole tour-caddy intel (read off the Par The Course books) ----
    tee = the Par The Course recommended play + any warning; avoid = where the strokes are;
    note = attack/bail decision. green slope is sampled live from the map. */
-const HOLE_INTEL = {"1": {"rows": "<div class=\"playrow\"><span class=\"playtag\">Go for it</span><span class=\"playline\"><b>D</b> &rarr; 73 in &middot; <b>58</b></span></div><div class=\"playrow\"><span class=\"playtag\">Middle</span><span class=\"playline\"><b>MD</b> &rarr; 108 in &middot; <b>56</b></span></div><div class=\"playrow\"><span class=\"playtag\">7 wood</span><span class=\"playline\"><b>7w</b> &rarr; 128 in &middot; <b>48</b></span></div><div class=\"playrow\"><span class=\"playtag\">4 iron</span><span class=\"playline\"><b>4i</b> &rarr; 138 in &middot; <b>PW</b></span></div><div class=\"playrow\"><span class=\"playtag\">5 hybrid</span><span class=\"playline\"><b>5H</b> &rarr; 148 in &middot; <b>9i</b></span></div>", "play": "Short two-shotter \u2014 position off the tee, then wedge it close.", "avoid": "Green sits open \u2014 a miss to the fat side is fine.", "call": "Fairway, then wedge \u2014 a birdie's there.", "green": "General slope front-to-back, toward the left (~3 ft, from lidar) \u2014 big picture only, not the subtle break.", "gnote": "Falls away long \u2014 bail anywhere but there."}, "2": {"rows": "<div class=\"playrow\"><span class=\"playtag\">Go for it</span><span class=\"playline\"><b>D</b> &rarr; 94 in &middot; <b>58</b></span></div><div class=\"playrow\"><span class=\"playtag\">Middle</span><span class=\"playline\"><b>MD</b> &rarr; 129 in &middot; <b>48</b></span></div><div class=\"playrow\"><span class=\"playtag\">7 wood</span><span class=\"playline\"><b>7w</b> &rarr; 149 in &middot; <b>9i</b></span></div><div class=\"playrow\"><span class=\"playtag\">4 iron</span><span class=\"playline\"><b>4i</b> &rarr; 159 in &middot; <b>9i</b></span></div><div class=\"playrow\"><span class=\"playtag\">5 hybrid</span><span class=\"playline\"><b>5H</b> &rarr; 169 in &middot; <b>8i</b></span></div>", "play": "A fairway leaves a manageable one \u2014 pick your number and commit.", "avoid": "Green sits open \u2014 a miss to the fat side is fine.", "call": "Fairway, then wedge \u2014 a birdie's there.", "green": "General slope toward the left (~10 ft, from lidar) \u2014 big picture only, not the subtle break.", "gnote": "Falls away left \u2014 bail anywhere but there."}, "3": {"rows": "<div class=\"playrow\"><span class=\"playtag\">Go for it</span><span class=\"playline\"><b>D</b> &rarr; 78 in &middot; <b>58</b></span></div><div class=\"playrow\"><span class=\"playtag\">Middle</span><span class=\"playline\"><b>MD</b> &rarr; 113 in &middot; <b>52</b></span></div><div class=\"playrow\"><span class=\"playtag\">7 wood</span><span class=\"playline\"><b>7w</b> &rarr; 133 in &middot; <b>PW</b></span></div><div class=\"playrow\"><span class=\"playtag\">4 iron</span><span class=\"playline\"><b>4i</b> &rarr; 143 in &middot; <b>PW</b></span></div><div class=\"playrow\"><span class=\"playtag\">5 hybrid</span><span class=\"playline\"><b>5H</b> &rarr; 153 in &middot; <b>9i</b></span></div>", "play": "Short two-shotter \u2014 position off the tee, then wedge it close.", "avoid": "Green sits open \u2014 a miss to the fat side is fine.", "call": "Fairway, then wedge \u2014 a birdie's there.", "green": "Lidar reads this green nearly flat \u2014 no major slope; trust your eyes on the ground.", "gnote": ""}, "4": {"rows": "<div class=\"playrow\"><span class=\"playtag\">One club</span><span class=\"playline\"><b>9i</b> &rarr; 148 yds</span></div>", "play": "Short iron in hand \u2014 go at the number.", "avoid": "Green sits open \u2014 a miss to the fat side is fine.", "call": "Green-light \u2014 go get it.", "green": "General slope back-to-front, toward the left (~2 ft, from lidar) \u2014 big picture only, not the subtle break.", "gnote": "False front \u2014 the green sits up; anything short spins off. Carry it to the middle."}, "5": {"rows": "<div class=\"playrow\"><span class=\"playtag\">Go for it</span><span class=\"playline\"><b>D</b> &rarr; 199 in &middot; <b>5H</b></span></div><div class=\"playrow\"><span class=\"playtag\">Middle</span><span class=\"playline\"><b>MD</b> &rarr; 234 in &middot; <b>MD</b></span></div><div class=\"playrow\"><span class=\"playtag\">7 wood</span><span class=\"playline\"><b>7w</b> &rarr; 254 in &middot; <b>MD</b></span></div><div class=\"playrow\"><span class=\"playtag\">4 iron</span><span class=\"playline\"><b>4i</b> &rarr; 264 in &middot; <b>D</b></span></div><div class=\"playrow\"><span class=\"playtag\">5 hybrid</span><span class=\"playline\"><b>5H</b> &rarr; 274 in &middot; <b>D</b></span></div>", "play": "Reachable if you catch two \u2014 otherwise lay up to a wedge.", "avoid": "Green sits open \u2014 a miss to the fat side is fine.", "call": "Respect it \u2014 par is a great number here.", "green": "General slope toward the left (~3 ft, from lidar) \u2014 big picture only, not the subtle break.", "gnote": "Falls away long \u2014 bail anywhere but there."}, "6": {"rows": "<div class=\"playrow\"><span class=\"playtag\">One club</span><span class=\"playline\"><b>7i</b> &rarr; 179 yds</span></div>", "play": "Mid-iron; start at the center and let it feed.", "avoid": "Green sits open \u2014 a miss to the fat side is fine.", "call": "Green-light \u2014 go get it.", "green": "Lidar reads this green nearly flat \u2014 no major slope; trust your eyes on the ground.", "gnote": "Falls away long \u2014 bail anywhere but there."}, "7": {"rows": "<div class=\"playrow\"><span class=\"playtag\">Go for it</span><span class=\"playline\"><b>D</b> &rarr; 144 in &middot; <b>PW</b></span></div><div class=\"playrow\"><span class=\"playtag\">Middle</span><span class=\"playline\"><b>MD</b> &rarr; 179 in &middot; <b>7i</b></span></div><div class=\"playrow\"><span class=\"playtag\">7 wood</span><span class=\"playline\"><b>7w</b> &rarr; 199 in &middot; <b>5H</b></span></div><div class=\"playrow\"><span class=\"playtag\">4 iron</span><span class=\"playline\"><b>4i</b> &rarr; 209 in &middot; <b>4i</b></span></div><div class=\"playrow\"><span class=\"playtag\">5 hybrid</span><span class=\"playline\"><b>5H</b> &rarr; 219 in &middot; <b>7w</b></span></div>", "play": "A fairway leaves a manageable one \u2014 pick your number and commit.", "avoid": "Green sits open \u2014 a miss to the fat side is fine.", "call": "Fairway, then wedge \u2014 a birdie's there.", "green": "General slope back-to-front (~2 ft, from lidar) \u2014 big picture only, not the subtle break.", "gnote": ""}, "8": {"rows": "<div class=\"playrow\"><span class=\"playtag\">Go for it</span><span class=\"playline\"><b>D</b> &rarr; 116 in &middot; <b>52</b></span></div><div class=\"playrow\"><span class=\"playtag\">Middle</span><span class=\"playline\"><b>MD</b> &rarr; 151 in &middot; <b>9i</b></span></div><div class=\"playrow\"><span class=\"playtag\">7 wood</span><span class=\"playline\"><b>7w</b> &rarr; 171 in &middot; <b>8i</b></span></div><div class=\"playrow\"><span class=\"playtag\">4 iron</span><span class=\"playline\"><b>4i</b> &rarr; 181 in &middot; <b>7i</b></span></div><div class=\"playrow\"><span class=\"playtag\">5 hybrid</span><span class=\"playline\"><b>5H</b> &rarr; 191 in &middot; <b>6i</b></span></div>", "play": "A fairway leaves a manageable one \u2014 pick your number and commit.", "avoid": "Green sits open \u2014 a miss to the fat side is fine.", "call": "Fairway, then wedge \u2014 a birdie's there.", "green": "Lidar reads this green nearly flat \u2014 no major slope; trust your eyes on the ground.", "gnote": ""}, "9": {"rows": "<div class=\"playrow\"><span class=\"playtag\">Go for it</span><span class=\"playline\"><b>D</b> &rarr; 350 in &middot; <b>D</b></span></div><div class=\"playrow\"><span class=\"playtag\">Middle</span><span class=\"playline\"><b>MD</b> &rarr; 385 in &middot; <b>D</b></span></div><div class=\"playrow\"><span class=\"playtag\">7 wood</span><span class=\"playline\"><b>7w</b> &rarr; 405 in &middot; <b>D</b></span></div><div class=\"playrow\"><span class=\"playtag\">4 iron</span><span class=\"playline\"><b>4i</b> &rarr; 415 in &middot; <b>D</b></span></div><div class=\"playrow\"><span class=\"playtag\">5 hybrid</span><span class=\"playline\"><b>5H</b> &rarr; 425 in &middot; <b>D</b></span></div>", "play": "Position, position, wedge \u2014 take your five and move on.", "avoid": "Green sits open \u2014 a miss to the fat side is fine.", "call": "Respect it \u2014 par is a great number here.", "green": "General slope back-to-front, toward the right (~2 ft, from lidar) \u2014 big picture only, not the subtle break.", "gnote": "False front \u2014 the green sits up; anything short spins off. Carry it to the middle."}, "10": {"rows": "<div class=\"playrow\"><span class=\"playtag\">Go for it</span><span class=\"playline\"><b>D</b> &rarr; 89 in &middot; <b>58</b></span></div><div class=\"playrow\"><span class=\"playtag\">Middle</span><span class=\"playline\"><b>MD</b> &rarr; 124 in &middot; <b>48</b></span></div><div class=\"playrow\"><span class=\"playtag\">7 wood</span><span class=\"playline\"><b>7w</b> &rarr; 144 in &middot; <b>PW</b></span></div><div class=\"playrow\"><span class=\"playtag\">4 iron</span><span class=\"playline\"><b>4i</b> &rarr; 154 in &middot; <b>9i</b></span></div><div class=\"playrow\"><span class=\"playtag\">5 hybrid</span><span class=\"playline\"><b>5H</b> &rarr; 164 in &middot; <b>8i</b></span></div>", "play": "Off the tee, avoid the water side, then attack the number. Favor the right side coming in.", "avoid": "Water down the left; bunker short.", "call": "Water down the left \u2014 favor the right.", "green": "Lidar reads this green nearly flat \u2014 no major slope; trust your eyes on the ground.", "gnote": ""}, "11": {"rows": "<div class=\"playrow\"><span class=\"playtag\">Go for it</span><span class=\"playline\"><b>D</b> &rarr; 137 in &middot; <b>PW</b></span></div><div class=\"playrow\"><span class=\"playtag\">Middle</span><span class=\"playline\"><b>MD</b> &rarr; 172 in &middot; <b>8i</b></span></div><div class=\"playrow\"><span class=\"playtag\">7 wood</span><span class=\"playline\"><b>7w</b> &rarr; 192 in &middot; <b>6i</b></span></div><div class=\"playrow\"><span class=\"playtag\">4 iron</span><span class=\"playline\"><b>4i</b> &rarr; 202 in &middot; <b>5H</b></span></div><div class=\"playrow\"><span class=\"playtag\">5 hybrid</span><span class=\"playline\"><b>5H</b> &rarr; 212 in &middot; <b>4i</b></span></div>", "play": "A fairway leaves a manageable one \u2014 pick your number and commit.", "avoid": "Bunker right.", "call": "One bunker right \u2014 favor the left.", "green": "Lidar reads this green nearly flat \u2014 no major slope; trust your eyes on the ground.", "gnote": ""}, "12": {"rows": "<div class=\"playrow\"><span class=\"playtag\">Go for it</span><span class=\"playline\"><b>D</b> &rarr; 154 in &middot; <b>9i</b></span></div><div class=\"playrow\"><span class=\"playtag\">Middle</span><span class=\"playline\"><b>MD</b> &rarr; 189 in &middot; <b>6i</b></span></div><div class=\"playrow\"><span class=\"playtag\">7 wood</span><span class=\"playline\"><b>7w</b> &rarr; 209 in &middot; <b>4i</b></span></div><div class=\"playrow\"><span class=\"playtag\">4 iron</span><span class=\"playline\"><b>4i</b> &rarr; 219 in &middot; <b>7w</b></span></div><div class=\"playrow\"><span class=\"playtag\">5 hybrid</span><span class=\"playline\"><b>5H</b> &rarr; 229 in &middot; <b>3H</b></span></div>", "play": "One of the toughest (HCP 4) \u2014 find the fairway and take your par.", "avoid": "Green sits open \u2014 a miss to the fat side is fine.", "call": "Respect it \u2014 par is a great number here.", "green": "General slope back-to-front (~7 ft, from lidar) \u2014 big picture only, not the subtle break.", "gnote": "False front \u2014 the green sits up; anything short spins off. Carry it to the middle."}, "13": {"rows": "<div class=\"playrow\"><span class=\"playtag\">One club</span><span class=\"playline\"><b>9i</b> &rarr; 156 yds</span></div>", "play": "Short iron in hand \u2014 go at the number.", "avoid": "Green sits open \u2014 a miss to the fat side is fine.", "call": "Green-light \u2014 go get it.", "green": "General slope front-to-back, toward the right (~6 ft, from lidar) \u2014 big picture only, not the subtle break.", "gnote": "Falls away right \u2014 bail anywhere but there."}, "14": {"rows": "<div class=\"playrow\"><span class=\"playtag\">Go for it</span><span class=\"playline\"><b>D</b> &rarr; 63 in &middot; <b>58</b></span></div><div class=\"playrow\"><span class=\"playtag\">Middle</span><span class=\"playline\"><b>MD</b> &rarr; 98 in &middot; <b>58</b></span></div><div class=\"playrow\"><span class=\"playtag\">7 wood</span><span class=\"playline\"><b>7w</b> &rarr; 118 in &middot; <b>52</b></span></div><div class=\"playrow\"><span class=\"playtag\">4 iron</span><span class=\"playline\"><b>4i</b> &rarr; 128 in &middot; <b>48</b></span></div><div class=\"playrow\"><span class=\"playtag\">5 hybrid</span><span class=\"playline\"><b>5H</b> &rarr; 138 in &middot; <b>PW</b></span></div>", "play": "Short two-shotter \u2014 position off the tee, then wedge it close.", "avoid": "Green sits open \u2014 a miss to the fat side is fine.", "call": "Fairway, then wedge \u2014 a birdie's there.", "green": "Lidar reads this green nearly flat \u2014 no major slope; trust your eyes on the ground.", "gnote": "False front \u2014 the green sits up; anything short spins off. Carry it to the middle."}, "15": {"rows": "<div class=\"playrow\"><span class=\"playtag\">One club</span><span class=\"playline\"><b>5H</b> &rarr; 199 yds</span></div>", "play": "Mid-iron; start at the center and let it feed.", "avoid": "Green sits open \u2014 a miss to the fat side is fine.", "call": "Green-light \u2014 go get it.", "green": "General slope back-to-front (~2 ft, from lidar) \u2014 big picture only, not the subtle break.", "gnote": ""}, "16": {"rows": "<div class=\"playrow\"><span class=\"playtag\">Go for it</span><span class=\"playline\"><b>D</b> &rarr; 240 in &middot; <b>MD</b></span></div><div class=\"playrow\"><span class=\"playtag\">Middle</span><span class=\"playline\"><b>MD</b> &rarr; 275 in &middot; <b>D</b></span></div><div class=\"playrow\"><span class=\"playtag\">7 wood</span><span class=\"playline\"><b>7w</b> &rarr; 295 in &middot; <b>D</b></span></div><div class=\"playrow\"><span class=\"playtag\">4 iron</span><span class=\"playline\"><b>4i</b> &rarr; 305 in &middot; <b>D</b></span></div><div class=\"playrow\"><span class=\"playtag\">5 hybrid</span><span class=\"playline\"><b>5H</b> &rarr; 315 in &middot; <b>D</b></span></div>", "play": "Reachable if you catch two \u2014 otherwise lay up to a wedge.", "avoid": "Green sits open \u2014 a miss to the fat side is fine.", "call": "Fairway, then wedge \u2014 a birdie's there.", "green": "Lidar reads this green nearly flat \u2014 no major slope; trust your eyes on the ground.", "gnote": "Falls away long \u2014 bail anywhere but there."}, "17": {"rows": "<div class=\"playrow\"><span class=\"playtag\">One club</span><span class=\"playline\"><b>7i</b> &rarr; 183 yds</span></div>", "play": "Mid-iron; start at the center and let it feed.", "avoid": "Water crosses the fairway.", "call": "Water crosses the hole \u2014 know your carry number.", "green": "Lidar reads this green nearly flat \u2014 no major slope; trust your eyes on the ground.", "gnote": "False front \u2014 the green sits up; anything short spins off. Carry it to the middle."}, "18": {"rows": "<div class=\"playrow\"><span class=\"playtag\">Go for it</span><span class=\"playline\"><b>D</b> &rarr; 180 in &middot; <b>7i</b></span></div><div class=\"playrow\"><span class=\"playtag\">Middle</span><span class=\"playline\"><b>MD</b> &rarr; 215 in &middot; <b>7w</b></span></div><div class=\"playrow\"><span class=\"playtag\">7 wood</span><span class=\"playline\"><b>7w</b> &rarr; 235 in &middot; <b>MD</b></span></div><div class=\"playrow\"><span class=\"playtag\">4 iron</span><span class=\"playline\"><b>4i</b> &rarr; 245 in &middot; <b>MD</b></span></div><div class=\"playrow\"><span class=\"playtag\">5 hybrid</span><span class=\"playline\"><b>5H</b> &rarr; 255 in &middot; <b>MD</b></span></div>", "play": "One of the toughest (HCP 2) \u2014 find the fairway and take your par. Favor the right side coming in.", "avoid": "Water down the left; bunker right.", "call": "Water down the left \u2014 favor the right.", "green": "Lidar reads this green nearly flat \u2014 no major slope; trust your eyes on the ground.", "gnote": ""}};
+const HOLE_INTEL = {"1": {"rows": "<div class=\"playrow\"><span class=\"playtag\">Go for it</span><span class=\"playline\"><b>D</b> &rarr; 73 in &middot; <b>58</b></span></div><div class=\"playrow\"><span class=\"playtag\">Middle</span><span class=\"playline\"><b>MD</b> &rarr; 108 in &middot; <b>56</b></span></div><div class=\"playrow\"><span class=\"playtag\">3 hybrid</span><span class=\"playline\"><b>3H</b> &rarr; 121 in &middot; <b>48</b></span></div><div class=\"playrow\"><span class=\"playtag\">7 wood</span><span class=\"playline\"><b>7w</b> &rarr; 128 in &middot; <b>48</b></span></div><div class=\"playrow\"><span class=\"playtag\">4 iron</span><span class=\"playline\"><b>4i</b> &rarr; 138 in &middot; <b>PW</b></span></div><div class=\"playrow\"><span class=\"playtag\">5 hybrid</span><span class=\"playline\"><b>5H</b> &rarr; 148 in &middot; <b>9i</b></span></div>", "play": "Short two-shotter \u2014 position off the tee, then wedge it close.", "avoid": "Green sits open \u2014 a miss to the fat side is fine.", "call": "Fairway, then wedge \u2014 a birdie's there.", "green": "General slope front-to-back, toward the left (~3 ft, from lidar) \u2014 big picture only, not the subtle break.", "gnote": "Falls away long \u2014 bail anywhere but there."}, "2": {"rows": "<div class=\"playrow\"><span class=\"playtag\">Go for it</span><span class=\"playline\"><b>D</b> &rarr; 94 in &middot; <b>58</b></span></div><div class=\"playrow\"><span class=\"playtag\">Middle</span><span class=\"playline\"><b>MD</b> &rarr; 129 in &middot; <b>48</b></span></div><div class=\"playrow\"><span class=\"playtag\">3 hybrid</span><span class=\"playline\"><b>3H</b> &rarr; 142 in &middot; <b>PW</b></span></div><div class=\"playrow\"><span class=\"playtag\">7 wood</span><span class=\"playline\"><b>7w</b> &rarr; 149 in &middot; <b>9i</b></span></div><div class=\"playrow\"><span class=\"playtag\">4 iron</span><span class=\"playline\"><b>4i</b> &rarr; 159 in &middot; <b>9i</b></span></div><div class=\"playrow\"><span class=\"playtag\">5 hybrid</span><span class=\"playline\"><b>5H</b> &rarr; 169 in &middot; <b>8i</b></span></div>", "play": "A fairway leaves a manageable one \u2014 pick your number and commit.", "avoid": "Green sits open \u2014 a miss to the fat side is fine.", "call": "Fairway, then wedge \u2014 a birdie's there.", "green": "General slope toward the left (~10 ft, from lidar) \u2014 big picture only, not the subtle break.", "gnote": "Falls away left \u2014 bail anywhere but there."}, "3": {"rows": "<div class=\"playrow\"><span class=\"playtag\">Go for it</span><span class=\"playline\"><b>D</b> &rarr; 78 in &middot; <b>58</b></span></div><div class=\"playrow\"><span class=\"playtag\">Middle</span><span class=\"playline\"><b>MD</b> &rarr; 113 in &middot; <b>52</b></span></div><div class=\"playrow\"><span class=\"playtag\">3 hybrid</span><span class=\"playline\"><b>3H</b> &rarr; 126 in &middot; <b>48</b></span></div><div class=\"playrow\"><span class=\"playtag\">7 wood</span><span class=\"playline\"><b>7w</b> &rarr; 133 in &middot; <b>PW</b></span></div><div class=\"playrow\"><span class=\"playtag\">4 iron</span><span class=\"playline\"><b>4i</b> &rarr; 143 in &middot; <b>PW</b></span></div><div class=\"playrow\"><span class=\"playtag\">5 hybrid</span><span class=\"playline\"><b>5H</b> &rarr; 153 in &middot; <b>9i</b></span></div>", "play": "Short two-shotter \u2014 position off the tee, then wedge it close.", "avoid": "Green sits open \u2014 a miss to the fat side is fine.", "call": "Fairway, then wedge \u2014 a birdie's there.", "green": "Lidar reads this green nearly flat \u2014 no major slope; trust your eyes on the ground.", "gnote": ""}, "4": {"rows": "<div class=\"playrow\"><span class=\"playtag\">One club</span><span class=\"playline\"><b>9i</b> &rarr; 148 yds</span></div>", "play": "Short iron in hand \u2014 go at the number.", "avoid": "Green sits open \u2014 a miss to the fat side is fine.", "call": "Green-light \u2014 go get it.", "green": "General slope back-to-front, toward the left (~2 ft, from lidar) \u2014 big picture only, not the subtle break.", "gnote": "False front \u2014 the green sits up; anything short spins off. Carry it to the middle."}, "5": {"rows": "<div class=\"playrow\"><span class=\"playtag\">Go for it</span><span class=\"playline\"><b>D</b> &rarr; 199 in &middot; <b>5H</b></span></div><div class=\"playrow\"><span class=\"playtag\">Middle</span><span class=\"playline\"><b>MD</b> &rarr; 234 in &middot; <b>MD</b></span></div><div class=\"playrow\"><span class=\"playtag\">3 hybrid</span><span class=\"playline\"><b>3H</b> &rarr; 247 in &middot; <b>MD</b></span></div><div class=\"playrow\"><span class=\"playtag\">7 wood</span><span class=\"playline\"><b>7w</b> &rarr; 254 in &middot; <b>MD</b></span></div><div class=\"playrow\"><span class=\"playtag\">4 iron</span><span class=\"playline\"><b>4i</b> &rarr; 264 in &middot; <b>D</b></span></div><div class=\"playrow\"><span class=\"playtag\">5 hybrid</span><span class=\"playline\"><b>5H</b> &rarr; 274 in &middot; <b>D</b></span></div>", "play": "Reachable if you catch two \u2014 otherwise lay up to a wedge.", "avoid": "Green sits open \u2014 a miss to the fat side is fine.", "call": "Respect it \u2014 par is a great number here.", "green": "General slope toward the left (~3 ft, from lidar) \u2014 big picture only, not the subtle break.", "gnote": "Falls away long \u2014 bail anywhere but there."}, "6": {"rows": "<div class=\"playrow\"><span class=\"playtag\">One club</span><span class=\"playline\"><b>7i</b> &rarr; 179 yds</span></div>", "play": "Mid-iron; start at the center and let it feed.", "avoid": "Green sits open \u2014 a miss to the fat side is fine.", "call": "Green-light \u2014 go get it.", "green": "Lidar reads this green nearly flat \u2014 no major slope; trust your eyes on the ground.", "gnote": "Falls away long \u2014 bail anywhere but there."}, "7": {"rows": "<div class=\"playrow\"><span class=\"playtag\">Go for it</span><span class=\"playline\"><b>D</b> &rarr; 144 in &middot; <b>PW</b></span></div><div class=\"playrow\"><span class=\"playtag\">Middle</span><span class=\"playline\"><b>MD</b> &rarr; 179 in &middot; <b>7i</b></span></div><div class=\"playrow\"><span class=\"playtag\">3 hybrid</span><span class=\"playline\"><b>3H</b> &rarr; 192 in &middot; <b>6i</b></span></div><div class=\"playrow\"><span class=\"playtag\">7 wood</span><span class=\"playline\"><b>7w</b> &rarr; 199 in &middot; <b>5H</b></span></div><div class=\"playrow\"><span class=\"playtag\">4 iron</span><span class=\"playline\"><b>4i</b> &rarr; 209 in &middot; <b>4i</b></span></div><div class=\"playrow\"><span class=\"playtag\">5 hybrid</span><span class=\"playline\"><b>5H</b> &rarr; 219 in &middot; <b>7w</b></span></div>", "play": "A fairway leaves a manageable one \u2014 pick your number and commit.", "avoid": "Green sits open \u2014 a miss to the fat side is fine.", "call": "Fairway, then wedge \u2014 a birdie's there.", "green": "General slope back-to-front (~2 ft, from lidar) \u2014 big picture only, not the subtle break.", "gnote": ""}, "8": {"rows": "<div class=\"playrow\"><span class=\"playtag\">Go for it</span><span class=\"playline\"><b>D</b> &rarr; 116 in &middot; <b>52</b></span></div><div class=\"playrow\"><span class=\"playtag\">Middle</span><span class=\"playline\"><b>MD</b> &rarr; 151 in &middot; <b>9i</b></span></div><div class=\"playrow\"><span class=\"playtag\">3 hybrid</span><span class=\"playline\"><b>3H</b> &rarr; 164 in &middot; <b>8i</b></span></div><div class=\"playrow\"><span class=\"playtag\">7 wood</span><span class=\"playline\"><b>7w</b> &rarr; 171 in &middot; <b>8i</b></span></div><div class=\"playrow\"><span class=\"playtag\">4 iron</span><span class=\"playline\"><b>4i</b> &rarr; 181 in &middot; <b>7i</b></span></div><div class=\"playrow\"><span class=\"playtag\">5 hybrid</span><span class=\"playline\"><b>5H</b> &rarr; 191 in &middot; <b>6i</b></span></div>", "play": "A fairway leaves a manageable one \u2014 pick your number and commit.", "avoid": "Green sits open \u2014 a miss to the fat side is fine.", "call": "Fairway, then wedge \u2014 a birdie's there.", "green": "Lidar reads this green nearly flat \u2014 no major slope; trust your eyes on the ground.", "gnote": ""}, "9": {"rows": "<div class=\"playrow\"><span class=\"playtag\">Go for it</span><span class=\"playline\"><b>D</b> &rarr; 350 in &middot; <b>D</b></span></div><div class=\"playrow\"><span class=\"playtag\">Middle</span><span class=\"playline\"><b>MD</b> &rarr; 385 in &middot; <b>D</b></span></div><div class=\"playrow\"><span class=\"playtag\">3 hybrid</span><span class=\"playline\"><b>3H</b> &rarr; 398 in &middot; <b>D</b></span></div><div class=\"playrow\"><span class=\"playtag\">7 wood</span><span class=\"playline\"><b>7w</b> &rarr; 405 in &middot; <b>D</b></span></div><div class=\"playrow\"><span class=\"playtag\">4 iron</span><span class=\"playline\"><b>4i</b> &rarr; 415 in &middot; <b>D</b></span></div><div class=\"playrow\"><span class=\"playtag\">5 hybrid</span><span class=\"playline\"><b>5H</b> &rarr; 425 in &middot; <b>D</b></span></div>", "play": "Position, position, wedge \u2014 take your five and move on.", "avoid": "Green sits open \u2014 a miss to the fat side is fine.", "call": "Respect it \u2014 par is a great number here.", "green": "General slope back-to-front, toward the right (~2 ft, from lidar) \u2014 big picture only, not the subtle break.", "gnote": "False front \u2014 the green sits up; anything short spins off. Carry it to the middle."}, "10": {"rows": "<div class=\"playrow\"><span class=\"playtag\">Go for it</span><span class=\"playline\"><b>D</b> &rarr; 89 in &middot; <b>58</b></span></div><div class=\"playrow\"><span class=\"playtag\">Middle</span><span class=\"playline\"><b>MD</b> &rarr; 124 in &middot; <b>48</b></span></div><div class=\"playrow\"><span class=\"playtag\">3 hybrid</span><span class=\"playline\"><b>3H</b> &rarr; 137 in &middot; <b>PW</b></span></div><div class=\"playrow\"><span class=\"playtag\">7 wood</span><span class=\"playline\"><b>7w</b> &rarr; 144 in &middot; <b>PW</b></span></div><div class=\"playrow\"><span class=\"playtag\">4 iron</span><span class=\"playline\"><b>4i</b> &rarr; 154 in &middot; <b>9i</b></span></div><div class=\"playrow\"><span class=\"playtag\">5 hybrid</span><span class=\"playline\"><b>5H</b> &rarr; 164 in &middot; <b>8i</b></span></div>", "play": "Off the tee, avoid the water side, then attack the number. Favor the right side coming in.", "avoid": "Water down the left; bunker short.", "call": "Water down the left \u2014 favor the right.", "green": "Lidar reads this green nearly flat \u2014 no major slope; trust your eyes on the ground.", "gnote": ""}, "11": {"rows": "<div class=\"playrow\"><span class=\"playtag\">Go for it</span><span class=\"playline\"><b>D</b> &rarr; 137 in &middot; <b>PW</b></span></div><div class=\"playrow\"><span class=\"playtag\">Middle</span><span class=\"playline\"><b>MD</b> &rarr; 172 in &middot; <b>8i</b></span></div><div class=\"playrow\"><span class=\"playtag\">3 hybrid</span><span class=\"playline\"><b>3H</b> &rarr; 185 in &middot; <b>7i</b></span></div><div class=\"playrow\"><span class=\"playtag\">7 wood</span><span class=\"playline\"><b>7w</b> &rarr; 192 in &middot; <b>6i</b></span></div><div class=\"playrow\"><span class=\"playtag\">4 iron</span><span class=\"playline\"><b>4i</b> &rarr; 202 in &middot; <b>5H</b></span></div><div class=\"playrow\"><span class=\"playtag\">5 hybrid</span><span class=\"playline\"><b>5H</b> &rarr; 212 in &middot; <b>4i</b></span></div>", "play": "A fairway leaves a manageable one \u2014 pick your number and commit.", "avoid": "Bunker right.", "call": "One bunker right \u2014 favor the left.", "green": "Lidar reads this green nearly flat \u2014 no major slope; trust your eyes on the ground.", "gnote": ""}, "12": {"rows": "<div class=\"playrow\"><span class=\"playtag\">Go for it</span><span class=\"playline\"><b>D</b> &rarr; 154 in &middot; <b>9i</b></span></div><div class=\"playrow\"><span class=\"playtag\">Middle</span><span class=\"playline\"><b>MD</b> &rarr; 189 in &middot; <b>6i</b></span></div><div class=\"playrow\"><span class=\"playtag\">3 hybrid</span><span class=\"playline\"><b>3H</b> &rarr; 202 in &middot; <b>5H</b></span></div><div class=\"playrow\"><span class=\"playtag\">7 wood</span><span class=\"playline\"><b>7w</b> &rarr; 209 in &middot; <b>4i</b></span></div><div class=\"playrow\"><span class=\"playtag\">4 iron</span><span class=\"playline\"><b>4i</b> &rarr; 219 in &middot; <b>7w</b></span></div><div class=\"playrow\"><span class=\"playtag\">5 hybrid</span><span class=\"playline\"><b>5H</b> &rarr; 229 in &middot; <b>3H</b></span></div>", "play": "One of the toughest (HCP 4) \u2014 find the fairway and take your par.", "avoid": "Green sits open \u2014 a miss to the fat side is fine.", "call": "Respect it \u2014 par is a great number here.", "green": "General slope back-to-front (~7 ft, from lidar) \u2014 big picture only, not the subtle break.", "gnote": "False front \u2014 the green sits up; anything short spins off. Carry it to the middle."}, "13": {"rows": "<div class=\"playrow\"><span class=\"playtag\">One club</span><span class=\"playline\"><b>9i</b> &rarr; 156 yds</span></div>", "play": "Short iron in hand \u2014 go at the number.", "avoid": "Green sits open \u2014 a miss to the fat side is fine.", "call": "Green-light \u2014 go get it.", "green": "General slope front-to-back, toward the right (~6 ft, from lidar) \u2014 big picture only, not the subtle break.", "gnote": "Falls away right \u2014 bail anywhere but there."}, "14": {"rows": "<div class=\"playrow\"><span class=\"playtag\">Go for it</span><span class=\"playline\"><b>D</b> &rarr; 63 in &middot; <b>58</b></span></div><div class=\"playrow\"><span class=\"playtag\">Middle</span><span class=\"playline\"><b>MD</b> &rarr; 98 in &middot; <b>58</b></span></div><div class=\"playrow\"><span class=\"playtag\">3 hybrid</span><span class=\"playline\"><b>3H</b> &rarr; 111 in &middot; <b>52</b></span></div><div class=\"playrow\"><span class=\"playtag\">7 wood</span><span class=\"playline\"><b>7w</b> &rarr; 118 in &middot; <b>52</b></span></div><div class=\"playrow\"><span class=\"playtag\">4 iron</span><span class=\"playline\"><b>4i</b> &rarr; 128 in &middot; <b>48</b></span></div><div class=\"playrow\"><span class=\"playtag\">5 hybrid</span><span class=\"playline\"><b>5H</b> &rarr; 138 in &middot; <b>PW</b></span></div>", "play": "Short two-shotter \u2014 position off the tee, then wedge it close.", "avoid": "Green sits open \u2014 a miss to the fat side is fine.", "call": "Fairway, then wedge \u2014 a birdie's there.", "green": "Lidar reads this green nearly flat \u2014 no major slope; trust your eyes on the ground.", "gnote": "False front \u2014 the green sits up; anything short spins off. Carry it to the middle."}, "15": {"rows": "<div class=\"playrow\"><span class=\"playtag\">One club</span><span class=\"playline\"><b>5H</b> &rarr; 199 yds</span></div>", "play": "Mid-iron; start at the center and let it feed.", "avoid": "Green sits open \u2014 a miss to the fat side is fine.", "call": "Green-light \u2014 go get it.", "green": "General slope back-to-front (~2 ft, from lidar) \u2014 big picture only, not the subtle break.", "gnote": ""}, "16": {"rows": "<div class=\"playrow\"><span class=\"playtag\">Go for it</span><span class=\"playline\"><b>D</b> &rarr; 240 in &middot; <b>MD</b></span></div><div class=\"playrow\"><span class=\"playtag\">Middle</span><span class=\"playline\"><b>MD</b> &rarr; 275 in &middot; <b>D</b></span></div><div class=\"playrow\"><span class=\"playtag\">3 hybrid</span><span class=\"playline\"><b>3H</b> &rarr; 288 in &middot; <b>D</b></span></div><div class=\"playrow\"><span class=\"playtag\">7 wood</span><span class=\"playline\"><b>7w</b> &rarr; 295 in &middot; <b>D</b></span></div><div class=\"playrow\"><span class=\"playtag\">4 iron</span><span class=\"playline\"><b>4i</b> &rarr; 305 in &middot; <b>D</b></span></div><div class=\"playrow\"><span class=\"playtag\">5 hybrid</span><span class=\"playline\"><b>5H</b> &rarr; 315 in &middot; <b>D</b></span></div>", "play": "Reachable if you catch two \u2014 otherwise lay up to a wedge.", "avoid": "Green sits open \u2014 a miss to the fat side is fine.", "call": "Fairway, then wedge \u2014 a birdie's there.", "green": "Lidar reads this green nearly flat \u2014 no major slope; trust your eyes on the ground.", "gnote": "Falls away long \u2014 bail anywhere but there."}, "17": {"rows": "<div class=\"playrow\"><span class=\"playtag\">One club</span><span class=\"playline\"><b>7i</b> &rarr; 183 yds</span></div>", "play": "Mid-iron; start at the center and let it feed.", "avoid": "Water crosses the fairway.", "call": "Water crosses the hole \u2014 know your carry number.", "green": "Lidar reads this green nearly flat \u2014 no major slope; trust your eyes on the ground.", "gnote": "False front \u2014 the green sits up; anything short spins off. Carry it to the middle."}, "18": {"rows": "<div class=\"playrow\"><span class=\"playtag\">Go for it</span><span class=\"playline\"><b>D</b> &rarr; 180 in &middot; <b>7i</b></span></div><div class=\"playrow\"><span class=\"playtag\">Middle</span><span class=\"playline\"><b>MD</b> &rarr; 215 in &middot; <b>7w</b></span></div><div class=\"playrow\"><span class=\"playtag\">3 hybrid</span><span class=\"playline\"><b>3H</b> &rarr; 228 in &middot; <b>3H</b></span></div><div class=\"playrow\"><span class=\"playtag\">7 wood</span><span class=\"playline\"><b>7w</b> &rarr; 235 in &middot; <b>MD</b></span></div><div class=\"playrow\"><span class=\"playtag\">4 iron</span><span class=\"playline\"><b>4i</b> &rarr; 245 in &middot; <b>MD</b></span></div><div class=\"playrow\"><span class=\"playtag\">5 hybrid</span><span class=\"playline\"><b>5H</b> &rarr; 255 in &middot; <b>MD</b></span></div>", "play": "One of the toughest (HCP 2) \u2014 find the fairway and take your par. Favor the right side coming in.", "avoid": "Water down the left; bunker right.", "call": "Water down the left \u2014 favor the right.", "green": "Lidar reads this green nearly flat \u2014 no major slope; trust your eyes on the ground.", "gnote": ""}};
 const GREEN_SLOPES = {"1": {"high": "front right", "low": "back left"}, "2": {"high": "right", "low": "left"}, "3": {"high": "right", "low": "left"}, "4": {"high": "back right", "low": "front left"}, "5": {"high": "right", "low": "left"}, "6": {"high": "right", "low": "left"}, "7": {"high": "back", "low": "front"}, "8": {"high": "front left", "low": "back right"}, "9": {"high": "back left", "low": "front right"}, "10": {"high": "back left", "low": "front right"}, "11": {"high": "left", "low": "right"}, "12": {"high": "back", "low": "front"}, "13": {"high": "front left", "low": "back right"}, "14": {"high": "back", "low": "front"}, "15": {"high": "back", "low": "front"}, "16": {"high": "right", "low": "left"}, "17": {"high": "back", "low": "front"}, "18": {"high": "back", "low": "front"}};
 
 /* ---------- state ----------
@@ -2224,7 +2594,18 @@ dEl.addEventListener("change", () => { if(dEl.value){ ROUND.date = dEl.value; lo
 function render(){
   document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on", b.dataset.tab===tab));
   const main = $("#main");
-  main.innerHTML = tab==="hole" ? viewHole() : viewOverview();
+  /* Last-resort guard: a view must never leave a blank screen that also hides
+     the Save/Clear buttons. If a view throws, fall back to an always-working
+     Save/Clear panel so the round is never stranded (the data is on the
+     channel regardless). bind() below wires these buttons. */
+  try {
+    main.innerHTML = tab==="hole" ? viewHole() : viewOverview();
+  } catch(e){
+    main.innerHTML = `<div class="sgcard"><div class="sghead">Display hiccup</div>
+      <div class="sgnote">This view hit an error, but your round is safe on the channel. You can still save.</div></div>
+      <button class="savebtn" data-act="saveround">Save round &middot; send to Home Base</button>
+      <button class="reset" data-act="reset">Clear round</button>`;
+  }
   const zoomEl = $("#zoomroot");
   if (zoomEl) zoomEl.remove();
   if (bookZoom && tab==="hole"){
@@ -2962,24 +3343,35 @@ function viewOverview(){
 const SG_LABEL = {off_tee:"Off the Tee", p176:"176+", p101:"101-175", p100:"100 & In",
                   putting:"Putting", ball_strike:"Ball Striking"};
 function sgCard(){
-  const holes = buildRoundJSON().holes.filter(h => (h.shots || []).length);
-  if (!holes.length){
+  /* The live SG card must NEVER be able to blank the Overview or strand the
+     Save button. The whole compute-and-render is wrapped: if the engine throws
+     on one shot's data (e.g. Tiffany Greens, 2026-09-23), the card degrades to
+     a note and the rest of the Overview - scorecard and Save - renders normally.
+     The round is still recording, on the channel, and recoverable via
+     "pull my round". */
+  try {
+    const holes = buildRoundJSON().holes.filter(h => (h.shots || []).length);
+    if (!holes.length){
+      return `<div class="sgcard"><div class="sghead">Strokes Gained &middot; vs 5 HCP</div>
+        <div class="sgnote">Log a shot and your strokes gained appears here, hole by hole.</div></div>`;
+    }
+    const tot = roundSG(holes, "5hcp");
+    const row = (k, cls) => {
+      const v = tot[k], pos = v >= 0;
+      return `<div class="sgrow${cls || ""}"><div class="nm">${SG_LABEL[k]}</div>
+        <div class="vl" style="color:${pos ? "#1E8E4F" : "#B22234"}">${pos ? "+" : ""}${v.toFixed(2)}</div></div>`;
+    };
+    return `<div class="sgcard">
+      <div class="sghead">Strokes Gained &middot; vs 5 HCP</div>
+      ${["off_tee","p176","p101","p100"].map(k => row(k)).join("")}
+      ${row("ball_strike", " sgtot")}
+      ${row("putting", " sgafter")}
+      <div class="sgnote">${holes.length} hole${holes.length === 1 ? "" : "s"} with shots logged</div>
+    </div>`;
+  } catch(e){
     return `<div class="sgcard"><div class="sghead">Strokes Gained &middot; vs 5 HCP</div>
-      <div class="sgnote">Log a shot and your strokes gained appears here, hole by hole.</div></div>`;
+      <div class="sgnote">Strokes gained is paused for a moment - your round is still recording and saved. Tell Home Base &ldquo;pull my round&rdquo; for the full breakdown.</div></div>`;
   }
-  const tot = roundSG(holes, "5hcp");
-  const row = (k, cls) => {
-    const v = tot[k], pos = v >= 0;
-    return `<div class="sgrow${cls || ""}"><div class="nm">${SG_LABEL[k]}</div>
-      <div class="vl" style="color:${pos ? "#1E8E4F" : "#B22234"}">${pos ? "+" : ""}${v.toFixed(2)}</div></div>`;
-  };
-  return `<div class="sgcard">
-    <div class="sghead">Strokes Gained &middot; vs 5 HCP</div>
-    ${["off_tee","p176","p101","p100"].map(k => row(k)).join("")}
-    ${row("ball_strike", " sgtot")}
-    ${row("putting", " sgafter")}
-    <div class="sgnote">${holes.length} hole${holes.length === 1 ? "" : "s"} with shots logged</div>
-  </div>`;
 }
 
 /* ---------- events ---------- */
