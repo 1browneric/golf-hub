@@ -111,7 +111,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
 .holenav .navbtn.dis{opacity:.4;cursor:default}
 .navnow{flex:none;font-family:var(--font-title);font-weight:700;font-size:17px;color:var(--red);
   min-width:60px;text-align:center}
-.mt-script{font-family:var(--font-body);font-size:13.5px;line-height:1.75;color:var(--cream);padding:8px 2px 4px}
+.mt-script{font-family:var(--font-body);font-size:18px;line-height:1.6;color:var(--cream);padding:8px 2px 4px}
 .mt-script h3{font-family:var(--font-caps);font-weight:800;font-size:10px;letter-spacing:.14em;
               color:var(--steel);margin:16px 0 7px}
 .mt-script p{margin:0 0 11px}
@@ -317,7 +317,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
 .gd .gd-ul{margin:4px 0 12px;padding-left:18px}
 .gd .gd-ul li{margin:0 0 7px}
 .gd .gd-tw{overflow-x:auto;margin:6px 0 14px}
-.gd .gd-t{border-collapse:collapse;width:100%;font-size:12.5px}
+.gd .gd-t{border-collapse:collapse;width:100%;font-size:16px}
 .gd .gd-t th{font-family:var(--font-caps);font-weight:700;font-size:9.5px;letter-spacing:.1em;color:var(--steel);text-align:left;padding:6px 8px 6px 0;border-bottom:1px solid rgba(143,160,184,.3)}
 .gd .gd-t td{padding:7px 8px 7px 0;border-bottom:1px solid rgba(143,160,184,.12);vertical-align:top}
 .lchips[hidden]{display:none}
@@ -513,13 +513,13 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
              stays, small, under each cue. -->
         <div class="h-title" style="font-size:22px;margin-top:22px">My Cues</div>
           <div class="sectlab" style="margin-top:14px">GRIP</div>
-          <div class="cue"><div class="cuet">Trigger finger</div><div class="cuel">Right index finger down the side of the shaft.</div><div class="cuel">Gets me on plane.</div><div class="cuedate">SEPTEMBER 15 &middot; P1</div></div>
+          <div class="cue"><div class="cuet">Trigger finger</div><div class="cuel">Right index finger down the side of the shaft.</div><div class="cuel">Gets me on plane.</div><div class="cuedate">SEPTEMBER 15</div></div>
           <div class="sectlab" style="margin-top:18px">BODY AND PIVOT</div>
-          <div class="cue"><div class="cuet">Wide to wide</div><div class="cuel">From low behind to high in front.</div><div class="cuel">Turn over and get whips.</div><div class="cuel">Elbow to elbow.</div><div class="cuel">Arms straight at the bottom, 6 to 4.</div><div class="cuel">Eyes on a spot 2 to 3 inches in front of the ball.</div><div class="cuedate">OCTOBER 11 &middot; P2 TO P9</div></div>
-          <div class="cue"><div class="cuet">Pivot. Rotate. Drag back foot.</div><div class="cuel">Finish with the pelvis facing the target.</div><div class="cuedate">SEPTEMBER 19 &middot; P10</div></div>
+          <div class="cue"><div class="cuet">Wide to wide</div><div class="cuel">From low behind to high in front.</div><div class="cuel">Turn over and get whips.</div><div class="cuel">Elbow to elbow.</div><div class="cuel">Arms straight at the bottom, 6 to 4.</div><div class="cuel">Eyes on a spot 2 to 3 inches in front of the ball.</div><div class="cuedate">OCTOBER 11</div></div>
+          <div class="cue"><div class="cuet">Pivot. Rotate. Drag back foot.</div><div class="cuel">Finish with the pelvis facing the target.</div><div class="cuedate">SEPTEMBER 19</div></div>
           <div class="sectlab" style="margin-top:18px">STRIKE</div>
-          <div class="cue"><div class="cuet">Front-shoulder wall</div><div class="cuel">Irons: through the wall with the shoulder.</div><div class="cuel">Driver: behind the wall. Up and back and behind.</div><div class="cuedate">SEPTEMBER 22 &middot; P7</div></div>
-          <div class="cue"><div class="cuet">Head down</div><div class="cuel">Eyes stay on the spot where the ball was.</div><div class="cuel">Don't look up to see where it went.</div><div class="cuedate">SEPTEMBER 25 &middot; P7</div></div>
+          <div class="cue"><div class="cuet">Front-shoulder wall</div><div class="cuel">Irons: through the wall with the shoulder.</div><div class="cuel">Driver: behind the wall. Up and back and behind.</div><div class="cuedate">SEPTEMBER 22</div></div>
+          <div class="cue"><div class="cuet">Head down</div><div class="cuel">Eyes stay on the spot where the ball was.</div><div class="cuel">Don't look up to see where it went.</div><div class="cuedate">SEPTEMBER 25</div></div>
           <div class="sectlab" style="margin-top:18px">START LINE</div>
           <div class="cue"><div class="cuet">Field goal balls</div><div class="cuel">Two balls on the turf out in front of the teed ball, like a field goal post.</div><div class="cuel">Start the ball between them. It starts me right.</div><div class="cuedate">OCTOBER 13</div></div>
         <div class="h-title" style="font-size:22px;margin-top:22px">Learn</div>
@@ -558,6 +558,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
           <tbody id="launch-body"></tbody>
         </table>
       </div>
+      <div id="launch-hosel"></div>
       <div id="launch-note" style="font-size:13px;line-height:1.5;color:var(--steel);margin-top:8px"></div>
       </div>
       <div data-cdpane="strike" hidden>
@@ -3122,7 +3123,7 @@ all();
     "3H":{t:["225","237","12","100","146","1.46","-3.5","+0.5","0.0","-0.5","14.0","17.5","10.2","0.0","4437","-1.0","87","47","5.8","+5","0.0","0.0","0.0","0.0","22","16","\u00b17","Moderate","Low"],b:["227","245","16","99","143-147","1.47","","","","","","","11-12","","3200-3600","","","","","","","","","","20","18","\u00b19","Low","Low"],s:["204.2","225.9","21.7","94.8","134.8","1.42","-5.3","-2.5","-1.6","+0.9","14.4","20.0","11.6","-1.7","3752","+11.6","73.0","35.5","5.78","","+2.8","-6.8","+12.4","+15.9","","","","",""],l:["214.5","236.3","21.8","94.2","135.5","1.44","-2.4","-1.2","-0.3","+0.8","15.9","18.6","13.4","-0.5","3375","+0.4","82.4","37.2","6.04","5.7","-0.3","+2.0","+1.1","+0.4","","","","",""],l2:["227.4","242.7","15.2","97.1","140.9","1.45","-3.0","-0.4","-0.4","0.0","16.1","19.2","13.5","-0.3","3598","+6.0","96.6","41.1","6.56","6.9","-0.3","-5.9","+10.2","+11.9","","","","",""],g:["227","245","14","99","145","1.47","-3.0","+1.0","0.0","-1.0","16.0","19.0","13.5","0.0","4000","-3","90","45","6.3","3","0.0","0.0","0.0","0.0","16","14","\u00b17","Moderate","Low"]},
     "7w":{t:["219","228","9","101","148","1.46","-3.5","+0.5","0.0","-0.5","16.0","19.5","11.8","0.0","5150","-1.0","103","50","6.2","+5","0.0","0.0","0.0","0.0","20","14","\u00b16","Good","Moderate"],b:["220","230","","","","","","","","","","","","","","","","","","","","","","","","","","",""],s:["","","","","","","","","","","","","","","","","","","","","","","","","","","","",""],l:["","","","","","","","","","","","","","","","","","","","","","","","","","","","",""],l2:["216.9","222.2","5.4","100.3","141.7","1.41","-1.4","0.0","-0.4","-0.4","19.0","20.6","15.6","-0.3","4939","+2.1","122.6","48.9","7.06","3.5","+1.7","-4.9","+3.2","+3.1","","","","",""],g:["220","230","10","96","139","1.45","-2.5","+1.0","0.0","-1.0","18.5","21.0","16.0","0.0","4500","-3","95","46","6.4","3","0.0","0.0","0.0","0.0","15","12","\u00b16","Moderate","Low"]},
     "4i":{t:["203","216","13","96","137","1.43","-3.4","+0.5","0.0","-0.5","15.5","18.9","11.0","0.0","4836","-1.0","84","48","5.7","+7","0.0","0.0","0.0","0.0","20","14","\u00b16","Good","Moderate"],b:["210","220","17","94","134-136","1.44","","","","","","","13-14","","3800-4300","","105-115","40-42","","","","","","","16","14","\u00b17","Moderate","Moderate"],s:["183.0","214.6","31.5","88.5","124.7","1.41","","-1.2","+1.0","+2.2","13.8","","11.5","+0.7","2797","+4.2","50.9","27.6","4.85","","+5.4","-6.0","+8.9","+11.2","","","","",""],l:["201.8","226.7","24.9","92.3","131.5","1.43","-4.2","-0.9","-0.4","+0.5","14.1","18.7","11.5","-0.5","3432","+1.0","66.3","33.2","5.58","9.0","+1.6","-3.5","-0.4","-0.3","","","","",""],l2:["210.0","231.9","22.0","93.5","133.5","1.43","-2.7","+0.7","+2.2","+1.4","15.4","18.3","13.0","+1.9","3219","+2.0","78.0","36.2","5.92","5.8","+2.4","-6.6","+10.6","+11.7","","","","",""],g:["210","220","10","94","136","1.45","-3.5","+1.0","0.0","-1.0","17.0","20.5","13.0","0.0","4400","-3","100","46","6.3","5","0.0","0.0","0.0","0.0","14","11","\u00b16","Good","Moderate"]},
-    "5H":{t:["203","213","10","96","135","1.42","-3.0","+0.5","0.0","-0.5","16.5","19.5","12.8","0.0","4900","-1.0","95","48","6.0","+6","0.0","0.0","0.0","0.0","17","12","\u00b15","Good","Moderate"],b:["200","215","","","","","","","","","","","","","","","","","","","","","","","","","","",""],s:["203.2","213.9","10.7","95.3","133.6","1.40","-5.9","-2.0","-2.7","-0.6","17.0","23.0","13.5","-2.6","4661","+8.6","92.5","42.8","6.35","","+4.0","-11.0","+6.2","+7.8","","","","",""],l:["","","","","","","","","","","","","","","","","","","","","","","","","","","","",""],l2:["208.4","215.7","7.3","96.6","134.7","1.39","-3.1","-0.2","-0.2","-0.1","19.0","22.2","15.6","-0.2","4530","+1.9","108.4","46.1","6.70","7.2","+2.4","-5.3","+3.2","+3.4","","","","",""],g:["200","215","9","93","133","1.43","-3.0","+1.0","0.0","-1.0","19.5","22.5","16.0","0.0","4900","-3","98","47","6.4","4","0.0","0.0","0.0","0.0","14","11","\u00b16","Moderate","Moderate"]},
+    "5H":{t:["203","213","10","96","135","1.42","-3.0","+0.5","0.0","-0.5","16.5","19.5","12.8","0.0","4900","-1.0","95","48","6.0","+6","0.0","0.0","0.0","0.0","17","12","\u00b15","Good","Moderate"],b:["200","215","","","","","","","","","","","","","","","","","","","","","","","","","","",""],s:["203.2","213.9","10.7","95.3","133.6","1.40","-5.9","-2.0","-2.7","-0.6","17.0","23.0","13.5","-2.6","4661","+8.6","92.5","42.8","6.35","","+4.0","-11.0","+6.2","+7.8","","","","",""],l:["","","","","","","","","","","","","","","","","","","","","","","","","","","","",""],l2:["208.4","215.7","7.3","96.6","134.7","1.39","-3.1","-0.2","-0.2","0.0","19.0","22.2","15.6","-0.2","4530","+1.9","108.4","46.1","6.70","7.2","+2.4","-5.3","+3.2","+3.4","","","","",""],g:["200","215","9","93","133","1.43","-3.0","+1.0","0.0","-1.0","19.5","22.5","16.0","0.0","4900","-3","98","47","6.4","4","0.0","0.0","0.0","0.0","14","11","\u00b16","Moderate","Moderate"]},
     "6i":{t:["183","193","10","92","127","1.38","-4.1","+0.5","0.0","-0.5","19.5","23.6","14.1","0.0","6231","-1.0","90","50","5.9","+8","0.0","0.0","0.0","0.0","16","12","\u00b15","Very Good","Moderate-High"],b:["193","207","14","90","126","1.42","","","","","","","15","","4500","","90","43","","","","","","","15","13","\u00b16","Moderate","Moderate"],s:["186.5","201.2","14.8","88.4","124.2","1.41","-4.3","-2.3","-0.3","+2.0","17.6","20.4","14.2","-0.6","4299","+3.4","79.5","39.9","5.86","9.0","-0.2","+0.7","+2.9","+3.6","","","","",""],l:["191.1","205.2","14.1","88.9","125.7","1.41","-5.1","-0.3","+0.1","+0.3","18.0","23.2","14.5","0.0","4358","-0.5","84.1","41.0","6.02","10.8","+0.5","+1.6","-0.7","-0.9","","","","",""],l2:["196.6","207.1","10.5","91.1","128.9","1.42","-4.9","0.0","+0.8","+0.8","19.1","24.1","15.5","+0.7","4621","+0.7","97.0","44.3","6.36","10.4","-3.8","-3.8","+3.1","+3.3","","","","",""],g:["193","203","8","91","128","1.41","-3.7","+1.0","0.0","-1.0","20.0","23.7","15.5","0.0","5200","-3","95","48","6.4","7","0.0","0.0","0.0","0.0","12","10","\u00b15","Good","Moderate-High"]},
     "7i":{t:["172","181","9","90","120","1.33","-4.3","+0.5","0.0","-0.5","22.5","26.8","16.3","0.0","7097","-1.0","96","50","6.1","+9","0.0","0.0","0.0","0.0","14","11","\u00b15","Very Good","High"],b:["184","195","11","90","123","1.40","","","","","","","15.8","","5050","","93","45","","","","","","","13","11","\u00b15.5","Good","Moderate-High"],s:["177.8","188.7","10.9","86.9","120.2","1.38","-4.9","-2.0","-0.6","+1.5","19.9","24.8","16.0","-0.8","4705","+2.1","84.7","42.5","5.93","10.9","-0.7","+0.1","+0.6","+0.8","","","","",""],l:["175.4","183.8","8.3","86.1","118.8","1.38","-4.5","-1.2","+0.8","+2.1","21.8","26.4","17.6","+0.4","4957","+2.7","91.1","44.6","6.04","9.4","-2.6","-1.0","+5.2","+5.6","","","","",""],l2:["","","","","","","","","","","","","","","","","","","","","","","","","","","","",""],g:["184","192","7","90","124","1.38","-4.1","+1.0","0.0","-1.0","23.0","27.1","16.5","0.0","6100","-3","98","49","6.4","8","0.0","0.0","0.0","0.0","11","9","\u00b15","Very Good","High"]},
     "8i":{t:["160","168","8","87","115","1.32","-4.5","+0.5","0.0","-0.5","25.0","29.5","18.1","0.0","7998","-1.0","93","51","6.0","+9","0.0","0.0","0.0","0.0","12","10","\u00b14","Excellent","Very High"],b:["168","179","9","85","115","1.39","","","","","","","16.5","","5500","","80","46","","","","","","","12","10","\u00b15","Good","High"],s:["165.4","174.4","9.1","85.1","115.3","1.36","-4.7","-1.7","-0.4","+1.3","21.1","26.9","16.3","-0.7","5521","+3.0","79.6","42.8","5.74","8.6","-2.1","+3.3","+2.2","+2.6","","","","",""],l:["167.9","174.6","6.6","86.4","117.0","1.35","-5.2","-1.7","-0.3","+1.4","22.4","27.9","17.5","-0.6","5808","+3.0","88.5","45.2","5.96","11.2","-3.7","-1.7","+2.2","+2.6","","","","",""],l2:["169.8","175.3","5.5","85.6","117.4","1.37","-4.5","-1.0","-0.4","+0.7","23.4","28.0","18.6","-0.5","5636","-0.3","95.4","46.9","6.12","9.6","-2.7","-2.1","-2.0","-2.2","","","","",""],g:["168","175","6","87","116","1.33","-4.3","+1.0","0.0","-1.0","25.5","29.8","18.5","0.0","6900","-3","95","50","6.3","8","0.0","0.0","0.0","0.0","10","8","\u00b14","Very Good","Very High"]},
@@ -3134,6 +3135,10 @@ all();
     "58":{t:["93","96","3","74","80","1.08","-6.0","+0.5","0.0","-0.5","45.0","51.0","33.0","0.0","10700","-1.0","74","56","5.1","+10","0.0","0.0","0.0","0.0","6","5","\u00b12.5","Excellent","Very High"],b:["95","98","3","","","","","","","","","","","","","","","","","","","","","","","","","Excellent","Very High"],s:["38.4","49.6","11.2","41.2","44.7","1.08","","+0.4","-0.2","-0.6","43.5","","31.2","0.0","5359","0.0","21.1","38.0","2.43","","+1.1","+5.5","-0.2","-0.2","","","","",""],l:["","","","","","","","","","","","","","","","","","","","","","","","","","","","",""],l2:["","","","","","","","","","","","","","","","","","","","","","","","","","","","",""],g:["95","98","3","70","78","1.11","-6.0","+1.0","0.0","-1.0","45.5","51.5","33.5","0.0","10300","-3","80","56","5.2","9","0.0","0.0","0.0","0.0","5","4","\u00b13","Excellent","Very High"]}
   };
 
+  /* The driver's latest Lessons line split by hosel, written by trackman_sheet.py
+     `hub` from the Shots tab (council 2026-10-22): the block average blends every
+     hosel he hit in it, so the split sits under the table, most recent first. */
+  var DRIVER_HOSEL={"block":"Lessons 2","rows":[{"hosel":"A1","n":6,"carry":"269.7","total":"292.9","cs":"110.5","bs":"158.8","smash":"1.44","la":"13.4","spin":"2379","side":"-19.7"},{"hosel":"D1","n":37,"carry":"263.1","total":"284.4","cs":"108.6","bs":"156.1","smash":"1.44","la":"13.1","spin":"2657","side":"-1.5"},{"hosel":"C1","n":48,"carry":"259.3","total":"280.5","cs":"107.6","bs":"154.2","smash":"1.43","la":"13.4","spin":"2676","side":"+2.3"}]};
   var launchClub="D";
   /* A row whose columns are not all the same club says so under the table. */
   var LAUNCH_NOTE={"5H":"Spring is the old TSi 23°. Lsn 2 is the GT2 24° from 10/20 (7 good shots)."};
@@ -3158,6 +3163,18 @@ all();
         return '<td'+(k==='t'?' class="tr2"':k==='g'?' class="tg"':'')+'>'+vals[j]+'</td>';
       }).join('')+'</tr>';
     }).join('');
+    var hb=document.getElementById('launch-hosel');
+    if(hb){
+      var hr=(launchClub==='D'&&DRIVER_HOSEL.rows)||[];
+      hb.innerHTML=hr.length?
+        '<div class="sectlab" style="margin:18px 0 8px">'+DRIVER_HOSEL.block.toUpperCase()+' BY HOSEL</div>'+
+        '<div class="ctable lscroll" style="padding:6px 10px"><table class="ltab"><thead><tr><th></th>'+
+          ['Good shots','Carry','Total','Club speed','Ball speed','Smash','Launch','Spin','Side carry'].map(function(h){return '<th>'+h+'</th>';}).join('')+
+        '</tr></thead><tbody>'+hr.map(function(r,i){
+          return '<tr><td>'+r.hosel+(i===0?' (now)':'')+'</td>'+
+            [r.n,r.carry,r.total,r.cs,r.bs,r.smash,r.la,r.spin,r.side].map(function(v){return '<td>'+v+'</td>';}).join('')+'</tr>';
+        }).join('')+'</tbody></table></div>':'';
+    }
   }
   /* Club Data > Gear. Only what Eric has stated or the sheet records, never a
      spec filled in from a catalogue: Driver = last setup he named (10/20: hosel
@@ -4882,7 +4899,9 @@ all();
 '- The trail foot sets the width: wider for the long clubs, narrower as the club gets shorter.',
 '- Because only the trail foot moves, the ball reads farther forward of centre with the driver and closer to centre with the wedges, which is where low point wants it for each.',
 '## Starting widths',
-'Measured at the outside edges of the feet. The usual scale is wedges just inside the shoulders, mid irons at the shoulders, driver just outside. Lay an alignment stick across your shoulders once, mark it, and set each group from the marks.',
+'- Measured at the outside edges of the feet.',
+'- The usual scale is wedges just inside the shoulders, mid irons at the shoulders, driver just outside.',
+'- Lay an alignment stick across your shoulders once, mark it, and set each group from the marks.',
 '| Group | Clubs | Feet',
 '| 1 | Driver, Mini Driver | 1 to 2 in outside the shoulders',
 '| 2 | 3 Hybrid, 7 Wood, 4 Iron, 5 Hybrid | At the shoulders, toward the outside',
@@ -4909,7 +4928,9 @@ all();
 '## Why this one',
 'Inside 100 is the recurring scoring leak in your strokes gained. This turns the partial wedges into a system instead of a feel.',
 '## The system',
-'The clock is your lead arm at the top of the backswing. Instead of chasing three arm positions, let the stance set the length. The narrower the feet, the shorter the turn, so the arm stops in about the same place on its own.',
+'- The clock is your lead arm at the top of the backswing.',
+'- Instead of chasing three arm positions, let the stance set the length.',
+'- The narrower the feet, the shorter the turn, so the arm stops in about the same place on its own.',
 '| Stance | Feet | Lead arm | Rule of thumb',
 '| Narrow | Heels touching to 2 in apart | 7:30 | About half of full carry',
 '| Middle | 6 to 8 in, inside the hips | 9:00 | About 75%',
@@ -4938,7 +4959,9 @@ all();
   ].join('\n')},
 
   'ppos':{title:'Swing Positions: P1 to P10',md:[
-'The P system splits the swing into ten checkpoints by where the lead arm and the shaft are. It gives you, Jordan and the video one shared language. Under each one: what to check, and which of your cues live there.',
+'- The P system splits the swing into ten checkpoints by where the lead arm and the shaft are.',
+'- It gives you, Jordan and the video one shared language.',
+'- Under each one: what to check, and which of your cues live there.',
 '## P1 Address',
 'Grip, posture, ball position, stance, weight balanced.',
 '- Your cues: trigger finger (right index finger down the shaft). Ball about half a ball forward. No forward press.',
@@ -4969,7 +4992,9 @@ all();
 'Balanced, facing the target, hands high.',
 '- Your cue: pivot, rotate, drag the back foot. Finish with the pelvis facing the target.',
 '## What TrackMan sees',
-'Only P7. Club path, face, attack angle, dynamic loft, low point and impact location are the result of P1 to P6. When one of those numbers moves, look upstream: a path change is built from P2 to P6, and a strike change often starts at P1 or P6.',
+'- Only P7.',
+'- Club path, face, attack angle, dynamic loft, low point and impact location are the result of P1 to P6.',
+'- When one of those numbers moves, look upstream: a path change is built from P2 to P6, and a strike change often starts at P1 or P6.',
 '### Source',
 'Position definitions: HackMotion, "Golf Swing Positions Explained (P Classification System)".'
   ].join('\n')},
@@ -4980,7 +5005,8 @@ all();
 '- Two inhales through the nose, the second a short top-up, then one long slow exhale through the mouth.',
 '- One to three of them.',
 '- Use it walking to the ball after a bad one, on the first tee, and before a putt you have to make.',
-'A long exhale is the quickest thing you can do on purpose to bring your heart rate down. In a 2023 Stanford study, five minutes a day of this kind of breathing improved mood and lowered resting breathing rate more than mindfulness meditation did.',
+'- A long exhale is the quickest thing you can do on purpose to bring your heart rate down.',
+'- In a 2023 Stanford study, five minutes a day of this kind of breathing improved mood and lowered resting breathing rate more than mindfulness meditation did.',
 '## Box breathing',
 'For the tee box while the group ahead clears: 4 seconds in, hold 4, out 4, hold 4. Two rounds.',
 '## In the routine',
@@ -5004,7 +5030,8 @@ all();
   ].join('\n')},
 
   'good':{title:'What Good Looks Like',md:[
-'Expectations at your level, about 8.8 now with sub-5 the goal. A shot inside these numbers is a good shot even if it does not feel like one.',
+'Expectations at your level, with sub-5 the goal.',
+'A shot inside these numbers is a good shot even if it does not feel like one.',
 '## Rounds',
 '- A 5 to 10 index lands within 3 shots of their own average 60% of the time. One round in five is 3 or more worse. A bad round is normal spread, not a broken swing.',
 '- Doubles or worse: about 2.3 a round at an 8, about 1.6 at a 5. Rounds with zero doubles: 22.9% at a 5, 6.5% at a 10.',
@@ -5049,7 +5076,10 @@ all();
 
   'transfer':{title:'Practice That Transfers',md:[
 '## Blocked and random',
-'Blocked practice (same club, same target) builds a move. Random practice (a new club and target every ball) builds the skill you use on the course. Blocked looks better on the range, and random holds up better on the course. Motor-learning research calls it contextual interference.',
+'- Blocked practice (same club, same target) builds a move.',
+'- Random practice (a new club and target every ball) builds the skill you use on the course.',
+'- Blocked looks better on the range, and random holds up better on the course.',
+'- Motor-learning research calls it contextual interference.',
 '## Every bucket',
 '- First two thirds: the work, blocked is fine.',
 '- Last third: full routine on every ball, a new target and club every ball, and play holes in your head (driver, then the approach that drive leaves).',
@@ -5061,7 +5091,9 @@ all();
 
   'speed':{title:'Speed Training Plan',md:[
 '## Goal',
-'Spring target 115 mph, stretch 118. Lessons 2 driver average is 108.2. Fastest recorded is 112.8, the drive you photographed on 09/25.',
+'- Spring target: 115 mph. Stretch: 118.',
+'- Lessons 2 driver average: 108.2.',
+'- Fastest this fall: 112.9, October 20. Fastest ever: 115.0, in the spring.',
 '## Where it fits',
 'The speed block in your plan: 15 minutes at GolfTrk before practice, 1 or 2 a week. Never the day after a heavy leg day.',
 '## The session',
@@ -5072,17 +5104,52 @@ all();
 '## The 12-Ball Blast Off',
 'At the end of a normal range or TrackMan session: 10 drivers as hard as you can, then 2 controlled swings to reset your tempo. It is Scott Fawcett\'s (DECADE), who got it from Max Greyserman.',
 '## Wicked Smart Golf 30-Day Speed Challenge',
-'- What it is: Michael Leonard\'s paid course, $77. 21 videos, 30 days, two sessions a week of 20 to 50 minutes. No special equipment needed. Rypstick, The Stack, SuperSpeed and the HiiTS driver are optional.',
+'### What it is',
+'- Michael Leonard\'s paid course, $77.',
+'- 21 videos, 30 days, two sessions a week of 20 to 50 minutes.',
+'- No special equipment needed.',
+'- Rypstick, The Stack, SuperSpeed and the HiiTS driver are optional.',
 '- What it covers: setting your starting speed and goal, the common mistakes, protocols with trainers, drills, and range or simulator sessions, plus a tracker.',
-'- What is free (their speed-training article): dial in the driver for high launch and low spin; overspeed trainers about 20 minutes a few times a week; speed-only sessions of 10 to 15 all-out balls, 1 or 2 a week, ignoring accuracy; Tour Tempo for speed; the 12-Ball Blast Off; and lifting 2 to 3 times a week built on compound lifts.',
-'- Not here: the challenge\'s own drill-by-drill plan. It is behind the paywall, and their YouTube video would not open from here.',
+'### What is free (their speed-training article)',
+'- Dial in the driver for high launch and low spin.',
+'- Overspeed trainers, about 20 minutes a few times a week.',
+'- Speed-only sessions: 10 to 15 all-out balls, 1 or 2 a week, ignoring accuracy.',
+'- Tour Tempo for speed.',
+'- The 12-Ball Blast Off.',
+'- Lifting 2 to 3 times a week, built on compound lifts.',
+'- Not here: the challenge\'s own drill-by-drill plan. It is behind the paywall.',
+'### His session (their YouTube)',
+'- Plan the two speed days on Sunday night.',
+'- 2 to 3 days between them, never on a day you play.',
+'- 15 minutes of warm-up at home: GolfForever bands or a dynamic routine.',
+'- At the bay, work up through the bag: wedges, irons, woods, then driver.',
+'- TrackMan in Shot Analysis with everything off except club speed. No ball flight on screen.',
+'- Speed block, then 10 all-out drives with your own driver, club speed and ball speed on.',
+'- Log your best light, medium and heavy swing, plus your best club speed and ball speed.',
+'- After: water, easy wedges or putting only, no hard workout or long run that day, stretch at night.',
+'### Mistakes to avoid (their YouTube)',
+'- Overtraining: 2 sessions a week, not 3 or 4.',
+'- Skipping Tour Tempo: worth 1 to 3 mph on its own.',
+'- No warm-up: it is a workout, warm up like one.',
+'- No gym: strength is the engine, speed training is the turbo. 2 to 3 full-body days a week.',
+'- Never hitting balls at full speed: use the 12-Ball Blast Off or a speed-only session.',
+'- Not measuring: track club speed every session.',
+'- Stopping in season: keep 1 session a week or every 10 days.',
+'- Swinging hard on the course: train speed in practice, play golf on the course.',
+'- Ignoring recovery: sleep, stretching, food.',
+'- Impatience: it takes 8 to 16 weeks.',
 '## HiiTS speed driver',
 '- What it is: a driver you hit real balls with, built for speed work. 350cc head, 46-inch shaft, adjustable weights: light for speed, heavy for force.',
-'- Session from the Wicked Smart review: warm up, 10 swings with your own driver for a baseline average, then 4 swings light, 4 medium and 4 heavy, all out, noting each set\'s average. Short rest, then the whole thing once more. Two sessions a week inside their 16-week program. Measure on a launch monitor with the graphics off. Keep it apart from technique work.',
+'### Session from the Wicked Smart review',
+'- Warm up, 10 swings with your own driver for a baseline average, then 4 swings light, 4 medium and 4 heavy, all out, noting each set\'s average.',
+'- Short rest, then the whole thing once more.',
+'- Two sessions a week inside their 16-week program.',
+'- Measure on a launch monitor with the graphics off.',
+'- Keep it apart from technique work.',
 '- The reviewer went from 110 to 114.9 mph club speed in the first session.',
 '- Price: not published in the review.',
 '### Sources',
-'wickedsmartgolf.com: the speed challenge page, "Golf Speed Training: 5 Proven Tips" and "HiiTs Golf Speed Training Review". Three Strikes: leomiller.golf/threestrikes.'
+'wickedsmartgolf.com: the speed challenge page, "Golf Speed Training: 5 Proven Tips" and "HiiTs Golf Speed Training Review". Wicked Smart Golf on YouTube: "How I Speed Train as a +2 Handicap" and "Your Speed Training Plan is Broken (Here\'s Why)". Three Strikes: leomiller.golf/threestrikes.'
   ].join('\n')},
 
   'workout':{title:'Golf Workout: How Each Move Helps',md:[
@@ -5179,7 +5246,7 @@ all();
      phone is busy. A silent looping <audio> keeps iOS on the media channel,
      so it plays through earbuds or the speaker with the mute switch on.
      --------------------------------------------------------------------- */
-  var TEMPO={mode:'full',set:'24/8',gap:5,on:false,ctx:null,timer:null,next:0,reps:0,keep:null};
+  var TEMPO={mode:'full',set:'24/8',gap:5,on:false,ctx:null,timer:null,next:0,reps:0,keep:null,nodes:[],waits:[]};
   var TEMPO_SETS={full:['18/6','21/7','24/8','27/9'],short:['14/7','16/8','18/9','20/10']};
   function tempoSilent(){
     if(TEMPO.keep) return TEMPO.keep;
@@ -5197,22 +5264,27 @@ all();
     g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+0.005);
     g.gain.exponentialRampToValueAtTime(0.0001,t+len);
     o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+len+0.02);
+    o._end=t+len+0.02; TEMPO.nodes.push(o);
   }
   function tempoTimes(){
     var p=TEMPO.set.split('/'); return {back:(+p[0])/30, down:(+p[1])/30};
   }
   function tempoPump(){
     var c=TEMPO.ctx; if(!TEMPO.on||!c) return;
+    /* Leaving the Tempo Trainer stops it - it must never keep beeping on
+       another screen (audit 2026-10-22). */
+    if(state.screen!=='tool'||!document.getElementById('tp-go')){ tempoStop(true); return; }
+    TEMPO.nodes=TEMPO.nodes.filter(function(o){return o._end==null||o._end>c.currentTime;});
     while(TEMPO.next<c.currentTime+1.5){
       var tm=tempoTimes(), t0=TEMPO.next;
       tempoBeep(t0,660,0.09,0.5);                       // takeaway
       tempoBeep(t0+tm.back,880,0.09,0.5);               // top
       tempoBeep(t0+tm.back+tm.down,1320,0.14,0.8);      // impact
       TEMPO.next=t0+tm.back+tm.down+TEMPO.gap;
-      (function(at){setTimeout(function(){
+      TEMPO.waits.push((function(at){return setTimeout(function(){
         if(!TEMPO.on) return; TEMPO.reps++;
         var r=document.getElementById('tp-reps'); if(r) r.textContent=TEMPO.reps+' rep'+(TEMPO.reps===1?'':'s');
-      },Math.max(0,(at-c.currentTime)*1000));})(t0+tm.back+tm.down);
+      },Math.max(0,(at-c.currentTime)*1000));})(t0+tm.back+tm.down));
     }
   }
   function tempoStart(){
@@ -5229,10 +5301,13 @@ all();
     tempoPump(); TEMPO.timer=setInterval(tempoPump,250);
     renderTempo();
   }
-  function tempoStop(){
+  function tempoStop(away){
     TEMPO.on=false; clearInterval(TEMPO.timer); TEMPO.timer=null;
+    /* Tones are scheduled up to 1.5 s ahead; stop every one of them now. */
+    TEMPO.nodes.forEach(function(o){ try{ o.stop(0); }catch(e){} }); TEMPO.nodes=[];
+    TEMPO.waits.forEach(clearTimeout); TEMPO.waits=[];
     if(TEMPO.keep) TEMPO.keep.pause();
-    renderTempo();
+    if(!away) renderTempo();   // left the screen: the tool body may be another tool now
   }
   function renderTempo(){
     var tm=tempoTimes(), sets=TEMPO_SETS[TEMPO.mode];
@@ -5247,7 +5322,7 @@ all();
         '<div class="gearrow"><span class="k">Tones</span><span class="v">Low: start back. Middle: top. High: impact.</span></div>'+
       '</div>'+
       '<button class="btn btn-red" style="width:100%;margin-top:16px" id="tp-go">'+(TEMPO.on?'STOP':'START')+'</button>'+
-      '<div id="tp-reps" class="dspcount" style="font-size:13px">'+(TEMPO.on?TEMPO.reps+' reps':'')+'</div>'+
+      '<div id="tp-reps" class="dspcount" style="font-size:13px">'+(TEMPO.on?TEMPO.reps+' rep'+(TEMPO.reps===1?'':'s'):'')+'</div>'+
       '<div id="tp-msg" style="font-size:15px;color:var(--steel);line-height:1.5;margin-top:10px">'+
         'Plays through earbuds or the speaker. Keep the screen on while it runs.</div>'+
       '<div class="mt-script gd" style="margin-top:8px">'+guideHtml([
@@ -5274,7 +5349,8 @@ all();
      THREE STRIKES (TPI drill, as written up at leomiller.golf/threestrikes).
      Two normal swings set the cruising speed (their average, to 0.1 mph);
      that is the first mark. Every swing after is all out. Beat the mark
-     (strictly faster) and you swing again; anything else is a strike and a
+     (strictly faster) and you swing again; a tie is neither an up nor a
+     strike, swing again (the source's house rule 3); slower is a strike and a
      60-second rest. A strike never moves the mark. Undo only in the first
      10 seconds of a rest. Three strikes ends it.
      --------------------------------------------------------------------- */
@@ -5288,7 +5364,9 @@ all();
         '## How it works',
         '- Two normal swings set your cruising speed. That is your first mark.',
         '- Then every swing is as hard as you can go. Only club speed counts.',
-        '- Beat the mark and you swing again. Tie or slower is a strike, then 60 seconds of rest.',
+        '- Beat the mark and you swing again.',
+        '- A tie is neither: swing again.',
+        '- Slower is a strike, then 60 seconds of rest.',
         '- Three strikes and the drill is over.',
         'It trains your brain out of holding back: max-effort swings teach it what fast feels like.'
       ].join('\n'))+'</div>'+
@@ -5325,7 +5403,7 @@ all();
     }
     if(TS.swings.length){
       h+='<div class="card" style="padding:6px 18px;margin-top:16px">'+TS.swings.slice().reverse().map(function(s,i){
-        return '<div class="gearrow"><span class="k">Swing '+(TS.swings.length-i)+'</span><span class="v">'+s.v.toFixed(1)+' mph &middot; '+(s.beat?'new mark':'strike')+'</span></div>';
+        return '<div class="gearrow"><span class="k">Swing '+(TS.swings.length-i)+'</span><span class="v">'+s.v.toFixed(1)+' mph &middot; '+(s.beat?'new mark':s.tie?'tie, swing again':'strike')+'</span></div>';
       }).join('')+'</div>';
     }
     h+='<div id="ts-msg"></div>';
@@ -5354,6 +5432,7 @@ all();
       if(!isFinite(v)||v<=0){ tsMsg('Enter the club speed.'); return; }
       v=tsRound(v);
       if(v>TS.mark){ TS.swings.push({v:v,beat:true,prev:TS.mark}); TS.mark=v; }
+      else if(v===TS.mark){ TS.swings.push({v:v,tie:true}); }
       else{
         TS.swings.push({v:v,beat:false}); TS.strikes++;
         if(TS.strikes>=3){ TS.done=true; }
@@ -5401,7 +5480,7 @@ all();
     'Mobility':{mins:30,sub:'Core, yoga, flexibility',ex:[
       ['Swing trainer routine, 15 min','','',''],['Hips and thoracic spine on the ball, 10 min','','',''],
       ['Breathing and stretch, 5 min','','','']]},
-    'Speed':{mins:15,sub:'At GolfTrk, before practice: Three Strikes',ex:[['All-out driver swings, Three Strikes',1,'','']]}
+    'Speed':{mins:15,sub:'At GolfTrk, before practice',ex:[['Three Strikes: all-out driver swings','','','']]}
   };
   var WO_ORDER=['Lift A','Lift B','Mobility','Speed'];
   var WO_CACHE='wo_rows_v1';
