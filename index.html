@@ -5624,11 +5624,17 @@ all();
     var ss=woSessions(woRows||[]).filter(function(x){return x.type==='HiiTS';});
     return ss.length?ss.reduce(function(a,x){return x.date<a?x.date:a;},ss[0].date):null;
   }
-  /* Week of the protocol on a date: 1 until the first session is logged. */
+  /* Week of the protocol on a date (Eric, 2026-10-24: "1 or 2 sessions" a
+     week, not a sure 2). Only weeks he trained count, so a missed week never
+     skips him ahead a level: week = trained weeks before this one + 1. */
   function hiitsWeek(iso){
-    var st=hiitsStart(); if(!st) return 1;
-    var a=woMonday(st), b=woMonday(iso); if(!a||!b) return 1;
-    return Math.max(1,Math.round((b-a)/(7*864e5))+1);
+    var b=woMonday(iso); if(!b) return 1;
+    var seen={};
+    woSessions(woRows||[]).forEach(function(x){
+      if(x.type!=='HiiTS') return;
+      var m=woMonday(x.date); if(m&&m<b) seen[m.getTime()]=1;
+    });
+    return Object.keys(seen).length+1;
   }
   var WO_CACHE='wo_rows_v1';
   var WO_TOKEN='hb-golf-2026';   // same speed bump the drills send - not a security boundary
@@ -5652,7 +5658,9 @@ all();
     h+=woLines('HiiTS 16 Weeks',[
       ['This week:',hl?'Week '+hw+'. '+hiitsSetLine(hl):'Week '+hw+'. The 16 weeks are done: Phase 2 is next'],
       ['Starts:',hiitsStart()?woFmtDate(hiitsStart())+', your first session':'the week it arrives, with your first session'],
-      ['Sessions:','2 a week, 2 to 3 days apart, never on a day you play']]);
+      ['Sessions:','1 or 2 a week. With 2, keep them 2 to 3 days apart'],
+      ['Weeks:','only a week you train counts, so a missed week picks up where you left off'],
+      ['Never:','on a day you play']]);
     h+=woLines('HiiTS Session',[
       ['Warm up fully first. Every swing is 100% effort'],
       ['Day 1 only: 10 swings with your driver for a baseline club speed and ball speed, before set 1'],
@@ -5668,7 +5676,7 @@ all();
     h+=woLines('HiiTS Weights',HIITS_WEIGHTS.map(function(w){return [w[0]+':',w[1]+', '+w[2]];}));
     h+=woLines('Each Week',[
       ['Lift: 2 sessions, A and B'],['GolfTrk: 1 or 2, each starts with the speed block'],
-      ['HiiTS: 2 sessions. For the 16 weeks they are the speed block'],
+      ['HiiTS: 1 or 2 sessions. For the 16 weeks they are the speed block'],
       ['Mobility: 1, the first to drop in a busy week']]);
     h+=woLines('Spacing',[
       ['No speed block or HiiTS session the day after a heavy leg day'],['At least one day between the two lifts'],
@@ -5823,7 +5831,7 @@ all();
     var wk=ss.filter(function(x){return x.date>=monIso;});
     var n=function(t){return wk.filter(function(x){return x.type===t;}).length;};
     var lifts=n('Lift A')+n('Lift B');
-    var h=woLines('This Week',[['Lift:',lifts+' of 2'],['HiiTS:',n('HiiTS')+' of 2'],['Speed blocks:',n('Speed')+' of 1 to 2'],['Mobility:',n('Mobility')+' of 1']]);
+    var h=woLines('This Week',[['Lift:',lifts+' of 2'],['HiiTS:',n('HiiTS')+' of 1 to 2'],['Speed blocks:',n('Speed')+' of 1 to 2'],['Mobility:',n('Mobility')+' of 1']]);
     h+=hiitsProgress(ss);
     var sp=ss.filter(function(x){return x.speed!==''&&x.speed!=null&&isFinite(+x.speed);});
     var best=sp.reduce(function(a,x){return (a==null||+x.speed>+a.speed)?x:a;},null);
