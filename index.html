@@ -5160,7 +5160,10 @@ all();
 '- Measure on a launch monitor with the graphics off.',
 '- Keep it apart from technique work.',
 '- The reviewer went from 110 to 114.9 mph club speed in the first session.',
-'- Price: not published in the review.',
+'- Price: HiiTS Core $349, Plus $649.',
+'### Yours',
+'- HiiTS Core, right hand, ordered October 24, 2026.',
+'- The 16-week HiiTS protocol is on the Plan tab, and Log > HiiTS saves each session.',
 '### Sources',
 'wickedsmartgolf.com: the speed challenge page, "Golf Speed Training: 5 Proven Tips" and "HiiTs Golf Speed Training Review". Wicked Smart Golf on YouTube: "How I Speed Train as a +2 Handicap" and "Your Speed Training Plan is Broken (Here\'s Why)". Three Strikes: leomiller.golf/threestrikes.'
   ].join('\n')},
@@ -5587,9 +5590,46 @@ all();
     'Mobility':{mins:30,sub:'Core, yoga, flexibility',ex:[
       ['Swing trainer routine, 15 min','','',''],['Hips and thoracic spine on the ball, 10 min','','',''],
       ['Breathing and stretch, 5 min','','','']]},
-    'Speed':{mins:15,sub:'At GolfTrk, before practice',ex:[['Three Strikes: all-out driver swings','','','']]}
+    'Speed':{mins:15,sub:'At GolfTrk, before practice',ex:[['Three Strikes: all-out driver swings','','','']]},
+    'HiiTS':{mins:30,sub:'HiiTS driver at GolfTrk, 100% effort',ex:[]}
   };
-  var WO_ORDER=['Lift A','Lift B','Mobility','Speed'];
+  var WO_ORDER=['Lift A','Lift B','Mobility','Speed','HiiTS'];
+
+  /* HiiTS (Eric, 2026-10-24): HiiTS Core, the community's updated protocol
+     (Eddie, April 13). Every set is light, medium, heavy; after the last set a
+     light finisher of the same count. Week 1 is the week of his first HiiTS
+     session, so the plan starts the week the club arrives. The rows are named
+     so the hub can find them again: one per weight with its fastest club speed,
+     his own driver's 10 full-out swings with club and ball speed, and a
+     baseline before set 1 on day 1 only. */
+  var HIITS_LEVELS=[[1,1,2,3],[2,3,2,4],[4,5,2,5],[6,7,3,4],[8,10,3,5],[11,16,4,4]];
+  var HIITS_WEIGHTS=[['Light','2 gold screws','about 8% lighter than your driver'],
+    ['Medium','black screw front, gold back','about the same as your driver'],
+    ['Heavy','2 black screws','about 8% heavier than your driver']];
+  var HIITS_DRIVER='Own driver, 10 full out', HIITS_BASE='Own driver baseline';
+  function hiitsLevel(wk){
+    for(var i=0;i<HIITS_LEVELS.length;i++){ var L=HIITS_LEVELS[i]; if(wk>=L[0]&&wk<=L[1]) return {sets:L[2],n:L[3],from:L[0],to:L[1]}; }
+    return null;
+  }
+  function hiitsSwings(L){ return L.sets*L.n*3+L.n; }
+  function hiitsSetLine(L){
+    return L.sets+' sets of '+L.n+' light, '+L.n+' medium, '+L.n+' heavy, then '+L.n+' light. '+hiitsSwings(L)+' swings';
+  }
+  function woMonday(iso){
+    var m=/^(\d{4})-(\d{2})-(\d{2})/.exec(iso); if(!m) return null;
+    var d=new Date(+m[1],+m[2]-1,+m[3]); d.setDate(d.getDate()-((d.getDay()+6)%7)); return d;
+  }
+  function hiitsStart(){
+    /* The earliest date, not the first row: a session can be logged late. */
+    var ss=woSessions(woRows||[]).filter(function(x){return x.type==='HiiTS';});
+    return ss.length?ss.reduce(function(a,x){return x.date<a?x.date:a;},ss[0].date):null;
+  }
+  /* Week of the protocol on a date: 1 until the first session is logged. */
+  function hiitsWeek(iso){
+    var st=hiitsStart(); if(!st) return 1;
+    var a=woMonday(st), b=woMonday(iso); if(!a||!b) return 1;
+    return Math.max(1,Math.round((b-a)/(7*864e5))+1);
+  }
   var WO_CACHE='wo_rows_v1';
   var WO_TOKEN='hb-golf-2026';   // same speed bump the drills send - not a security boundary
   var woType='Lift A', woRows=null;
@@ -5608,11 +5648,30 @@ all();
       '<div class="card" style="padding:16px 18px;margin-top:12px;cursor:pointer" data-tool="strikes">'+
         '<div class="h-title" style="font-size:18px">Three Strikes</div></div>'+
       guideCard('speed')+guideCard('workout');
+    var hw=hiitsWeek(woToday()), hl=hiitsLevel(hw);
+    h+=woLines('HiiTS 16 Weeks',[
+      ['This week:',hl?'Week '+hw+'. '+hiitsSetLine(hl):'Week '+hw+'. The 16 weeks are done: Phase 2 is next'],
+      ['Starts:',hiitsStart()?woFmtDate(hiitsStart())+', your first session':'the week it arrives, with your first session'],
+      ['Sessions:','2 a week, 2 to 3 days apart, never on a day you play']]);
+    h+=woLines('HiiTS Session',[
+      ['Warm up fully first. Every swing is 100% effort'],
+      ['Day 1 only: 10 swings with your driver for a baseline club speed and ball speed, before set 1'],
+      ['Each set: light, then medium, then heavy'],
+      ['Record the fastest club speed with the HiiTS driver in each set'],
+      ['After the last set: the light finisher'],
+      ['Then your driver, 10 swings full out: record the fastest club speed and ball speed'],
+      ['Log it: Log > HiiTS']]);
+    h+=woLines('HiiTS Weeks',HIITS_LEVELS.map(function(L){
+      var lv={sets:L[2],n:L[3]};
+      return [(L[0]===L[1]?'Week '+L[0]:'Weeks '+L[0]+' to '+L[1])+':',hiitsSetLine(lv)];
+    }));
+    h+=woLines('HiiTS Weights',HIITS_WEIGHTS.map(function(w){return [w[0]+':',w[1]+', '+w[2]];}));
     h+=woLines('Each Week',[
       ['Lift: 2 sessions, A and B'],['GolfTrk: 1 or 2, each starts with the speed block'],
+      ['HiiTS: 2 sessions. For the 16 weeks they are the speed block'],
       ['Mobility: 1, the first to drop in a busy week']]);
     h+=woLines('Spacing',[
-      ['No speed block the day after a heavy leg day'],['At least one day between the two lifts'],
+      ['No speed block or HiiTS session the day after a heavy leg day'],['At least one day between the two lifts'],
       ['Low WHOOP recovery: mobility instead of lifting'],['Short week: 1 lift plus 1 GolfTrk']]);
     h+=woLines('Phases',[
       ['November:','base. Both feet, 3 sets of 10, controlled'],
@@ -5621,7 +5680,7 @@ all();
       ['February and March:','power. Lighter and explosive, more GolfTrk time']]);
     h+=woLines('Speed Goal',[['Spring target:','115 mph'],['Stretch:','118 mph'],['Hub Driver target:','112 mph']]);
     WO_ORDER.forEach(function(k){
-      var S=WO_SESSIONS[k];
+      var S=WO_SESSIONS[k]; if(k==='HiiTS') return;
       h+=woLines(k+' &middot; '+S.mins+' min',[[S.sub]].concat(S.ex.map(function(e){
         return [e[0]+(e[1]!==''?' &middot; '+e[1]+(e[2]!==''?' x '+e[2]:''):'')];
       })));
@@ -5636,6 +5695,32 @@ all();
   function woToday(){
     var d=new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);
   }
+  function hiitsIn(i,k,lbl,val,mode){
+    return '<div class="edfield"><div class="wolbl">'+lbl+'</div><input class="wof wo-in" data-i="'+i+'" data-k="'+k+'" type="number" inputmode="'+(mode||'decimal')+'" value="'+val+'"></div>';
+  }
+  /* HiiTS form: sets and reps come from this week of the plan (labelled so);
+     the baseline pair shows only until the first HiiTS session is saved. */
+  function hiitsEx(){
+    var hl=hiitsLevel(hiitsWeek(woToday()))||{sets:4,n:4};
+    var ex=HIITS_WEIGHTS.map(function(w,i){
+      return {name:'HiiTS '+w[0],sets:w[0]==='Light'?hl.sets+1:hl.sets,reps:hl.n,speed:true};
+    });
+    ex.push({name:HIITS_DRIVER,sets:1,reps:10,speed:true,ball:true});
+    if(!hiitsStart()) ex.unshift({name:HIITS_BASE,sets:1,reps:10,speed:true,ball:true});
+    return ex;
+  }
+  function renderHiitsLog(){
+    hiitsFormStart=hiitsStart();
+    var wk=hiitsWeek(woToday()), hl=hiitsLevel(wk);
+    var h='<div class="wolbl" style="margin-top:16px">Sets and reps are from week '+wk+' of the plan'+(hl?'':' (past week 16)')+'</div>';
+    h+=hiitsEx().map(function(e,i){
+      var row=e.ball
+        ? hiitsIn(i,'speed','Club mph','')+hiitsIn(i,'ball','Ball mph','')
+        : hiitsIn(i,'sets','Sets',e.sets,'numeric')+hiitsIn(i,'reps','Reps',e.reps,'numeric')+hiitsIn(i,'speed','Fastest mph','');
+      return '<div class="woex"><div class="n">'+e.name.replace(/^HiiTS /,'')+'</div><div class="edrow">'+row+'</div></div>';
+    }).join('');
+    return h;
+  }
   function renderWoLog(){
     var S=WO_SESSIONS[woType];
     var h='<div class="edrow" style="margin-top:16px">'+
@@ -5643,8 +5728,9 @@ all();
       '<div class="edfield"><div class="wolbl">Session</div><select class="wof" id="wo-type">'+
         WO_ORDER.map(function(k){return '<option'+(k===woType?' selected':'')+'>'+k+'</option>';}).join('')+'</select></div>'+
     '</div>'+
-    '<div class="wolbl" style="margin-top:16px">Sets and reps are from the plan</div>';
-    h+=S.ex.map(function(e,i){
+    (woType==='HiiTS'?'':'<div class="wolbl" style="margin-top:16px">Sets and reps are from the plan</div>');
+    if(woType==='HiiTS') h+=renderHiitsLog();
+    else h+=S.ex.map(function(e,i){
       return '<div class="woex"><div class="n">'+e[0]+'</div><div class="edrow">'+
         '<div class="edfield"><div class="wolbl">Sets</div><input class="wof wo-in" data-i="'+i+'" data-k="sets" type="number" inputmode="numeric" value="'+e[1]+'"></div>'+
         '<div class="edfield"><div class="wolbl">Reps</div><input class="wof wo-in" data-i="'+i+'" data-k="reps" type="number" inputmode="numeric" value="'+e[2]+'"></div>'+
@@ -5664,15 +5750,27 @@ all();
     document.getElementById('wo-result').innerHTML='<div style="font-size:18px;color:var(--cream);padding:12px 2px;line-height:1.5">'+esc(t)+'</div>';
   }
   function saveWorkout(){
-    var S=WO_SESSIONS[woType], ex=S.ex.map(function(e){return {name:e[0],sets:'',reps:'',weight:''};});
+    var S=WO_SESSIONS[woType], hx=woType==='HiiTS'?hiitsEx():null;
+    var ex=hx?hx.map(function(e){
+        /* Every HiiTS row sends speed and ball, so none borrows the session's. */
+        return {name:e.name,sets:e.sets,reps:e.reps,weight:'',speed:'',ball:''};
+      }):S.ex.map(function(e){return {name:e[0],sets:'',reps:'',weight:''};});
     document.querySelectorAll('.wo-in').forEach(function(inp){
       ex[+inp.dataset.i][inp.dataset.k]=String(inp.value).trim();
     });
+    var hball='';
+    if(hx){
+      /* Only the rows he filled in; the session's speed is his own driver's. */
+      ex=ex.filter(function(e){return e.speed!==''||e.ball!==''||(!/^Own driver/.test(e.name)&&(e.sets!==''||e.reps!==''));});
+      var dv=ex.filter(function(e){return e.name===HIITS_DRIVER;})[0];
+      if(dv) hball=dv.ball;
+    }
     var date=document.getElementById('wo-date').value;
     if(!date){ woMsg('Give it a date.'); return; }
     var sp=document.getElementById('wo-speed');
+    var dvs=hx?(ex.filter(function(e){return e.name===HIITS_DRIVER;})[0]||{}).speed||'':'';
     var body={token:WO_TOKEN,kind:'workout',session:{date:date,type:woType,
-      minutes:document.getElementById('wo-mins').value.trim(),speed:sp?sp.value.trim():'',
+      minutes:document.getElementById('wo-mins').value.trim(),speed:hx?dvs:(sp?sp.value.trim():''),ball:hball,
       notes:document.getElementById('wo-notes').value.trim(),exercises:ex}};
     var btn=document.getElementById('wo-save'); btn.disabled=true; btn.textContent='SAVING…';
     fetch(HOOK,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(body)})
@@ -5690,14 +5788,24 @@ all();
   }
 
   /* Rows -> sessions. Header row 1: Date | Session | Exercise | Sets | Reps |
-     Weight (lb) | Minutes | Fastest Club Speed (mph) | Notes. One session is
-     the run of rows sharing a date and a session name. */
+     Weight (lb) | Minutes | Fastest Club Speed (mph) | Notes | Fastest Ball
+     Speed (mph). One session is the run of rows sharing a date and a session
+     name. A HiiTS session's speed is its own-driver row, never a HiiTS weight's;
+     its baseline row is kept apart. */
   function woSessions(rows){
-    var out=[], key=null;
+    var out=[], key=null, cur=null;
     (rows||[]).slice(1).forEach(function(r){
       if(!r||!r[0]||!r[1]) return;
       var k=r[0]+'|'+r[1];
-      if(k!==key){ out.push({date:String(r[0]),type:String(r[1]),mins:r[6],speed:r[7]}); key=k; }
+      if(k!==key){
+        cur={date:String(r[0]),type:String(r[1]),mins:r[6],speed:String(r[1])==='HiiTS'?'':r[7],ball:'',w:{}};
+        out.push(cur); key=k;
+      }
+      if(cur.type!=='HiiTS') return;
+      var ex=String(r[2]||'');
+      if(ex===HIITS_DRIVER){ cur.speed=r[7]; cur.ball=r[9]==null?'':r[9]; }
+      else if(ex===HIITS_BASE){ cur.base=r[7]; cur.baseBall=r[9]==null?'':r[9]; }
+      else if(/^HiiTS /.test(ex)) cur.w[ex.slice(6)]=r[7];
     });
     return out;
   }
@@ -5715,7 +5823,8 @@ all();
     var wk=ss.filter(function(x){return x.date>=monIso;});
     var n=function(t){return wk.filter(function(x){return x.type===t;}).length;};
     var lifts=n('Lift A')+n('Lift B');
-    var h=woLines('This Week',[['Lift:',lifts+' of 2'],['Speed blocks:',n('Speed')+' of 1 to 2'],['Mobility:',n('Mobility')+' of 1']]);
+    var h=woLines('This Week',[['Lift:',lifts+' of 2'],['HiiTS:',n('HiiTS')+' of 2'],['Speed blocks:',n('Speed')+' of 1 to 2'],['Mobility:',n('Mobility')+' of 1']]);
+    h+=hiitsProgress(ss);
     var sp=ss.filter(function(x){return x.speed!==''&&x.speed!=null&&isFinite(+x.speed);});
     var best=sp.reduce(function(a,x){return (a==null||+x.speed>+a.speed)?x:a;},null);
     var last=sp.length?sp[sp.length-1]:null;
@@ -5729,6 +5838,38 @@ all();
     }):[['Nothing logged yet']]);
     el.innerHTML=h;
   }
+  function woMph(v){ return (v!==''&&v!=null&&isFinite(+v))?(+v).toFixed(1)+' mph':null; }
+  function hiitsProgress(ss){
+    var hs=ss.filter(function(x){return x.type==='HiiTS';});
+    var wk=hiitsWeek(woToday()), hl=hiitsLevel(wk);
+    var L=[['Week:',hs.length?(hl?wk+' of 16':'16 weeks done, Phase 2 is next'):'1 of 16, starts with your first session'],
+      ['Sessions logged:',String(hs.length)]];
+    var b=hs.filter(function(x){return woMph(x.base);})[0];
+    if(b){ L.push(['Baseline club speed:',woMph(b.base)]); if(woMph(b.baseBall)) L.push(['Baseline ball speed:',woMph(b.baseBall)]); }
+    var dv=hs.filter(function(x){return woMph(x.speed);});
+    if(dv.length){
+      var last=dv[dv.length-1];
+      var best=dv.reduce(function(a,x){return +x.speed>+a.speed?x:a;},dv[0]);
+      L.push(['Last driver club speed:',woMph(last.speed)+', '+woFmtDate(last.date)]);
+      if(woMph(last.ball)) L.push(['Last driver ball speed:',woMph(last.ball)]);
+      L.push(['Fastest driver club speed:',woMph(best.speed)+', '+woFmtDate(best.date)]);
+      if(b) L.push(['Since baseline:',((+best.speed-(+b.base))>=0?'+':'')+(+best.speed-(+b.base)).toFixed(1)+' mph']);
+    }
+    var lw=hs.length?hs[hs.length-1].w:{};
+    HIITS_WEIGHTS.forEach(function(w){ if(woMph(lw[w[0]])) L.push(['Last '+w[0].toLowerCase()+':',woMph(lw[w[0]])]); });
+    return woLines('HiiTS',L);
+  }
+  /* The HiiTS form follows the sheet (this week's sets, baseline or not), but
+     a form he has typed in, or one just saved, is never redrawn under him. */
+  var hiitsFormStart;
+  function hiitsRefreshLog(){
+    var st=hiitsStart();
+    if(woType!=='HiiTS'||st===hiitsFormStart) return;
+    var btn=document.getElementById('wo-save');
+    var typed=[].some.call(document.querySelectorAll('.wo-in[data-k="speed"],.wo-in[data-k="ball"]'),function(i){return i.value!=='';});
+    if(btn&&(btn.disabled||btn.textContent!=='SAVE SESSION'||typed)) return;
+    renderWoLog();
+  }
   function loadWorkouts(){
     fetch(HOOK+'?tab=workouts&_ts='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();})
       .then(function(j){
@@ -5739,7 +5880,7 @@ all();
         else if(j&&/No "Workouts" tab/.test(String(j.error))) woRows=[];
         else throw new Error(j&&j.error||'no rows');
         try{localStorage.setItem(WO_CACHE,JSON.stringify(woRows));}catch(e){}
-        renderWoProgress();
+        renderWoPlan(); hiitsRefreshLog(); renderWoProgress();
       })
       .catch(function(){
         try{var c=JSON.parse(localStorage.getItem(WO_CACHE)||'null'); if(c) woRows=c;}catch(e){}
