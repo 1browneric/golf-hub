@@ -5614,7 +5614,8 @@ all();
   function speedPct(n,d){ return d?Math.round(100*n/d)+'% ('+n+' of '+d+')':''; }
   function driverSpeedCard(){
     var S=DRIVER_SPEED, L=S.rows[0]; if(!L) return '';
-    function mph(v){ return v==null?'':v+' mph'; }
+    function f1(v){ return v==null?'':Number(v).toFixed(1); }
+    function mph(v){ return v==null?'':f1(v)+' mph'; }
     function block(title,x){
       return woLines(title,[
         ['Max club speed, good:',mph(x.g.cs)],['Max club speed, playable:',mph(x.p.cs)],
@@ -5640,7 +5641,7 @@ all();
         ['','Club good','Club playable','Ball good','Ball playable'].map(function(x){return '<th '+th+'>'+x+'</th>';}).join('')+
         '</tr></thead><tbody>'+S.rows.map(function(r){
           return '<tr><td '+td+'>'+r.d+'</td>'+[r.all.g[kc],r.all.p[kc],r.all.g[kb],r.all.p[kb]].map(function(v){
-            return '<td '+td+'>'+(v==null?'':v)+'</td>';}).join('')+'</tr>';
+            return '<td '+td+'>'+f1(v)+'</td>';}).join('')+'</tr>';
         }).join('')+'</tbody></table></div>';
     }
     h+=table('All Drivers &middot; Max by Session','cs','bs');
