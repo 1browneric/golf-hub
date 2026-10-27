@@ -60,7 +60,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
 .hero{background:linear-gradient(160deg,var(--navy),var(--navy-deep));border:1px solid var(--card-line);
       border-radius:22px;padding:22px 22px 20px}
 .hero .big{font-family:var(--font-data);font-weight:600;font-size:58px;line-height:.9;letter-spacing:-.02em}
-.pill{display:inline-flex;align-items:center;gap:5px;background:rgba(30,142,79,.16);border:1px solid rgba(30,142,79,.45);
+.pill{display:inline-flex;align-items:center;gap:5px;background:rgba(143,160,184,.10);border:1px solid rgba(143,160,184,.35);
       border-radius:20px;padding:4px 10px}
 .pill .v{font-family:var(--font-data);font-weight:600;font-size:13px;color:var(--green-pos)}
 .lab{font-family:var(--font-caps);font-weight:600;letter-spacing:.14em;color:var(--steel)}
@@ -386,11 +386,11 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
         <div class="gtop">
           <div>
             <div class="big" id="avg-how">&mdash;</div>
-            <div class="lab" id="avg-topar" style="font-size:11px;margin-top:6px">SEASON AVG · +12.4 TO PAR</div>
+            <div class="lab" id="avg-topar" style="font-size:11px;margin-top:6px;line-height:1.5">SEASON AVG</div>
           </div>
           <div style="text-align:right">
             <div class="pill" id="trend-pill"></div>
-            <div class="lab" id="trend-lab" style="font-size:10px;letter-spacing:.12em;margin-top:6px">LAST 5 VS PRIOR 5</div>
+            <div class="lab" id="trend-lab" style="font-size:10px;letter-spacing:.12em;margin-top:6px;white-space:nowrap">LAST 5 VS PRIOR 5</div>
           </div>
         </div>
         <svg id="trend-svg" viewBox="0 0 320 112" style="width:100%;height:104px;margin-top:16px;display:block;overflow:visible">
@@ -1221,18 +1221,17 @@ all();
        at 5 mph and 1.4 by 20. Both are right - the ratio GROWS with the wind,
        and 1.5 is the strong-wind end of it. Saying that is more use than
        either number on its own, and stops the screen contradicting itself. */
-    var lead=condLead('A light wind hurts and helps about the same. The harder it blows the more '+
-      'one-sided it gets'+(d20?', and at 20 mph into the wind costs your driver '+d20.hurt+
-      ' yards where downwind only gives back '+d20.help:'')+
-      ' - so club up into it, and never bank on the help coming home.');
+    var lead=condLead('Into costs more than down gives back. Club up into it.');
     var mine=[];
-    if(d10) mine.push(['Driver, 10 mph', d10.hurt+' yds into, '+d10.help+' yds down']);
-    if(d20) mine.push(['Driver, 20 mph', d20.hurt+' yds into, '+d20.help+' yds down']);
-    if(n10) mine.push(['9 iron, 10 mph', n10.hurt+' yds into, '+n10.help+' yds down']);
+    /* one stat per row: what into costs, then what down gives back */
+    var both=function(nm,w){ mine.push([nm+' into','-'+w.hurt+' yds']); mine.push([nm+' down','+'+w.help+' yds']); };
+    if(d10) both('Driver, 10 mph',d10);
+    if(d20) both('Driver, 20 mph',d20);
+    if(n10) both('9 iron, 10 mph',n10);
     var live='';
     if(WX.wind!=null&&WX.wind>=8){
-      live=condLead('It is blowing '+Math.round(WX.wind)+' mph right now'+
-        (WX.windDir?' from the '+WX.windDir:'')+' - into it, expect a wider miss as well as a shorter one.');
+      live=condLead('Now: '+Math.round(WX.wind)+' mph'+(WX.windDir?' from the '+WX.windDir:''))+
+        condLead('Into it: shorter and wider');
     }
     return '<div class="cnote">'+live+lead+
       (mine.length?condLabel('OFF YOUR OWN CHART')+condRows(mine):'')+
@@ -1258,12 +1257,11 @@ all();
     if(WX.temp!=null){
       var swing=(WX.temp-REF_TEMP)/20*5;
       var s1=Math.round(swing);
-      lead=condLead(Math.round(WX.temp)+' degrees right now: your driver carries about '+
-        (s1>0?'+':'')+s1+' yards against 70'+
-        (Math.abs(s1)>=3?', which is most of a club':'')+
-        (wetBall()?'. The ball is wet, so it will fly shorter still':'')+'.');
+      lead=condLead('Now: '+Math.round(WX.temp)+' degrees')+
+        condLead('Driver: '+(s1>0?'+':'')+s1+' yds against 70')+
+        (wetBall()?condLead('Wet ball: flies shorter'):'');
     } else {
-      lead=condLead('Every 20 degrees is worth about 5 yards with the driver, less with shorter clubs.');
+      lead=condLead('Every 20 degrees: about 5 yds with the driver');
     }
     var rows=[40,50,60,70,80,90,100].map(function(t){
       var y=Math.round((t-REF_TEMP)/20*5);
@@ -1342,7 +1340,7 @@ all();
   // plays most, nearest first. Any Course carries a `sub` instead of a
   // location and par.
   var COURSES=[
-    {name:'Any Course',sub:'Anywhere · set the par as you play',slug:'any-course'},
+    {name:'Any Course',sub:'',slug:'any-course'},
     {name:'Tiffany Greens Golf Club',loc:'Kansas City, MO',par:72,slug:'tiffany-greens'},
     {name:'Falcon Lakes Golf Club',loc:'Basehor, KS',par:71,slug:'falcon-lakes'},
     {name:'Shoal Creek Golf Course',loc:'Kansas City, MO',par:71,slug:'shoal-creek'},
@@ -1391,6 +1389,10 @@ all();
   var LOC=(function(){var m={};
     COURSES.forEach(function(c){if(c.loc){m[c.name]=c.loc;m[c.name.replace(' Golf Course','').replace(' Golf Club','')]=c.loc;}});
     ROUNDS.forEach(function(r){if(r.loc)m[r.course]=r.loc;});
+    /* Played, not in the course library: the sheet carries no location. */
+    [['Colbert Hills Golf Course','Manhattan, KS'],['Fred Arbanas Golf Course','Kansas City, MO'],
+     ['Excelsior Springs Golf Course','Excelsior Springs, MO'],['Sunflower Hills Golf Course','Bonner Springs, KS']]
+      .forEach(function(c){m[c[0]]=m[c[0]]||c[1];m[c[0].replace(' Golf Course','')]=m[c[0]];});
     return m;})();
 
   /* Rounds tab, after the 3 header rows:
@@ -1592,7 +1594,7 @@ all();
       ' style="padding:16px 16px 14px;margin-bottom:10px;cursor:pointer">'+
       '<div style="display:flex;align-items:flex-start;justify-content:space-between">'+
         '<div><div class="h-title" style="font-size:18px">'+r.course+'</div>'+
-        '<div style="font-family:var(--font-body);font-size:12px;color:var(--steel);margin-top:2px">'+r.loc+' · '+r.date+'</div></div>'+
+        '<div style="font-family:var(--font-body);font-size:12px;color:var(--steel);margin-top:2px">'+(r.loc?r.loc+' · ':'')+r.date+'</div></div>'+
         '<div style="text-align:right"><div class="mono" style="font-weight:600;font-size:26px;line-height:1">'+r.score+'</div><div class="mono" style="font-size:12px;color:var(--red)">'+toPar+'</div></div>'+
       '</div>'+
       '<div style="display:flex;gap:6px;margin-top:14px;padding:10px 0;border-top:1px solid rgba(143,160,184,.16);border-bottom:1px solid rgba(143,160,184,.16)">'+
@@ -2184,7 +2186,8 @@ all();
          and last always print; a short round says how many holes it was */
       var k=Math.ceil(chron.length/12);
       return chron.map(function(r,i){
-        if(i%k && i!==chron.length-1) return '';
+        var last=chron.length-1;
+        if(i!==last && (i%k || last-i<Math.max(k,2))) return '';
         return chTxt(chX(i),y,r.date+(r.n<18?'&middot;'+r.n:''));
       }).join('');
     };
@@ -2211,7 +2214,7 @@ all();
       if(!val) return groupLabel(t);
       return '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:14px">'+
         '<span style="font-family:var(--font-caps);font-weight:800;font-size:10px;letter-spacing:.14em;color:var(--steel)">'+t+'</span>'+
-        '<span class="mono" style="font-size:12px;color:var(--cream)">'+val+'</span></div>';
+        '<span class="mono" style="font-size:12px;color:var(--cream);white-space:nowrap;margin-left:10px">'+val+'</span></div>';
     };
     var chLegend=function(items){
       /* one series per row; when the item carries an average it sits
@@ -2308,19 +2311,38 @@ all();
          gridline, so without a label it would read as axis furniture rather
          than as a standard he set. */
       var ref=function(v,col,label){
-        var y=yOf(v).toFixed(1);
+        var y=yOf(v).toFixed(1), w=label.length*5+4;
+        /* the first spot clear of the line, its points and their value labels
+           wins, scanning right to left above the line, then below it, so the
+           words never sit on the data */
+        var spots=[];
+        [-4,11].forEach(function(dy){
+          for(var x=CH_W-8;x-w>=CH_X0;x-=12) spots.push([x,+y+dy,'end']);
+        });
+        var trace=[];
+        pts.forEach(function(q,i){
+          trace.push([q.x,yOf(q.v)]);
+          if(i===0||i===pts.length-1||i===minI) trace.push([q.x,yOf(q.v)-12]);
+          var n=pts[i+1]; if(!n) return;
+          for(var t=1;t<10;t++) trace.push([q.x+(n.x-q.x)*t/10,yOf(q.v)+(yOf(n.v)-yOf(q.v))*t/10]);
+        });
+        var clear=function(sp){
+          var x0=sp[0]-w-3, x1=sp[0]+3, y0=sp[1]-10, y1=sp[1]+3;
+          return !trace.some(function(c){return c[0]>x0&&c[0]<x1&&c[1]>y0&&c[1]<y1;});
+        };
+        var sp=spots.filter(clear)[0]||spots[0];
         return '<line x1="'+(CH_X0-6)+'" y1="'+y+'" x2="'+(CH_W-6)+'" y2="'+y+
                '" stroke="'+col+'" stroke-width="1" stroke-dasharray="4 3" opacity=".7"/>'+
-               chTxt(CH_W-8,+y-4,label,col,'end');
+               chTxt(sp[0],sp[1],label,col,sp[2]);
       };
       /* ONE reference line, the target. A second line at the season rate
          duplicated the title, which already reads "last five (season)", and
          its label landed on top of the final data point at the right edge. */
+      var minI=0;
+      pts.forEach(function(q,i){ if(q.v<pts[minI].v) minI=i; });
       s2+=ref(TEN_PCT_TARGET,CH_RED,'TARGET '+TEN_PCT_TARGET+'%');
       s2+='<polyline points="'+pts.map(function(q){return q.x.toFixed(1)+','+yOf(q.v).toFixed(1);}).join(' ')+
           '" fill="none" stroke="'+CH_CREAM+'" stroke-width="2"/>';
-      var minI=0;
-      pts.forEach(function(q,i){ if(q.v<pts[minI].v) minI=i; });
       pts.forEach(function(q,i){
         s2+='<circle cx="'+q.x.toFixed(1)+'" cy="'+yOf(q.v).toFixed(1)+'" r="4" fill="'+CH_CREAM+
             '" stroke="'+CH_NAVY+'" stroke-width="2"/>';
@@ -2500,7 +2522,7 @@ all();
       var set=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
       set('avg-hub',avg.toFixed(1)); set('avg-how',avg.toFixed(1)); set('avg-rounds',avg.toFixed(1));
       var e=document.getElementById('avg-topar');
-      if(e) e.innerHTML='SEASON AVG &middot; '+(tp>=0?'+':'')+tp.toFixed(1)+' TO PAR';
+      if(e) e.innerHTML='SEASON AVG<br>'+(tp>=0?'+':'')+tp.toFixed(1)+' TO PAR';
     }
   }
 
@@ -3193,7 +3215,7 @@ all();
     D:[['Head','Titleist GT3 11°'],['Shaft','Tensei 1K Blue, stiff'],['Kick point','Mid'],
        ['Hosel','A1: standard loft and lie'],['CG slider','T1: toe, fade bias'],['Weight','10 g']],
     MD:[['Head','Titleist GT280 13°'],['Hosel','B2: standard loft, 0.75° upright']],
-    "5H":[['Head','Titleist GT2 24°'],['Shaft','Tensei 1K Blue, stiff'],['Replaced','TSi 23° (10/22/2026)']],
+    "5H":[['Head','Titleist GT2 24°'],['Shaft','Tensei 1K Blue, stiff'],['Replaced','TSi 23° (October 22, 2026)']],
     "7w":[['Head','Titleist GT2 21°'],['Shaft','Tensei 1K Blue 65, stiff'],['Kick point','Mid'],
        ['Hosel','A1: standard loft and lie']]
   };
@@ -3228,10 +3250,10 @@ all();
 
   document.getElementById('course-list').innerHTML=COURSES.map(function(c){
     // Any Course has no fixed location or par — it carries its own subtitle.
-    var sub=c.sub||(c.loc+' · Par '+c.par);
+    var sub=c.slug==='any-course'?'':(c.loc+' · Par '+c.par);
     return '<a class="mod" href="course/'+c.slug+'/'+(c.v?'?'+c.v:'')+'" style="text-decoration:none;color:inherit">'+
       '<div class="mleft"><div class="t">'+c.name+'</div>'+
-      '<div class="s">'+sub+'</div></div>'+
+      (sub?'<div class="s">'+sub+'</div>':'')+'</div>'+
       '<div class="mright"><div class="lab" style="font-weight:700;font-size:10px;letter-spacing:.14em;color:var(--red)">START</div></div>'+
     '</a>';
   }).join('');
@@ -3573,7 +3595,7 @@ all();
           'Ten tee shots, alternating: driver, then the club you would hit if the hole frightened you. Five each.',
           'Score both the same way - is the ball in play with a shot to the green, yes or no.',
           'The point is not which club is longer. It is which club puts more of the ten in play, measured rather than assumed.',
-          'On Aug 2 the driver cost 4.27 strokes on its own and you hit 4 of 14 fairways. That is the round this drill is aimed at.',
+          'On Aug 2 Off the Tee cost 1.38 strokes against a 5 handicap and you hit 4 of 14 fairways. That is the round this drill is aimed at.',
           'If the safe club wins on the range it wins on the course, and the tee shot stops being a decision you make standing over the ball.'
         ]
       }],
@@ -3584,7 +3606,7 @@ all();
           'Ten approaches from 176 yards and out. Pick a green with a visible front, middle and back third.',
           'The target is the MIDDLE THIRD, every single ball, whatever the flag is doing. A ball that finishes anywhere in that third is a hit.',
           'Score is out of ten. Nothing about proximity to a pin is recorded, because from this distance the pin is not the target.',
-          'From 176 and out you lost 7.35 strokes over two rounds. None of that is recovered by getting closer to flags; it is recovered by stopping the ball on the surface.',
+          'From 176 and out you lost 1.50 strokes against a 5 handicap over Aug 1 and 2. None of that is recovered by getting closer to flags; it is recovered by stopping the ball on the surface.',
           'A ball short of the green and a ball over it are the same miss here. Both are counted as misses and both are worth noticing.'
         ]
       },{
@@ -4897,6 +4919,33 @@ all();
      Every number is either his own (TrackMan sheet, SG tracker) or a cited
      source; a cell nobody has measured says "measure", never a guess.
      ===================================================================== */
+  /* Measured numbers quoted inside a guide are read from the hub's own
+     measured lines (LAUNCH, DRIVER_SPEED - both written from the TrackMan
+     sheet), never typed into the text, so a new session cannot leave a
+     guide behind. */
+  var MONTH_FULL={Jan:'January',Feb:'February',Mar:'March',Apr:'April',May:'May',Jun:'June',
+    Jul:'July',Aug:'August',Sep:'September',Oct:'October',Nov:'November',Dec:'December'};
+  function dayFull(d){ var m=/^(\w{3}) (\d+)$/.exec(d||''); return m?(MONTH_FULL[m[1]]||m[1])+' '+m[2]:(d||''); }
+  function lsnLatest(club,i){
+    var L=(typeof LAUNCH!=='undefined'&&LAUNCH[club])||{}, out=null;
+    ['l','l2','l3','l4','l5','l6'].forEach(function(k,j){ if(L[k]&&L[k][i]) out={v:L[k][i],b:'Lessons '+(j+1)}; });
+    return out;
+  }
+  function lsnCarryLines(){
+    return [['48','AW 48°'],['52','52°'],['56','56°'],['58','58°']].map(function(w){
+      var x=lsnLatest(w[0],0);
+      return '- '+w[1]+': '+(x?x.v+' ('+x.b+')':'no full-swing line yet');
+    });
+  }
+  function speedGoalLines(){
+    var out=[], x=lsnLatest('D',3);
+    if(x) out.push('- '+x.b+' driver average: '+x.v+' mph.');
+    var B=(typeof DRIVER_SPEED!=='undefined'&&DRIVER_SPEED.best&&DRIVER_SPEED.best.g)||null;
+    if(B&&B.cs!=null) out.push('- Fastest this fall: '+Number(B.cs).toFixed(1)+' mph, '+dayFull(B.cs_d)+'.');
+    if(B&&B.cs!=null&&B.cs>115) out.push('- Fastest ever: '+Number(B.cs).toFixed(1)+' mph, '+dayFull(B.cs_d)+'.');
+    else out.push('- Fastest ever: 115.0 mph, in the spring.');
+    return out;
+  }
   var GUIDES={
   'stance':{title:'Stance Width Plan',md:[
 '## When to start',
@@ -4934,12 +4983,10 @@ all();
 'Width scale and thigh kiss drill: MyGolfSpy, "Golf Stance Width: 3 Setup Rules".'
   ].join('\n')},
 
-  'inside100':{title:'Inside 100: Stance Clock',md:[
+  'inside100':{title:'Inside 100: Stance Clock',get md(){return [
 '## When to start',
 '- After two sessions on the new driver setup (hosel A1, slider T1).',
 '- One change per session: when you test stance, nothing else changes that day.',
-'## Why this one',
-'Inside 100 is the recurring scoring leak in your strokes gained. This turns the partial wedges into a system instead of a feel.',
 '## The system',
 '- The clock is your lead arm at the top of the backswing.',
 '- Instead of chasing three arm positions, let the stance set the length.',
@@ -4954,7 +5001,7 @@ all();
 '- Tempo: 2:1 on every swing. Use the Tempo Trainer on a short-game setting, start at 18/9. The length changes, the rhythm does not.',
 '- Finish as long as the backswing.',
 '## Your matrix',
-'Four wedges by three stances is 12 numbers. Full-swing carry so far (good shots): 52° 113.5 and 56° 104.7 in Lessons 2, AW 118.0 in Lessons 1. The 58° has no full-swing line yet.',
+'Full-swing carry so far, good shots:'].concat(lsnCarryLines(),[
 '| Wedge | Narrow 7:30 | Middle 9:00 | Full 10:30',
 '| AW 48° | measure | measure | measure',
 '| 52° | measure | measure | measure',
@@ -4969,12 +5016,9 @@ all();
 'Pick the cell closest to the number, set the stance, and make the swing the stance gives you.',
 '### Source',
 'Clock positions and percentages: GOLF.com, "Clever trick for wedge distance control".'
-  ].join('\n')},
+  ]).join('\n');}},
 
   'ppos':{title:'Swing Positions: P1 to P10',md:[
-'- The P system splits the swing into ten checkpoints by where the lead arm and the shaft are.',
-'- It gives you, Jordan and the video one shared language.',
-'- Under each one: what to check, and which of your cues live there.',
 '## P1 Address',
 'Grip, posture, ball position, stance, weight balanced.',
 '- Your cues: trigger finger (right index finger down the shaft). Ball about half a ball forward. No forward press.',
@@ -5043,7 +5087,6 @@ all();
   ].join('\n')},
 
   'good':{title:'What Good Looks Like',md:[
-'Expectations at your level, with sub-5 the goal.',
 'A shot inside these numbers is a good shot even if it does not feel like one.',
 '## Rounds',
 '- A 5 to 10 index lands within 3 shots of their own average 60% of the time. One round in five is 3 or more worse. A bad round is normal spread, not a broken swing.',
@@ -5102,11 +5145,10 @@ all();
 'Give practice a score you can lose: the Putting Combine, or start a ladder over on a miss.'
   ].join('\n')},
 
-  'speed':{title:'Speed Training Plan',md:[
+  'speed':{title:'Speed Training Plan',get md(){return [
 '## Goal',
-'- Spring target: 115 mph. Stretch: 118.',
-'- Lessons 2 driver average: 108.2.',
-'- Fastest this fall: 112.9, October 20. Fastest ever: 115.0, in the spring.',
+'- Spring target: 115 mph.',
+'- Stretch: 118 mph.'].concat(speedGoalLines(),[
 '## Where it fits',
 'The speed block in your plan: 15 minutes at GolfTrk before practice, 1 or 2 a week. Never the day after a heavy leg day.',
 '## The session',
@@ -5166,10 +5208,9 @@ all();
 '- The 16-week HiiTS protocol is on the Plan tab, and Log > HiiTS saves each session.',
 '### Sources',
 'wickedsmartgolf.com: the speed challenge page, "Golf Speed Training: 5 Proven Tips" and "HiiTs Golf Speed Training Review". Wicked Smart Golf on YouTube: "How I Speed Train as a +2 Handicap" and "Your Speed Training Plan is Broken (Here\'s Why)". Three Strikes: leomiller.golf/threestrikes.'
-  ].join('\n')},
+  ]).join('\n');}},
 
   'workout':{title:'Golf Workout: How Each Move Helps',md:[
-'Your plan from 10/21 (Lift A, Lift B, Mobility, Speed) with how to do each move and what it does for the swing. Sets and reps are on the Plan tab.',
 '## Warm-up, every lift (5 min)',
 '- Cat-cow, 8. Open books, 8 per side. World\'s greatest stretch, 4 per side. Bodyweight squats, 10.',
 '## Lift A: legs and power',
@@ -5477,8 +5518,7 @@ all();
         '- Beat the mark and you swing again.',
         '- A tie is neither: swing again.',
         '- Slower is a strike, then 60 seconds of rest.',
-        '- Three strikes and the drill is over.',
-        'It trains your brain out of holding back: max-effort swings teach it what fast feels like.'
+        '- Three strikes and the drill is over.'
       ].join('\n'))+'</div>'+
       '<div class="edrow" style="margin-top:12px">'+
         '<div class="edfield"><div class="wolbl">Normal swing 1 mph</div><input class="wof" id="ts-c1" type="number" inputmode="decimal" value="'+TS.c1+'"></div>'+
@@ -5634,7 +5674,7 @@ all();
       ['Best ball speed, playable:',mph(B.p.bs)+', '+B.p.bs_d]]);
     L.setups.forEach(function(x){ if(L.setups.length>1) h+=block(L.d+' &middot; '+x.name,x); });
     h+=block(L.d+' &middot; '+(L.setups.length>1?'All drivers':L.setups[0].name),L.all);
-    var td='style="font-size:18px;padding:9px 6px"', th='style="font-size:11px;padding:6px"';
+    var td='style="font-size:18px;padding:9px 6px"', th='style="font-size:18px;padding:6px;letter-spacing:.02em"';
     function table(title,kc,kb){
       return '<div class="h-title" style="font-size:22px;margin-top:20px">'+title+'</div>'+
         '<div class="card lscroll" style="padding:6px 12px;margin-top:8px"><table class="ltab"><thead><tr>'+
