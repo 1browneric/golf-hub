@@ -5607,6 +5607,46 @@ all();
     ['Medium','black screw front, gold back','about the same as your driver'],
     ['Heavy','2 black screws','about 8% heavier than your driver']];
   var HIITS_DRIVER='Own driver, 10 full out', HIITS_BASE='Own driver baseline';
+  /* TrackMan driver speed per session (Driver and its trials, good and playable),
+     written by trackman_sheet.py hub after every ingest - the yardstick for HiiTS
+     (Eric, 2026-10-27). */
+  var DRIVER_SPEED={"cs":110,"bs":160,"rows":[{"d":"Oct 27","setups":[{"name":"GT3 + Tensei","g":{"n":14,"cs":111.9,"bs":163.8,"csa":109.7,"bsa":159.1,"c":8,"b":7},"p":{"n":21,"cs":111.9,"bs":163.8,"csa":109.0,"bsa":154.8,"c":8,"b":7}},{"name":"GTS2 + Steadfast Lite","g":{"n":23,"cs":114.8,"bs":164.1,"csa":110.5,"bsa":158.2,"c":15,"b":11},"p":{"n":22,"cs":114.8,"bs":164.1,"csa":110.5,"bsa":157.0,"c":15,"b":11}},{"name":"GTS2 + Tensei Regular","g":{"n":7,"cs":112.8,"bs":163.9,"csa":110.5,"bsa":159.2,"c":5,"b":2},"p":{"n":8,"cs":112.8,"bs":163.9,"csa":110.2,"bsa":156.6,"c":5,"b":2}}],"all":{"g":{"n":44,"cs":114.8,"bs":164.1,"csa":110.2,"bsa":158.6,"c":28,"b":20},"p":{"n":51,"cs":114.8,"bs":164.1,"csa":109.8,"bsa":156.1,"c":28,"b":20}}},{"d":"Oct 20","setups":[{"name":"GT3 + Tensei","g":{"n":12,"cs":111.2,"bs":163.3,"csa":108.9,"bsa":156.1,"c":4,"b":3},"p":{"n":15,"cs":112.2,"bs":161.9,"csa":108.8,"bsa":152.1,"c":4,"b":1}},{"name":"GTS2 + Steadfast","g":{"n":20,"cs":112.9,"bs":163.6,"csa":110.5,"bsa":157.9,"c":13,"b":6},"p":{"n":32,"cs":112.9,"bs":163.6,"csa":110.1,"bsa":154.6,"c":18,"b":6}},{"name":"GTS2 + Tensei","g":{"n":13,"cs":112.5,"bs":159.8,"csa":109.5,"bsa":156.7,"c":4,"b":0},"p":{"n":15,"cs":112.5,"bs":159.8,"csa":109.3,"bsa":155.0,"c":4,"b":0}},{"name":"GT3 + Steadfast","g":{"n":6,"cs":110.8,"bs":159.8,"csa":109.2,"bsa":156.4,"c":1,"b":0},"p":{"n":9,"cs":111.8,"bs":159.8,"csa":109.6,"bsa":153.4,"c":2,"b":0}}],"all":{"g":{"n":51,"cs":112.9,"bs":163.6,"csa":109.7,"bsa":157.0,"c":22,"b":9},"p":{"n":71,"cs":112.9,"bs":163.6,"csa":109.6,"bsa":154.0,"c":28,"b":7}}},{"d":"Oct 13","setups":[{"name":"Driver","g":{"n":23,"cs":111.7,"bs":163.7,"csa":109.1,"bsa":157.0,"c":6,"b":4},"p":{"n":29,"cs":111.7,"bs":163.7,"csa":108.5,"bsa":152.7,"c":6,"b":3}}],"all":{"g":{"n":23,"cs":111.7,"bs":163.7,"csa":109.1,"bsa":157.0,"c":6,"b":4},"p":{"n":29,"cs":111.7,"bs":163.7,"csa":108.5,"bsa":152.7,"c":6,"b":3}}},{"d":"Oct 11","setups":[{"name":"Driver","g":{"n":10,"cs":111.5,"bs":160.4,"csa":107.5,"bsa":155.6,"c":1,"b":2},"p":{"n":22,"cs":112.1,"bs":160.4,"csa":108.3,"bsa":149.6,"c":6,"b":2}}],"all":{"g":{"n":10,"cs":111.5,"bs":160.4,"csa":107.5,"bsa":155.6,"c":1,"b":2},"p":{"n":22,"cs":112.1,"bs":160.4,"csa":108.3,"bsa":149.6,"c":6,"b":2}}},{"d":"Oct 6","setups":[{"name":"Driver","g":{"n":46,"cs":111.0,"bs":161.2,"csa":107.7,"bsa":154.1,"c":4,"b":1},"p":{"n":53,"cs":110.8,"bs":159.1,"csa":107.5,"bsa":151.7,"c":8,"b":0}}],"all":{"g":{"n":46,"cs":111.0,"bs":161.2,"csa":107.7,"bsa":154.1,"c":4,"b":1},"p":{"n":53,"cs":110.8,"bs":159.1,"csa":107.5,"bsa":151.7,"c":8,"b":0}}},{"d":"Oct 2","setups":[{"name":"Driver","g":{"n":15,"cs":107.3,"bs":153.8,"csa":104.1,"bsa":148.0,"c":0,"b":0},"p":{"n":23,"cs":107.8,"bs":153.8,"csa":103.8,"bsa":144.4,"c":0,"b":0}}],"all":{"g":{"n":15,"cs":107.3,"bs":153.8,"csa":104.1,"bsa":148.0,"c":0,"b":0},"p":{"n":23,"cs":107.8,"bs":153.8,"csa":103.8,"bsa":144.4,"c":0,"b":0}}},{"d":"Sep 25","setups":[{"name":"Driver","g":{"n":7,"cs":109.5,"bs":157.0,"csa":107.4,"bsa":152.7,"c":0,"b":0},"p":{"n":12,"cs":109.7,"bs":157.0,"csa":107.6,"bsa":149.8,"c":0,"b":0}}],"all":{"g":{"n":7,"cs":109.5,"bs":157.0,"csa":107.4,"bsa":152.7,"c":0,"b":0},"p":{"n":12,"cs":109.7,"bs":157.0,"csa":107.6,"bsa":149.8,"c":0,"b":0}}},{"d":"Sep 15","setups":[{"name":"Driver","g":{"n":7,"cs":110.3,"bs":159.9,"csa":107.5,"bsa":154.6,"c":1,"b":0},"p":{"n":10,"cs":110.3,"bs":158.1,"csa":106.8,"bsa":150.0,"c":1,"b":0}}],"all":{"g":{"n":7,"cs":110.3,"bs":159.9,"csa":107.5,"bsa":154.6,"c":1,"b":0},"p":{"n":10,"cs":110.3,"bs":158.1,"csa":106.8,"bsa":150.0,"c":1,"b":0}}},{"d":"Sep 11","setups":[{"name":"Driver","g":{"n":35,"cs":111.2,"bs":162.2,"csa":107.1,"bsa":154.8,"c":4,"b":4},"p":{"n":39,"cs":111.2,"bs":162.2,"csa":107.4,"bsa":153.2,"c":4,"b":3}}],"all":{"g":{"n":35,"cs":111.2,"bs":162.2,"csa":107.1,"bsa":154.8,"c":4,"b":4},"p":{"n":39,"cs":111.2,"bs":162.2,"csa":107.4,"bsa":153.2,"c":4,"b":3}}},{"d":"Sep 8","setups":[{"name":"Driver","g":{"n":16,"cs":108.1,"bs":155.1,"csa":105.0,"bsa":151.1,"c":0,"b":0},"p":{"n":20,"cs":108.1,"bs":155.1,"csa":104.8,"bsa":149.2,"c":0,"b":0}}],"all":{"g":{"n":16,"cs":108.1,"bs":155.1,"csa":105.0,"bsa":151.1,"c":0,"b":0},"p":{"n":20,"cs":108.1,"bs":155.1,"csa":104.8,"bsa":149.2,"c":0,"b":0}}}],"best":{"g":{"cs":114.8,"cs_d":"Oct 27","bs":164.1,"bs_d":"Oct 27"},"p":{"cs":114.8,"cs_d":"Oct 27","bs":164.1,"bs_d":"Oct 27"}}};
+  function speedPct(n,d){ return d?Math.round(100*n/d)+'% ('+n+' of '+d+')':''; }
+  function driverSpeedCard(){
+    var S=DRIVER_SPEED, L=S.rows[0]; if(!L) return '';
+    function mph(v){ return v==null?'':v+' mph'; }
+    function block(title,x){
+      return woLines(title,[
+        ['Max club speed, good:',mph(x.g.cs)],['Max club speed, playable:',mph(x.p.cs)],
+        ['Avg club speed, good:',mph(x.g.csa)],['Avg club speed, playable:',mph(x.p.csa)],
+        ['Max ball speed, good:',mph(x.g.bs)],['Max ball speed, playable:',mph(x.p.bs)],
+        ['Avg ball speed, good:',mph(x.g.bsa)],['Avg ball speed, playable:',mph(x.p.bsa)],
+        ['Over '+S.cs+' mph club speed, good:',speedPct(x.g.c,x.g.n)],
+        ['Over '+S.cs+' mph club speed, playable:',speedPct(x.p.c,x.p.n)],
+        ['Over '+S.bs+' mph ball speed, good:',speedPct(x.g.b,x.g.n)],
+        ['Over '+S.bs+' mph ball speed, playable:',speedPct(x.p.b,x.p.n)]]);
+    }
+    var B=S.best, h=woLines('TrackMan Driver Speed',[
+      ['Best club speed, good:',mph(B.g.cs)+', '+B.g.cs_d],
+      ['Best club speed, playable:',mph(B.p.cs)+', '+B.p.cs_d],
+      ['Best ball speed, good:',mph(B.g.bs)+', '+B.g.bs_d],
+      ['Best ball speed, playable:',mph(B.p.bs)+', '+B.p.bs_d]]);
+    L.setups.forEach(function(x){ if(L.setups.length>1) h+=block(L.d+' &middot; '+x.name,x); });
+    h+=block(L.d+' &middot; '+(L.setups.length>1?'All drivers':L.setups[0].name),L.all);
+    var td='style="font-size:18px;padding:9px 6px"', th='style="font-size:11px;padding:6px"';
+    function table(title,kc,kb){
+      return '<div class="h-title" style="font-size:22px;margin-top:20px">'+title+'</div>'+
+        '<div class="card lscroll" style="padding:6px 12px;margin-top:8px"><table class="ltab"><thead><tr>'+
+        ['','Club good','Club playable','Ball good','Ball playable'].map(function(x){return '<th '+th+'>'+x+'</th>';}).join('')+
+        '</tr></thead><tbody>'+S.rows.map(function(r){
+          return '<tr><td '+td+'>'+r.d+'</td>'+[r.all.g[kc],r.all.p[kc],r.all.g[kb],r.all.p[kb]].map(function(v){
+            return '<td '+td+'>'+(v==null?'':v)+'</td>';}).join('')+'</tr>';
+        }).join('')+'</tbody></table></div>';
+    }
+    h+=table('All Drivers &middot; Max by Session','cs','bs');
+    h+=table('All Drivers &middot; Average by Session','csa','bsa');
+    return h;
+  }
   function hiitsLevel(wk){
     for(var i=0;i<HIITS_LEVELS.length;i++){ var L=HIITS_LEVELS[i]; if(wk>=L[0]&&wk<=L[1]) return {sets:L[2],n:L[3],from:L[0],to:L[1]}; }
     return null;
@@ -5687,6 +5727,7 @@ all();
       ['January:','slow tempo. 4 seconds down, 2-second pause, drive up fast'],
       ['February and March:','power. Lighter and explosive, more GolfTrk time']]);
     h+=woLines('Speed Goal',[['Spring target:','115 mph'],['Stretch:','118 mph'],['Hub Driver target:','112 mph']]);
+    h+=driverSpeedCard();
     WO_ORDER.forEach(function(k){
       var S=WO_SESSIONS[k]; if(k==='HiiTS') return;
       h+=woLines(k+' &middot; '+S.mins+' min',[[S.sub]].concat(S.ex.map(function(e){
