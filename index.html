@@ -5203,7 +5203,7 @@ all();
 '- Price: HiiTS Core $349, Plus $649.',
 '### Yours',
 '- HiiTS Core, right hand, ordered October 24, 2026.',
-'- The 16-week HiiTS protocol is on the Plan tab, and Log > HiiTS saves each session.',
+'- The HiiTS protocol from your HiiTS Protocol PDF is on the Plan tab: Phase 1 (16 weeks), Phase 2, the weights and the speed formula. Log > HiiTS saves each session.',
 '### Sources',
 'wickedsmartgolf.com: the speed challenge page, "Golf Speed Training: 5 Proven Tips" and "HiiTs Golf Speed Training Review". Wicked Smart Golf on YouTube: "How I Speed Train as a +2 Handicap" and "Your Speed Training Plan is Broken (Here\'s Why)". Three Strikes: leomiller.golf/threestrikes.'
   ]).join('\n');}},
@@ -5641,9 +5641,16 @@ all();
      his own driver's 10 full-out swings with club and ball speed, and a
      baseline before set 1 on day 1 only. */
   var HIITS_LEVELS=[[1,1,2,3],[2,3,2,4],[4,5,2,5],[6,7,3,4],[8,10,3,5],[11,16,4,4]];
-  var HIITS_WEIGHTS=[['Light','2 gold screws','about 8% lighter than your driver'],
-    ['Medium','black screw front, gold back','about the same as your driver'],
-    ['Heavy','2 black screws','about 8% heavier than your driver']];
+  /* Phase 2 and the speed formula (Eric's HiiTS Protocol PDF in Drive,
+     2026-10-30): overall weeks, sets, swings per weight, driver finish swings.
+     The PDF lists no week 17; past week 34 is maintenance. Phase 1 ends with
+     8 to 16 regular-driver swings. */
+  var HIITS_P2=[[18,21,3,4,10],[22,25,3,5,10],[26,34,4,4,15]];
+  var HIITS_FORMULA=[[90,1.055,95,95],[95,1.06,101,94],[100,1.06,106,94],[105,1.06,111,94],
+    [110,1.065,117,94],[115,1.065,122,94],[120,1.065,128,94],[125,1.07,134,93],[130,1.07,139,93]];
+  var HIITS_WEIGHTS=[['Light','gold screws in both ports','about 8% lighter than your driver'],
+    ['Medium','one gold and one black heavy screw, either port','about the same as your driver'],
+    ['Heavy','black heavy screws in both ports','about 8% heavier than your driver']];
   var HIITS_DRIVER='Own driver, 10 full out', HIITS_BASE='Own driver baseline';
   /* TrackMan driver speed per session (Driver and its trials, good and playable),
      written by trackman_sheet.py hub after every ingest - the yardstick for HiiTS
@@ -5687,12 +5694,19 @@ all();
     return h;
   }
   function hiitsLevel(wk){
-    for(var i=0;i<HIITS_LEVELS.length;i++){ var L=HIITS_LEVELS[i]; if(wk>=L[0]&&wk<=L[1]) return {sets:L[2],n:L[3],from:L[0],to:L[1]}; }
+    for(var i=0;i<HIITS_LEVELS.length;i++){ var L=HIITS_LEVELS[i]; if(wk>=L[0]&&wk<=L[1]) return {sets:L[2],n:L[3],from:L[0],to:L[1],p:1,d:'8 to 16'}; }
+    for(var j=0;j<HIITS_P2.length;j++){ var M=HIITS_P2[j]; if(wk>=M[0]&&wk<=M[1]) return {sets:M[2],n:M[3],from:M[0],to:M[1],p:2,d:String(M[4])}; }
     return null;
   }
   function hiitsSwings(L){ return L.sets*L.n*3+L.n; }
   function hiitsSetLine(L){
-    return L.sets+' sets of '+L.n+' light, '+L.n+' medium, '+L.n+' heavy, then '+L.n+' light. '+hiitsSwings(L)+' swings';
+    return L.sets+' sets of '+L.n+' light, '+L.n+' medium, '+L.n+' heavy, then '+L.n+' light. '+hiitsSwings(L)+' swings'+
+      (L.d?'. Then your driver, '+L.d+' swings':'');
+  }
+  /* What a week with no level means: week 17 is not in the protocol, past 34 is maintenance. */
+  function hiitsOffPlan(wk){
+    return wk>34?'Phases 1 and 2 are done: maintenance, 1 session a week or every other week'
+      :'Week 17 is not listed in the protocol. Phase 2 starts at week 18';
   }
   function woMonday(iso){
     var m=/^(\d{4})-(\d{2})-(\d{2})/.exec(iso); if(!m) return null;
@@ -5735,9 +5749,9 @@ all();
       guideCard('speed')+guideCard('workout');
     var hw=hiitsWeek(woToday()), hl=hiitsLevel(hw);
     h+=woLines('HiiTS 16 Weeks',[
-      ['This week:',hl?'Week '+hw+'. '+hiitsSetLine(hl):'Week '+hw+'. The 16 weeks are done: Phase 2 is next'],
+      ['This week:','Week '+hw+(hl&&hl.p===2?', Phase 2':'')+'. '+(hl?hiitsSetLine(hl):hiitsOffPlan(hw))],
       ['Starts:',hiitsStart()?woFmtDate(hiitsStart())+', your first session':'the week it arrives, with your first session'],
-      ['Sessions:','1 or 2 a week. With 2, keep them 2 to 3 days apart'],
+      ['Sessions:','1 or 2 a week. With 2, keep them 2 to 3 days apart. The protocol says 2, fully recovered between'],
       ['Weeks:','only a week you train counts, so a missed week picks up where you left off'],
       ['Never:','on a day you play']]);
     h+=woLines('HiiTS Session',[
@@ -5746,13 +5760,22 @@ all();
       ['Each set: light, then medium, then heavy'],
       ['Record the fastest club speed with the HiiTS driver in each set'],
       ['After the last set: the light finisher'],
-      ['Then your driver, 10 swings full out: record the fastest club speed and ball speed'],
+      ['Then your regular driver full out: 8 to 16 swings in Phase 1, 10 or 15 in Phase 2. Record the fastest club speed and ball speed'],
       ['Log it: Log > HiiTS']]);
     h+=woLines('HiiTS Weeks',HIITS_LEVELS.map(function(L){
-      var lv={sets:L[2],n:L[3]};
+      var lv={sets:L[2],n:L[3],d:'8 to 16'};
       return [(L[0]===L[1]?'Week '+L[0]:'Weeks '+L[0]+' to '+L[1])+':',hiitsSetLine(lv)];
     }));
-    h+=woLines('HiiTS Weights',HIITS_WEIGHTS.map(function(w){return [w[0]+':',w[1]+', '+w[2]];}));
+    h+=woLines('HiiTS Phase 2',HIITS_P2.map(function(M){
+      return ['Weeks '+M[0]+' to '+M[1]+':',hiitsSetLine({sets:M[2],n:M[3],d:String(M[4])})];
+    }).concat([['Week 17:','not listed in the protocol'],
+      ['After:','once you hold the speed you want on the course, 1 session a week or every other week']]));
+    h+=woLines('HiiTS Weights',HIITS_WEIGHTS.map(function(w){return [w[0]+':',w[1]+', '+w[2]];}).concat(
+      [['Always light, then medium, then heavy']]));
+    h+=woLines('HiiTS Speed Formula',[['Your fastest light-setting speed sets the cruise speed you can carry on the course']].concat(
+      HIITS_FORMULA.map(function(f){
+        return ['Cruise '+f[0]+' mph:','light max '+f[2]+' mph (x '+f[1]+', cruise is '+f[3]+'% effort)'];
+      })));
     h+=woLines('Each Week',[
       ['Lift: 2 sessions, A and B'],['GolfTrk: 1 or 2, each starts with the speed block'],
       ['HiiTS: 1 or 2 sessions. For the 16 weeks they are the speed block'],
@@ -5800,7 +5823,7 @@ all();
   function renderHiitsLog(){
     hiitsFormStart=hiitsStart();
     var wk=hiitsWeek(woToday()), hl=hiitsLevel(wk);
-    var h='<div class="wolbl" style="margin-top:16px">Sets and reps are from week '+wk+' of the plan'+(hl?'':' (past week 16)')+'</div>';
+    var h='<div class="wolbl" style="margin-top:16px">Sets and reps are from week '+wk+' of the plan'+(hl?(hl.p===2?', Phase 2':''):' ('+(wk>34?'maintenance':'week 17 is not in the protocol')+')')+'</div>';
     h+=hiitsEx().map(function(e,i){
       var row=e.ball
         ? hiitsIn(i,'speed','Club mph','')+hiitsIn(i,'ball','Ball mph','')
@@ -5930,7 +5953,7 @@ all();
   function hiitsProgress(ss){
     var hs=ss.filter(function(x){return x.type==='HiiTS';});
     var wk=hiitsWeek(woToday()), hl=hiitsLevel(wk);
-    var L=[['Week:',hs.length?(hl?wk+' of 16':'16 weeks done, Phase 2 is next'):'1 of 16, starts with your first session'],
+    var L=[['Week:',hs.length?(hl?(hl.p===1?wk+' of 16':wk+', Phase 2 (weeks 18 to 34)'):wk+'. '+hiitsOffPlan(wk)):'1 of 16, starts with your first session'],
       ['Sessions logged:',String(hs.length)]];
     var b=hs.filter(function(x){return woMph(x.base);})[0];
     if(b){ L.push(['Baseline club speed:',woMph(b.base)]); if(woMph(b.baseBall)) L.push(['Baseline ball speed:',woMph(b.baseBall)]); }
