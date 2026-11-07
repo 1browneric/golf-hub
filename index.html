@@ -5760,15 +5760,16 @@ all();
     var ss=woSessions(woRows||[]).filter(function(x){return x.type==='HiiTS';});
     return ss.length?ss.reduce(function(a,x){return x.date<a?x.date:a;},ss[0].date):null;
   }
-  /* Week of the protocol on a date (Eric, 2026-10-24: "1 or 2 sessions" a
-     week, not a sure 2). Only weeks he trained count, so a missed week never
-     skips him ahead a level: week = trained weeks before this one + 1. */
+  /* Week of the protocol on a date. Each HiiTS session is one protocol week,
+     as his HiiTS log numbers them (2026-11-07: Oct 30 week 1, Nov 3 week 2,
+     Nov 6 week 3, next Level 3 week 4), and he trains 1 or 2 a week. A missed
+     week never skips him ahead a level: week = sessions before this day + 1. */
   function hiitsWeek(iso){
-    var b=woMonday(iso); if(!b) return 1;
+    var day=/^(\d{4}-\d{2}-\d{2})/.exec(iso||''); if(!day) return 1;
     var seen={};
     woSessions(woRows||[]).forEach(function(x){
       if(x.type!=='HiiTS') return;
-      var m=woMonday(x.date); if(m&&m<b) seen[m.getTime()]=1;
+      var d=/^(\d{4}-\d{2}-\d{2})/.exec(x.date||''); if(d&&d[1]<day[1]) seen[d[1]]=1;
     });
     return Object.keys(seen).length+1;
   }
