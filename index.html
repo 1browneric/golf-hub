@@ -167,10 +167,10 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
 .crow{border-top:1px solid rgba(143,160,184,.12);align-items:center}
 .chead span{font-family:var(--font-caps);font-weight:700;font-size:9px;letter-spacing:.12em;color:var(--steel)}
 /* ---- Launch data, My Bag ------------------------------------------------
-   Reference lines per club - Tour, Bag, Spring, each Lessons block, Target (the
+   Reference lines per club - Tour, Bag, Spring, each Lessons block, Goal (the
    measured ones are written by skills/trackman-sheet `hub`) - against every
    parameter TrackMan reports. Laid out parameter-down-the-side rather than the
-   wide desktop matrix, because 29 columns cannot be read on a phone. Target is
+   wide desktop matrix, because 29 columns cannot be read on a phone. Goal is
    the only coloured column; nothing here encodes meaning in colour alone. */
 .lchips{display:flex;gap:6px;overflow-x:auto;padding:2px 0 4px;-webkit-overflow-scrolling:touch}
 .lchips::-webkit-scrollbar{display:none}
@@ -244,6 +244,9 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
 .woline{font-size:18px;line-height:1.45;color:var(--cream);padding:6px 0;border-bottom:1px solid rgba(143,160,184,.12)}
 .woline:last-child{border-bottom:none}
 .woline .d{color:var(--steel)}
+.wocat{padding:16px 18px;margin-top:12px;cursor:pointer}
+.wosub{font-size:16px;line-height:1.4;color:var(--cream);margin-top:6px}
+.wosub .wok{color:var(--steel)}
 .edrow{display:flex;gap:8px}
 .edrow + .edrow{margin-top:8px}
 .edfield{flex:1;min-width:0}
@@ -664,13 +667,13 @@ all();
     <section class="screen" data-screen="workouts">
       <div class="h-title" style="font-size:32px;margin-top:6px">Workouts</div>
       <div class="pgtabs">
-        <button class="pgtab on" data-wotab="plan">Plan</button>
-        <button class="pgtab" data-wotab="log">Log</button>
-        <button class="pgtab" data-wotab="progress">Progress</button>
+        <button class="pgtab on" data-wotab="week">Week</button>
+        <button class="pgtab" data-wotab="history">History</button>
+        <button class="pgtab" data-wotab="notes">Notes</button>
       </div>
-      <div data-wopane="plan" id="wo-plan"></div>
-      <div data-wopane="log" id="wo-log" hidden></div>
-      <div data-wopane="progress" id="wo-progress" hidden></div>
+      <div data-wopane="week" id="wo-week"></div>
+      <div data-wopane="history" id="wo-history" hidden></div>
+      <div data-wopane="notes" id="wo-notes-pane" hidden></div>
     </section>
 
     <!-- Mental Training: one screen per level, the same as everywhere else on
@@ -2333,12 +2336,12 @@ all();
                '" stroke="'+col+'" stroke-width="1" stroke-dasharray="4 3" opacity=".7"/>'+
                chTxt(sp[0],sp[1],label,col,sp[2]);
       };
-      /* ONE reference line, the target. A second line at the season rate
+      /* ONE reference line, the goal. A second line at the season rate
          duplicated the title, which already reads "last five (season)", and
          its label landed on top of the final data point at the right edge. */
       var minI=0;
       pts.forEach(function(q,i){ if(q.v<pts[minI].v) minI=i; });
-      s2+=ref(TEN_PCT_TARGET,CH_RED,'TARGET '+TEN_PCT_TARGET+'%');
+      s2+=ref(TEN_PCT_TARGET,CH_RED,'GOAL '+TEN_PCT_TARGET+'%');
       s2+='<polyline points="'+pts.map(function(q){return q.x.toFixed(1)+','+yOf(q.v).toFixed(1);}).join(' ')+
           '" fill="none" stroke="'+CH_CREAM+'" stroke-width="2"/>';
       pts.forEach(function(q,i){
@@ -3177,10 +3180,10 @@ all();
       return '<button class="lchip'+(k===launchClub?' on':'')+'" data-lc="'+k+'">'+b.name+'</button>';
     }).join('');
     /* Columns follow the data: Tour, Bag, then every measured line the sheet
-       wrote (s = Spring, l = Lessons 1, lN = Lessons N), then Target. */
+       wrote (s = Spring, l = Lessons 1, lN = Lessons N), then Goal. */
     var cols=Object.keys(d).filter(function(k){return Array.isArray(d[k]);});
     document.getElementById('launch-head').innerHTML='<tr><th></th>'+cols.map(function(k){
-      var name=k==='t'?'Tour':k==='b'?'Bag':k==='g'?'Target':k==='s'?'Spring':'Lsn '+(k.slice(1)||'1');
+      var name=k==='t'?'Tour':k==='b'?'Bag':k==='g'?'Goal':k==='s'?'Spring':'Lsn '+(k.slice(1)||'1');
       return '<th>'+name+'</th>';
     }).join('')+'</tr>';
     document.getElementById('launch-body').innerHTML=LAUNCH_LBL.map(function(lbl,i){
@@ -3399,7 +3402,7 @@ all();
      lesson by adding an entry to LESSONS - newest first.
      ===================================================================== */
   (function(){
-    var LESSONS=[{"id": "2026-09-01", "label": "September 1, 2026", "instructor": "Jordan Bobert", "location": "GolfTRK Liberty", "format": "Private Lesson", "assess": [{"area": "Spine Angle (Irons)", "tag": "IMPROVING", "note": "Started at 137° — too much bend. Target with irons is 140–145°. You got to a max of 140° in session, which I'm okay with. Now we hold it."}, {"area": "Stance Width", "tag": "NEEDS WORK", "note": "Feet need to be just a bit wider apart. Small change, big effect on your base."}, {"area": "Backswing Length", "tag": "NEEDS WORK", "note": "Shorten it up as much as you can. When your shoulder hits your chin, it's time to go."}, {"area": "Hands from the Top", "tag": "NEEDS WORK", "note": "From the top of the swing, your hands need to travel down to your right pocket."}, {"area": "Club Path & Release", "tag": "NEEDS WORK", "note": "Path needs to work more to the right. Release through the ball by getting your hands more extended out."}], "fix": [{"t": "Widen the stance", "s": "Just a bit wider than where you've been. You need a base that will hold up when we add speed back in."}, {"t": "Shorten the backswing", "s": "As short as you can make it. The trigger is simple — when your shoulder hits your chin, it's time to go. Anything past that is length you can't control."}, {"t": "Hands to the right pocket", "s": "From the top, the hands have to travel down to your right pocket. That's the move that gets the club in position to work from the inside."}, {"t": "Path right, and release", "s": "The path needs to work more to the right, and the hands need to extend out through the ball instead of holding on. Extension is the release."}], "secs": [{"key": "d1", "title": "Drill 1 — Hands to the Right Pocket", "lead": "The priority. Ten rehearsals in front of every ball you hit.", "rows": [{"t": "Take the club to the top and stop."}, {"t": "Bring the hands down until they hit your right pocket, then stop again. Don't swing through."}, {"t": "Do that 10 times in a row. Slow. Feel where the hands are."}, {"t": "On rep 11, make a full swing and hit the ball."}, {"t": "Then start the count over. Ten rehearsals, one ball."}], "note": "Why: ten slow reps buys you one good swing. You're not practicing hitting golf balls right now — you're practicing where your hands go from the top. The ball is just the test at the end."}, {"key": "d2", "title": "Drill 2 — Path to the Right, Release Through It", "lead": "Once the hands are getting to the pocket, the club has room to work out to the right. Now we let it go.", "rows": [{"t": "Gate drill", "s": "Set a headcover just outside and behind the ball. Miss it. That forces the club to work out to the right instead of across."}, {"t": "Start it right on purpose", "s": "Pick a target and try to start every ball right of it. Don't worry about where it finishes yet."}, {"t": "Extend through", "s": "Feel the hands and arms chase out and down the line past impact. Long arms after the ball, not short ones."}, {"t": "Release, don't hold", "s": "If it feels like you're letting the club go rather than steering it, that's the feel. Extension out is the release."}, {"t": "Half speed first", "s": "The release will not show up at full speed if it isn't there at half."}]}, {"key": "rules", "title": "Practice Rules", "rows": [{"t": "The 10 reps are not optional", "s": "Every ball you hit gets ten pocket rehearsals in front of it. That ratio is the whole program."}, {"t": "Setup first", "s": "Spine angle 140–145° and the wider stance before anything else happens."}, {"t": "Mid-iron only through Week 1", "s": "No driver."}, {"t": "If the backswing gets long, stop and reset", "s": "Shoulder to chin, then go."}, {"t": "A ball that starts right is a good ball right now", "s": "We are chasing path and release, not results."}, {"t": "Film down-the-line twice a week", "s": "Two frames: top of backswing, and hands halfway down."}]}, {"key": "program", "title": "Two-Week Program", "lead": "Goal: hold the setup, shorten the backswing, hands to the pocket, then path and release. Frequency: 4–5 sessions per week, 40 minutes each.", "weeks": [{"name": "Week 1 — Setup and the Pocket", "blocks": [{"time": "5 MIN", "t": "Setup checks", "s": "Mirror. Spine angle to 140–145°, feet a touch wider. Build the position 10 times before you touch a ball."}, {"time": "15 MIN", "t": "Right pocket reps", "s": "Go to the top, bring the hands down to the right pocket, stop. 10 reps in a row, then swing through one ball. Repeat."}, {"time": "15 MIN", "t": "Short backswing", "s": "Half to three-quarter swings, mid-iron, 50% speed. Shoulder touches chin and you go. Nothing longer."}, {"time": "5 MIN", "t": "Video check", "s": "Film down-the-line. Check backswing length and where the hands are halfway down."}], "rule": "No driver. Nothing above 50% speed. The only goal this week is that the hands find the right pocket without you thinking about it."}, {"name": "Week 2 — Path and Release", "blocks": [{"time": "5 MIN", "t": "Setup checks", "s": "Same as Week 1. Spine angle and stance width before every session."}, {"time": "10 MIN", "t": "Right pocket reps", "s": "Still 10 reps before hitting. This does not go away — it is the foundation for everything else."}, {"time": "15 MIN", "t": "Path to the right", "s": "Gate or headcover outside the ball. Feel the club work out to the right. Start balls right of target on purpose."}, {"time": "10 MIN", "t": "Extend & release", "s": "Hands chase out and down the line past impact. Feel the arms extend rather than hold on."}, {"time": "10 MIN", "t": "Build speed", "s": "Take it from 50% to full with a mid-iron. Any time the backswing gets long, drop back down."}], "rule": "Keep the pocket reps. Add the path and release work on top. Build speed only after the shape shows up at half speed. Compare your video against Week 1."}]}, {"key": "checks", "title": "Checkpoints", "lead": "The coach's list. Tap one to mark it done. The marks are kept on this device.", "rows": [{"t": "I can set up at 140–145° spine angle without checking"}, {"t": "My stance is wider and it feels normal"}, {"t": "My backswing stops when my shoulder hits my chin"}, {"t": "I can do 10 pocket reps in a row and feel the same position each time"}, {"t": "My hands reach the right pocket in a full swing on video"}, {"t": "I can start the ball right of my target on command"}, {"t": "My arms extend out through the ball instead of holding on"}, {"t": "It all holds at full speed with a mid-iron"}]}, {"key": "read", "title": "Coach's Read", "paras": ["**What's working.** The spine angle is the win from today. You came in at 137° and got yourself to 140° inside the session, which tells me the change is available to you — it's not a mobility problem or a can't-do-it problem. You just have to build it until it stops being something you think about. Hold 140–145° and the rest of what we're working on gets easier, because the club has room to work.", "**Outlook.** You proved today that the spine angle is there when you ask for it — that was the question mark and now it isn't. The rest is sequence: wider base, shorter backswing, hands to the pocket, then let it go to the right. Do the ten reps. Ten rehearsals for every ball, every session, no shortcuts. That's how this becomes yours instead of something you have to remember."]}]}];
+    var LESSONS=[{"id": "2026-09-01", "label": "September 1, 2026", "instructor": "Jordan Bobert", "location": "GolfTRK Liberty", "format": "Private Lesson", "assess": [{"area": "Spine Angle (Irons)", "tag": "IMPROVING", "note": "Started at 137° — too much bend. Goal with irons is 140–145°. You got to a max of 140° in session, which I'm okay with. Now we hold it."}, {"area": "Stance Width", "tag": "NEEDS WORK", "note": "Feet need to be just a bit wider apart. Small change, big effect on your base."}, {"area": "Backswing Length", "tag": "NEEDS WORK", "note": "Shorten it up as much as you can. When your shoulder hits your chin, it's time to go."}, {"area": "Hands from the Top", "tag": "NEEDS WORK", "note": "From the top of the swing, your hands need to travel down to your right pocket."}, {"area": "Club Path & Release", "tag": "NEEDS WORK", "note": "Path needs to work more to the right. Release through the ball by getting your hands more extended out."}], "fix": [{"t": "Widen the stance", "s": "Just a bit wider than where you've been. You need a base that will hold up when we add speed back in."}, {"t": "Shorten the backswing", "s": "As short as you can make it. The trigger is simple — when your shoulder hits your chin, it's time to go. Anything past that is length you can't control."}, {"t": "Hands to the right pocket", "s": "From the top, the hands have to travel down to your right pocket. That's the move that gets the club in position to work from the inside."}, {"t": "Path right, and release", "s": "The path needs to work more to the right, and the hands need to extend out through the ball instead of holding on. Extension is the release."}], "secs": [{"key": "d1", "title": "Drill 1 — Hands to the Right Pocket", "lead": "The priority. Ten rehearsals in front of every ball you hit.", "rows": [{"t": "Take the club to the top and stop."}, {"t": "Bring the hands down until they hit your right pocket, then stop again. Don't swing through."}, {"t": "Do that 10 times in a row. Slow. Feel where the hands are."}, {"t": "On rep 11, make a full swing and hit the ball."}, {"t": "Then start the count over. Ten rehearsals, one ball."}], "note": "Why: ten slow reps buys you one good swing. You're not practicing hitting golf balls right now — you're practicing where your hands go from the top. The ball is just the test at the end."}, {"key": "d2", "title": "Drill 2 — Path to the Right, Release Through It", "lead": "Once the hands are getting to the pocket, the club has room to work out to the right. Now we let it go.", "rows": [{"t": "Gate drill", "s": "Set a headcover just outside and behind the ball. Miss it. That forces the club to work out to the right instead of across."}, {"t": "Start it right on purpose", "s": "Pick a target and try to start every ball right of it. Don't worry about where it finishes yet."}, {"t": "Extend through", "s": "Feel the hands and arms chase out and down the line past impact. Long arms after the ball, not short ones."}, {"t": "Release, don't hold", "s": "If it feels like you're letting the club go rather than steering it, that's the feel. Extension out is the release."}, {"t": "Half speed first", "s": "The release will not show up at full speed if it isn't there at half."}]}, {"key": "rules", "title": "Practice Rules", "rows": [{"t": "The 10 reps are not optional", "s": "Every ball you hit gets ten pocket rehearsals in front of it. That ratio is the whole program."}, {"t": "Setup first", "s": "Spine angle 140–145° and the wider stance before anything else happens."}, {"t": "Mid-iron only through Week 1", "s": "No driver."}, {"t": "If the backswing gets long, stop and reset", "s": "Shoulder to chin, then go."}, {"t": "A ball that starts right is a good ball right now", "s": "We are chasing path and release, not results."}, {"t": "Film down-the-line twice a week", "s": "Two frames: top of backswing, and hands halfway down."}]}, {"key": "program", "title": "Two-Week Program", "lead": "Goal: hold the setup, shorten the backswing, hands to the pocket, then path and release. Frequency: 4–5 sessions per week, 40 minutes each.", "weeks": [{"name": "Week 1 — Setup and the Pocket", "blocks": [{"time": "5 MIN", "t": "Setup checks", "s": "Mirror. Spine angle to 140–145°, feet a touch wider. Build the position 10 times before you touch a ball."}, {"time": "15 MIN", "t": "Right pocket reps", "s": "Go to the top, bring the hands down to the right pocket, stop. 10 reps in a row, then swing through one ball. Repeat."}, {"time": "15 MIN", "t": "Short backswing", "s": "Half to three-quarter swings, mid-iron, 50% speed. Shoulder touches chin and you go. Nothing longer."}, {"time": "5 MIN", "t": "Video check", "s": "Film down-the-line. Check backswing length and where the hands are halfway down."}], "rule": "No driver. Nothing above 50% speed. The only goal this week is that the hands find the right pocket without you thinking about it."}, {"name": "Week 2 — Path and Release", "blocks": [{"time": "5 MIN", "t": "Setup checks", "s": "Same as Week 1. Spine angle and stance width before every session."}, {"time": "10 MIN", "t": "Right pocket reps", "s": "Still 10 reps before hitting. This does not go away — it is the foundation for everything else."}, {"time": "15 MIN", "t": "Path to the right", "s": "Gate or headcover outside the ball. Feel the club work out to the right. Start balls right of target on purpose."}, {"time": "10 MIN", "t": "Extend & release", "s": "Hands chase out and down the line past impact. Feel the arms extend rather than hold on."}, {"time": "10 MIN", "t": "Build speed", "s": "Take it from 50% to full with a mid-iron. Any time the backswing gets long, drop back down."}], "rule": "Keep the pocket reps. Add the path and release work on top. Build speed only after the shape shows up at half speed. Compare your video against Week 1."}]}, {"key": "checks", "title": "Checkpoints", "lead": "The coach's list. Tap one to mark it done. The marks are kept on this device.", "rows": [{"t": "I can set up at 140–145° spine angle without checking"}, {"t": "My stance is wider and it feels normal"}, {"t": "My backswing stops when my shoulder hits my chin"}, {"t": "I can do 10 pocket reps in a row and feel the same position each time"}, {"t": "My hands reach the right pocket in a full swing on video"}, {"t": "I can start the ball right of my target on command"}, {"t": "My arms extend out through the ball instead of holding on"}, {"t": "It all holds at full speed with a mid-iron"}]}, {"key": "read", "title": "Coach's Read", "paras": ["**What's working.** The spine angle is the win from today. You came in at 137° and got yourself to 140° inside the session, which tells me the change is available to you — it's not a mobility problem or a can't-do-it problem. You just have to build it until it stops being something you think about. Hold 140–145° and the rest of what we're working on gets easier, because the club has room to work.", "**Outlook.** You proved today that the spine angle is there when you ask for it — that was the question mark and now it isn't. The rest is sequence: wider base, shorter backswing, hands to the pocket, then let it go to the right. Do the ten reps. Ten rehearsals for every ball, every session, no shortcuts. That's how this becomes yours instead of something you have to remember."]}]}];
 
     function esc(s){return String(s==null?'':s)
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -5145,15 +5148,15 @@ all();
 
   'speed':{title:'Speed Training Plan',get md(){return [
 '## Goal',
-'- Spring target: 115 mph.',
+'- Spring goal: 115 mph.',
 '- Stretch: 118 mph.'].concat(speedGoalLines(),[
 '## Where it fits',
 'The speed block in your plan: 15 minutes at GolfTrk before practice, 1 or 2 a week. Never the day after a heavy leg day.',
 '## The session',
 '- Warm-up: wedges, irons, woods, then driver. No speed effort yet.',
-'- Three Strikes: all-out driver swings until three strikes (the tool on the Plan tab keeps score and the 60-second rests).',
+'- Three Strikes: all-out driver swings until three strikes (Workouts, Simulator, Three Strikes keeps score and the 60-second rests).',
 '- Tempo: Tour Tempo 3:1. Baseline 24/8, then speed work at 21/7 or 18/6 (the Tempo Trainer).',
-'- Log the fastest swing in Log > Speed.',
+'- Its Log button saves the fastest swing to Three Strikes.',
 '## The 12-Ball Blast Off',
 'At the end of a normal range or TrackMan session: 10 drivers as hard as you can, then 2 controlled swings to reset your tempo. It is Scott Fawcett\'s (DECADE), who got it from Max Greyserman.',
 '## Wicked Smart Golf 30-Day Speed Challenge',
@@ -5203,7 +5206,7 @@ all();
 '- Price: HiiTS Core $349, Plus $649.',
 '### Yours',
 '- HiiTS Core, right hand, ordered October 24, 2026.',
-'- The HiiTS protocol from your HiiTS Protocol PDF is on the Plan tab: Phase 1 (16 weeks), Phase 2, the weights and the speed formula. Log > HiiTS saves each session.',
+'- The HiiTS protocol from your HiiTS Protocol PDF is under Workouts, Simulator, HiiTS: Phase 1 (16 weeks), Phase 2, the weights and the speed formula, with the form that saves each session.',
 '### Sources',
 'wickedsmartgolf.com: the speed challenge page, "Golf Speed Training: 5 Proven Tips" and "HiiTs Golf Speed Training Review". Wicked Smart Golf on YouTube: "How I Speed Train as a +2 Handicap" and "Your Speed Training Plan is Broken (Here\'s Why)". Three Strikes: leomiller.golf/threestrikes.'
   ]).join('\n');}},
@@ -5211,23 +5214,25 @@ all();
   'workout':{title:'Golf Workout: How Each Move Helps',md:[
 '## Warm-up, every lift (5 min)',
 '- Cat-cow, 8. Open books, 8 per side. World\'s greatest stretch, 4 per side. Bodyweight squats, 10.',
-'## Lift A: legs and power',
-'- Band side walks and glute bridges: 10 steps each way, bridges with a 2-second squeeze. Wakes up the glutes that hold the trail hip going back and the lead hip through the ball.',
+'## Lift A: full body, squat focus',
 '- Squat jumps: jump as high as you can, land soft, reset before the next. Pushing into the ground is where club speed starts.',
+'- Band rotational pulls: band anchored at chest height, turn from the hips and pull it across fast, control it back. Rotational power, the move the swing is made of.',
 '- Goblet squat: dumbbell at the chest, sit down between the heels, chest up. Leg strength to push off the ground.',
+'- Dumbbell press on the ball: the ball makes the shoulders and core stabilise.',
+'- TRX row: shoulder blades back and down. Posture and a connected backswing.',
+'- TRX anti-rotation hold: arms straight out, do not let the straps turn you. The same muscles that brake rotation after impact.',
+'## Lift B: full body, hinge focus',
+'- Lateral bounds: push off one leg sideways, stick the landing on the other. Power for the pressure shift toward the target.',
+'- Plyo push-ups or fast band presses: push as fast as you can, reset each rep. Upper-body speed.',
 '- Dumbbell Romanian deadlift: soft knees, hinge from the hips, dumbbells slide down the thighs, back flat. Holds your posture from address to impact.',
 '- Lateral lunge: sit into one hip, the other leg straight. Strength side to side for the pressure shift.',
-'- TRX plank and side planks: brace like you are about to be pushed. A stiff middle passes speed from the legs to the arms.',
-'## Lift B: upper body and rotation',
-'- Swing trainer rotations: both directions, smooth, getting faster.',
-'- Dumbbell press on the ball: the ball makes the shoulders and core stabilise.',
-'- TRX row and single-arm row: shoulder blades back and down. Posture and a connected backswing.',
-'- TRX anti-rotation hold: arms straight out, do not let the straps turn you. The same muscles that brake rotation after impact.',
+'- Single-arm row: shoulder blade back and down, no twist. Posture and a connected backswing.',
 '- Dead bugs: low back flat to the floor the whole time. Core control while the arms and legs move.',
+'- Side planks: brace like you are about to be pushed. A stiff middle passes speed from the legs to the arms.',
 '## Mobility',
 '- 90/90 hip switches, thoracic rotations on the ball, half-kneeling hip flexor stretch. A bigger turn without swaying.',
 '## When the medicine ball arrives',
-'Rotational throws against a wall, 3 x 5 per side, in the February and March power phase. Not part of the plan until you add it.',
+'Rotational throws against a wall, 3 x 5 per side, go in the power slot of either lift once you have one.',
 '## Rules',
 '- Stop each set with about 2 good reps left. When every set reaches the top rep count, go up one setting next week.',
 '- Pain, not effort: stop that move.'
@@ -5597,9 +5602,7 @@ all();
     if(b.id==='ts-log'){
       var best=TS.swings.reduce(function(a,s){return Math.max(a,s.v);},0);
       var note='Three Strikes: cruising '+TS.cruise.toFixed(1)+', fastest '+best.toFixed(1)+', '+TS.swings.length+' swings';
-      woType='Speed'; renderWoLog();
-      show('workouts');
-      var lt=document.querySelector('[data-wotab="log"]'); if(lt) lt.click();
+      woOpen('Speed');
       var sp=document.getElementById('wo-speed'); if(sp) sp.value=best?best.toFixed(1):'';
       var nt=document.getElementById('wo-notes'); if(nt) nt.value=note;
       var sw=document.querySelector('.wo-in[data-k="reps"]'); if(sw) sw.value=TS.swings.length;
@@ -5615,27 +5618,65 @@ all();
      WORKOUTS (Eric, 2026-10-21). The plan is his winter plan as agreed in
      chat that day: a weekly menu he fits around his schedule, the November
      base phase set by set, and the speed goal (115 spring, 118 stretch; the
-     hub's Driver Target stays 112 until he says). Exercise detail grows with
+     hub's Driver goal stays 112 until he says). Exercise detail grows with
      him; this is the foundation. Sheet: Workouts tab, one row per exercise.
      ===================================================================== */
+  /* Rebuilt 2026-11-07 from the Nov 4 plan: four categories, each a menu he
+     picks 1 to 3 workouts from (Eric: "I think it's just some workouts and I
+     choose 1-3 of them"), never a weekly quota. Lift A and B are both full
+     body (warm-up, power, strength, core), the Fit For Golf order on two days.
+     Cardio is three outside runs (Eric, 2026-11-07: "Outside. Want a distance
+     and interval and a easy recovery"). The run numbers are starting points:
+     no runs were logged before this. Session names are what the sheet stores;
+     Speed shows as Three Strikes. */
+  var WO_RUN_START=['Starting points, not from your data: no runs are logged yet. Your logged runs set the next step'];
   var WO_SESSIONS={
-    'Lift A':{mins:45,sub:'Legs and power',ex:[
-      ['Band side walks and glute bridges',2,'',''],['Squat jumps',3,5,''],['Goblet squat',3,10,''],
-      ['Dumbbell Romanian deadlift',3,10,''],['Lateral lunge, per side',3,8,''],['TRX plank and side planks, 30 s',3,'','']]},
-    'Lift B':{mins:45,sub:'Upper body and rotation',ex:[
-      ['Swing trainer rotations',2,'',''],['Dumbbell press on the ball',3,10,''],['TRX row',3,12,''],
-      ['Single-arm dumbbell row, per side',3,10,''],['TRX anti-rotation hold, 20 s per side',3,'',''],['Dead bugs',3,10,'']]},
-    'Mobility':{mins:30,sub:'Core, yoga, flexibility',ex:[
-      ['Swing trainer routine, 15 min','','',''],['Hips and thoracic spine on the ball, 10 min','','',''],
-      ['Breathing and stretch, 5 min','','','']]},
-    'Speed':{mins:15,sub:'At GolfTrk, before practice',ex:[['Three Strikes: all-out driver swings','','','']]},
-    'HiiTS':{mins:30,sub:'HiiTS driver at GolfTrk, 100% effort',ex:[]}
+    'Swing training':{mins:45,sub:'At GolfTrk',form:'mins',ex:[],plan:[
+      ['Your lesson work and drills: Improvement, Practice tab'],
+      ['Same day as HiiTS or Three Strikes: speed first, then swing work']]},
+    'HiiTS':{mins:30,sub:'HiiTS driver at GolfTrk, 100% effort',ex:[]},
+    'Speed':{label:'Three Strikes',mins:15,sub:'All-out driver swings at GolfTrk, before practice',ex:[['Three Strikes: all-out driver swings','','','']],
+      notes:[['Never the day after a leg day']]},
+    'Lift A':{mins:45,sub:'Full body, squat focus',warm:true,exTitle:'Power, Strength, Core',ex:[
+      ['Squat jumps',3,5,''],['Band rotational pulls, per side',3,5,''],['Goblet squat',3,10,''],
+      ['Dumbbell press on the ball',3,10,''],['TRX row',3,12,''],['TRX anti-rotation hold, 20 s per side',3,'','']],
+      notes:[['Leg day: no HiiTS or Three Strikes tomorrow'],['Low WHOOP recovery today: Flexibility instead']]},
+    'Lift B':{mins:45,sub:'Full body, hinge focus',warm:true,exTitle:'Power, Strength, Core',ex:[
+      ['Lateral bounds, per side',3,4,''],['Plyo push-ups or fast band presses',3,5,''],['Dumbbell Romanian deadlift',3,10,''],
+      ['Lateral lunge, per side',3,8,''],['Single-arm dumbbell row, per side',3,10,''],['Dead bugs',3,10,''],['Side planks, 30 s per side',2,'','']],
+      notes:[['Leg day: no HiiTS or Three Strikes tomorrow'],['Low WHOOP recovery today: Flexibility instead']]},
+    'Distance run':{mins:35,sub:'Outside, steady',form:'run',ex:[],plan:[
+      ['Pace:','steady, you can talk in short sentences. About 5 or 6 out of 10'],
+      ['Distance:','start at 3 miles. Add about half a mile a week while it stays steady, up to 5 or 6'],
+      ['Start:','the first half mile easy']].concat([WO_RUN_START])},
+    'Interval run':{mins:35,sub:'Outside, hard and easy repeats',form:'run',repeats:true,ex:[],plan:[
+      ['Warm up:','10 minutes easy'],
+      ['Repeats:','6 x 1 minute hard, about 8 out of 10, with 2 minutes easy jogging between'],
+      ['Cool down:','10 minutes easy'],
+      ['Building:','one more repeat a week up to 10, then make them 90 seconds']].concat([WO_RUN_START]),
+      notes:[['Counts as a leg day: no HiiTS or Three Strikes tomorrow']]},
+    'Easy recovery run':{mins:25,sub:'Outside, easy',form:'run',ex:[],plan:[
+      ['Pace:','easy, you can talk in full sentences. About 3 or 4 out of 10'],
+      ['Time:','20 to 30 minutes on a flat route'],
+      ['When:','fits the day after a lift or HiiTS']].concat([WO_RUN_START])},
+    'Mobility':{mins:30,sub:'Core, yoga, flexibility',form:'mins',ex:[],plan:[
+      ['Swing trainer routine, 15 min'],['Hips and thoracic spine on the ball, 10 min'],['Breathing and stretch, 5 min']]},
+    'Stretch and yoga':{mins:25,sub:'Hips, back and shoulders',form:'mins',ex:[],plan:[
+      ['Cat-cow, 8'],['Child\'s pose, 1 minute'],['World\'s greatest stretch, 4 per side'],['90/90 hip switches, 8 per side'],
+      ['Half-kneeling hip flexor stretch, 45 s per side'],['Thread the needle, 6 per side'],
+      ['Figure-4 stretch on your back, 45 s per side'],['Band hamstring stretch, 45 s per side'],['Slow breathing on your back, 2 minutes']]}
   };
-  var WO_ORDER=['Lift A','Lift B','Mobility','Speed','HiiTS'];
+  /* What the sheet accepts, in the sheet's order (GolfTracker_Workout.gs). */
+  var WO_ORDER=['Lift A','Lift B','Mobility','Speed','HiiTS','Swing training','Distance run','Interval run','Easy recovery run','Stretch and yoga'];
+  var WO_CATS=[
+    ['Simulator',['Swing training','HiiTS','Speed','tempo']],
+    ['Lift',['Lift A','Lift B']],
+    ['Cardio',['Distance run','Interval run','Easy recovery run']],
+    ['Flexibility',['Mobility','Stretch and yoga']]];
 
   /* HiiTS (Eric, 2026-10-24): HiiTS Core, the community's updated protocol
-     (Eddie, April 13). Every set is light, medium, heavy; after the last set a
-     light finisher of the same count. Week 1 is the week of his first HiiTS
+     (Eddie, April 13). Every set is light, medium, heavy. No light finisher:
+     the finish is his gamer driver (Eric, 2026-11-06). Week 1 is the week of his first HiiTS
      session, so the plan starts the week the club arrives. The rows are named
      so the hub can find them again: one per weight with its fastest club speed,
      his own driver's 10 full-out swings with club and ball speed, and a
@@ -5651,7 +5692,9 @@ all();
   var HIITS_WEIGHTS=[['Light','gold screws in both ports','about 8% lighter than your driver'],
     ['Medium','one gold and one black heavy screw, either port','about the same as your driver'],
     ['Heavy','black heavy screws in both ports','about 8% heavier than your driver']];
-  var HIITS_DRIVER='Own driver, 10 full out', HIITS_BASE='Own driver baseline';
+  var HIITS_DRIVER='Gamer driver, 8 to 16 drives', HIITS_BASE='Own driver baseline';
+  /* Rows saved before 2026-11-07 carry the old name; read them as gamer drives. */
+  var HIITS_DRIVER_OLD='Own driver, 10 full out';
   /* TrackMan driver speed per session (Driver and its trials, good and playable),
      written by trackman_sheet.py hub after every ingest - the yardstick for HiiTS
      (Eric, 2026-10-27). */
@@ -5698,9 +5741,9 @@ all();
     for(var j=0;j<HIITS_P2.length;j++){ var M=HIITS_P2[j]; if(wk>=M[0]&&wk<=M[1]) return {sets:M[2],n:M[3],from:M[0],to:M[1],p:2,d:String(M[4])}; }
     return null;
   }
-  function hiitsSwings(L){ return L.sets*L.n*3+L.n; }
+  function hiitsSwings(L){ return L.sets*L.n*3; }
   function hiitsSetLine(L){
-    return L.sets+' sets of '+L.n+' light, '+L.n+' medium, '+L.n+' heavy, then '+L.n+' light. '+hiitsSwings(L)+' swings'+
+    return L.sets+' sets of '+L.n+' light, '+L.n+' medium, '+L.n+' heavy. '+hiitsSwings(L)+' swings'+
       (L.d?'. Then your driver, '+L.d+' swings':'');
   }
   /* What a week with no level means: week 17 is not in the protocol, past 34 is maintenance. */
@@ -5739,18 +5782,94 @@ all();
         return '<div class="woline">'+(l[1]!=null?'<span class="d">'+l[0]+'</span> '+l[1]:l[0])+'</div>';
       }).join('')+'</div>';
   }
-  function renderWoPlan(){
-    /* Tools and guides first (Eric, 2026-10-22): tempo trainer, Three Strikes,
-       the speed plan with the Wicked Smart and HiiTS notes, the workout detail. */
-    var h='<div class="card" style="padding:16px 18px;margin-top:16px;cursor:pointer" data-tool="tempo">'+
-        '<div class="h-title" style="font-size:18px">Tempo Trainer</div></div>'+
-      '<div class="card" style="padding:16px 18px;margin-top:12px;cursor:pointer" data-tool="strikes">'+
-        '<div class="h-title" style="font-size:18px">Three Strikes</div></div>'+
-      guideCard('speed')+guideCard('workout');
+  function woName(t){ var S=WO_SESSIONS[t]; return (S&&S.label)||t; }
+  function woCatOf(t){
+    for(var i=0;i<WO_CATS.length;i++) if(WO_CATS[i][1].indexOf(t)>-1) return WO_CATS[i][0];
+    return null;
+  }
+  function woIso(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+  function woToday(){ return woIso(new Date()); }
+  function woDayIso(off){ var d=new Date(); d.setDate(d.getDate()+off); return woIso(d); }
+  function woWeekStart(){ return woMonday(woToday()); }
+  function woThisWeek(){
+    var monIso=woIso(woWeekStart());
+    return woSessions(woRows||[]).filter(function(x){return x.date>=monIso;})
+      .sort(function(x,y){return x.date<y.date?-1:x.date>y.date?1:0;});
+  }
+  function woWeekday(iso){
+    var m=/^(\d{4})-(\d{2})-(\d{2})/.exec(iso); if(!m) return iso;
+    return new Date(+m[1],+m[2]-1,+m[3]).toLocaleDateString('en-US',{weekday:'long'});
+  }
+  function woRange(){
+    var a=woWeekStart(), b=new Date(a.getFullYear(),a.getMonth(),a.getDate()+6);
+    var am=a.toLocaleDateString('en-US',{month:'long'}), bm=b.toLocaleDateString('en-US',{month:'long'});
+    return am+' '+a.getDate()+' to '+(am===bm?'':bm+' ')+b.getDate();
+  }
+
+  /* Spacing as a heads-up, never a block (Eric, 2026-11-04): the plan's rules
+     show when he opens a workout, read against what he logged yesterday. A
+     leg day is Lift A, Lift B or the interval run. */
+  var WO_LEG=['Lift A','Lift B','Interval run'];
+  function woHeadsUp(t){
+    var y=woDayIso(-1), out=[];
+    var done=woSessions(woRows||[]).filter(function(x){return x.date===y;}).map(function(x){return x.type;});
+    var leg=done.filter(function(x){return WO_LEG.indexOf(x)>-1;})[0];
+    if((t==='HiiTS'||t==='Speed')&&leg)
+      out.push(['Legs are still recovering from '+woName(leg)+' yesterday. The plan keeps speed work off the day after a leg day. You can still do it.']);
+    var lift=done.filter(function(x){return x==='Lift A'||x==='Lift B';})[0];
+    if((t==='Lift A'||t==='Lift B')&&lift)
+      out.push(['You did '+lift+' yesterday. The plan keeps a day between lifts. You can still do it.']);
+    return out;
+  }
+
+  /* ---- Week: the four categories, each a menu he picks from ---- */
+  var woView={cat:null,t:null};
+  function woDoneLine(list){
+    return list.length?list.map(function(x){return woName(x.type)+', '+woWeekday(x.date);}).join('; '):'Nothing yet this week';
+  }
+  function renderWoHome(){
+    var wk=woThisWeek(), hw=hiitsWeek(woToday());
+    var h=woLines('Week '+hw,[[woRange()],['Done:',wk.length?woDoneLine(wk):'nothing yet this week']]);
+    WO_CATS.forEach(function(c){
+      var mine=wk.filter(function(x){return c[1].indexOf(x.type)>-1;});
+      h+='<div class="card wocat" data-wocat="'+c[0]+'">'+
+        '<div class="h-title" style="font-size:20px">'+c[0]+'</div>'+
+        '<div class="wosub">'+c[1].map(function(t){return t==='tempo'?'Tempo Trainer':woName(t);}).join(', ')+'</div>'+
+        '<div class="wosub"><span class="wok">Done this week:</span> '+woDoneLine(mine)+'</div></div>';
+    });
+    return h;
+  }
+  function woLast(t){
+    var ss=woSessions(woRows||[]).filter(function(x){return x.type===t;});
+    return ss.length?ss.reduce(function(a,x){return x.date>a?x.date:a;},ss[0].date):null;
+  }
+  function renderWoCat(cat){
+    var c=WO_CATS.filter(function(x){return x[0]===cat;})[0];
+    var h='<div class="mtback" data-woback="home" style="margin-top:14px">Back</div>'+
+      '<div class="h-title" style="font-size:28px;margin-top:6px">'+cat+'</div>';
+    c[1].forEach(function(t){
+      if(t==='tempo'){
+        h+='<div class="card wocat" data-tool="tempo"><div class="h-title" style="font-size:20px">Tempo Trainer</div>'+
+          '<div class="wosub">Tour Tempo tones for swing rehearsal</div></div>';
+        return;
+      }
+      var S=WO_SESSIONS[t], last=woLast(t);
+      h+='<div class="card wocat" data-woitem="'+t+'"><div class="h-title" style="font-size:20px">'+woName(t)+'</div>'+
+        '<div class="wosub">'+S.sub+', '+S.mins+' min</div>'+
+        '<div class="wosub"><span class="wok">Last done:</span> '+(last?woFmtDate(last):'not logged yet')+'</div></div>';
+    });
+    return h;
+  }
+  function woExLines(S){
+    return S.ex.map(function(e){
+      return [e[0]+(e[1]!==''?' &middot; '+e[1]+(e[2]!==''?' x '+e[2]:''):'')];
+    });
+  }
+  function hiitsPlanHtml(){
     var hw=hiitsWeek(woToday()), hl=hiitsLevel(hw);
-    h+=woLines('HiiTS 16 Weeks',[
+    var h=woLines('HiiTS 16 Weeks',[
       ['This week:','Week '+hw+(hl&&hl.p===2?', Phase 2':'')+'. '+(hl?hiitsSetLine(hl):hiitsOffPlan(hw))],
-      ['Starts:',hiitsStart()?woFmtDate(hiitsStart())+', your first session':'the week it arrives, with your first session'],
+      ['Started:',hiitsStart()?woFmtDate(hiitsStart())+', your first session':'with your first session'],
       ['Sessions:','1 or 2 a week. With 2, keep them 2 to 3 days apart. The protocol says 2, fully recovered between'],
       ['Weeks:','only a week you train counts, so a missed week picks up where you left off'],
       ['Never:','on a day you play']]);
@@ -5759,9 +5878,7 @@ all();
       ['Day 1 only: 10 swings with your driver for a baseline club speed and ball speed, before set 1'],
       ['Each set: light, then medium, then heavy'],
       ['Record the fastest club speed with the HiiTS driver in each set'],
-      ['After the last set: the light finisher'],
-      ['Then your regular driver full out: 8 to 16 swings in Phase 1, 10 or 15 in Phase 2. Record the fastest club speed and ball speed'],
-      ['Log it: Log > HiiTS']]);
+      ['Then your gamer driver full out: 8 to 16 swings in Phase 1, 10 or 15 in Phase 2. Record the fastest club speed and ball speed']]);
     h+=woLines('HiiTS Weeks',HIITS_LEVELS.map(function(L){
       var lv={sets:L[2],n:L[3],d:'8 to 16'};
       return [(L[0]===L[1]?'Week '+L[0]:'Weeks '+L[0]+' to '+L[1])+':',hiitsSetLine(lv)];
@@ -5776,36 +5893,45 @@ all();
       HIITS_FORMULA.map(function(f){
         return ['Cruise '+f[0]+' mph:','light max '+f[2]+' mph (x '+f[1]+', cruise is '+f[3]+'% effort)'];
       })));
-    h+=woLines('Each Week',[
-      ['Lift: 2 sessions, A and B'],['GolfTrk: 1 or 2, each starts with the speed block'],
-      ['HiiTS: 1 or 2 sessions. For the 16 weeks they are the speed block'],
-      ['Mobility: 1, the first to drop in a busy week']]);
-    h+=woLines('Spacing',[
-      ['No speed block or HiiTS session the day after a heavy leg day'],['At least one day between the two lifts'],
-      ['Low WHOOP recovery: mobility instead of lifting'],['Short week: 1 lift plus 1 GolfTrk']]);
-    h+=woLines('Phases',[
-      ['November:','base. Both feet, 3 sets of 10, controlled'],
-      ['December:','single leg'],
-      ['January:','slow tempo. 4 seconds down, 2-second pause, drive up fast'],
-      ['February and March:','power. Lighter and explosive, more GolfTrk time']]);
-    h+=woLines('Speed Goal',[['Spring target:','115 mph'],['Stretch:','118 mph'],['Hub Driver target:','112 mph']]);
-    h+=driverSpeedCard();
-    WO_ORDER.forEach(function(k){
-      var S=WO_SESSIONS[k]; if(k==='HiiTS') return;
-      h+=woLines(k+' &middot; '+S.mins+' min',[[S.sub]].concat(S.ex.map(function(e){
-        return [e[0]+(e[1]!==''?' &middot; '+e[1]+(e[2]!==''?' x '+e[2]:''):'')];
-      })));
-    });
-    h+=woLines('Picking the Weight',[['Stop each set with about 2 good reps left'],
-      ['Every set at the top rep count: up one setting next week']]);
-    h+=woLines('Equipment',[['TRX'],['Bowflex dumbbells, up to 52.5 lb each'],['Stability ball'],
-      ['Swing trainer, bar and bands'],['Loop bands'],['Medicine ball, 6 to 8 lb: not bought yet']]);
-    document.getElementById('wo-plan').innerHTML=h;
+    return h;
+  }
+  function woPlanHtml(t){
+    var S=WO_SESSIONS[t];
+    if(t==='HiiTS') return hiitsPlanHtml();
+    var h='';
+    if(t==='Speed') h+='<div class="card wocat" data-tool="strikes"><div class="h-title" style="font-size:20px">Start Three Strikes</div>'+
+      '<div class="wosub">Its Log button fills in the form below</div></div>';
+    if(S.warm) h+=woLines('Warm-up &middot; 5 min',[['Cat-cow, 8'],['Open books, 8 per side'],
+      ['World\'s greatest stretch, 4 per side'],['Bodyweight squats, 10']]);
+    if(S.plan) h+=woLines(S.planTitle||'The Workout',S.plan);
+    if(S.ex.length&&t!=='Speed') h+=woLines(S.exTitle||'The Workout',woExLines(S));
+    if(S.notes) h+=woLines('Notes',S.notes);
+    return h;
+  }
+  function renderWoItem(t){
+    var S=WO_SESSIONS[t], cat=woCatOf(t), hu=woHeadsUp(t);
+    var h='<div class="mtback" data-woback="cat" style="margin-top:14px">Back</div>'+
+      '<div class="h-title" style="font-size:28px;margin-top:6px">'+woName(t)+'</div>'+
+      '<div class="wosub" style="margin-top:4px">'+cat+' &middot; '+S.sub+', '+S.mins+' min</div>';
+    if(hu.length) h+=woLines('Heads-up',hu);
+    h+=woPlanHtml(t);
+    h+='<div class="h-title" style="font-size:22px;margin-top:24px">Log It</div>'+renderWoForm(t);
+    return h;
+  }
+  function renderWoWeek(){
+    var el=document.getElementById('wo-week'); if(!el) return;
+    if(woView.t){ woType=woView.t; el.innerHTML=renderWoItem(woView.t); if(woView.t==='HiiTS') hiitsFormStart=hiitsStart(); }
+    else if(woView.cat) el.innerHTML=renderWoCat(woView.cat);
+    else el.innerHTML=renderWoHome();
+  }
+  /* Open one workout straight from anywhere (Three Strikes' Log button). */
+  function woOpen(t){
+    woView={cat:woCatOf(t),t:t}; renderWoWeek();
+    show('workouts');
+    var wt=document.querySelector('[data-wotab="week"]'); if(wt) wt.click();
   }
 
-  function woToday(){
-    var d=new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);
-  }
+  /* ---- The log form for one workout ---- */
   function hiitsIn(i,k,lbl,val,mode){
     return '<div class="edfield"><div class="wolbl">'+lbl+'</div><input class="wof wo-in" data-i="'+i+'" data-k="'+k+'" type="number" inputmode="'+(mode||'decimal')+'" value="'+val+'"></div>';
   }
@@ -5814,14 +5940,13 @@ all();
   function hiitsEx(){
     var hl=hiitsLevel(hiitsWeek(woToday()))||{sets:4,n:4};
     var ex=HIITS_WEIGHTS.map(function(w,i){
-      return {name:'HiiTS '+w[0],sets:w[0]==='Light'?hl.sets+1:hl.sets,reps:hl.n,speed:true};
+      return {name:'HiiTS '+w[0],sets:hl.sets,reps:hl.n,speed:true};
     });
-    ex.push({name:HIITS_DRIVER,sets:1,reps:10,speed:true,ball:true});
+    ex.push({name:HIITS_DRIVER,sets:1,reps:8,speed:true,ball:true});
     if(!hiitsStart()) ex.unshift({name:HIITS_BASE,sets:1,reps:10,speed:true,ball:true});
     return ex;
   }
   function renderHiitsLog(){
-    hiitsFormStart=hiitsStart();
     var wk=hiitsWeek(woToday()), hl=hiitsLevel(wk);
     var h='<div class="wolbl" style="margin-top:16px">Sets and reps are from week '+wk+' of the plan'+(hl?(hl.p===2?', Phase 2':''):' ('+(wk>34?'maintenance':'week 17 is not in the protocol')+')')+'</div>';
     h+=hiitsEx().map(function(e,i){
@@ -5832,40 +5957,44 @@ all();
     }).join('');
     return h;
   }
-  function renderWoLog(){
-    var S=WO_SESSIONS[woType];
-    var h='<div class="edrow" style="margin-top:16px">'+
+  function woField(id,lbl,val,mode){
+    return '<div class="edfield"><div class="wolbl">'+lbl+'</div><input class="wof" id="'+id+'" type="number" inputmode="'+(mode||'decimal')+'" value="'+val+'"></div>';
+  }
+  function renderWoForm(t){
+    var S=WO_SESSIONS[t], f=S.form||'ex';
+    var h='<div class="edrow" style="margin-top:12px">'+
       '<div class="edfield"><div class="wolbl">Date</div><input class="wof" type="date" id="wo-date" value="'+woToday()+'"></div>'+
-      '<div class="edfield"><div class="wolbl">Session</div><select class="wof" id="wo-type">'+
-        WO_ORDER.map(function(k){return '<option'+(k===woType?' selected':'')+'>'+k+'</option>';}).join('')+'</select></div>'+
-    '</div>'+
-    (woType==='HiiTS'?'':'<div class="wolbl" style="margin-top:16px">Sets and reps are from the plan</div>');
-    if(woType==='HiiTS') h+=renderHiitsLog();
-    else h+=S.ex.map(function(e,i){
-      return '<div class="woex"><div class="n">'+e[0]+'</div><div class="edrow">'+
-        '<div class="edfield"><div class="wolbl">Sets</div><input class="wof wo-in" data-i="'+i+'" data-k="sets" type="number" inputmode="numeric" value="'+e[1]+'"></div>'+
-        '<div class="edfield"><div class="wolbl">Reps</div><input class="wof wo-in" data-i="'+i+'" data-k="reps" type="number" inputmode="numeric" value="'+e[2]+'"></div>'+
-        '<div class="edfield"><div class="wolbl">Lb</div><input class="wof wo-in" data-i="'+i+'" data-k="weight" type="number" inputmode="decimal" value=""></div>'+
-      '</div></div>';
-    }).join('');
-    h+='<div class="edrow" style="margin-top:16px">'+
-      '<div class="edfield"><div class="wolbl">Minutes</div><input class="wof" id="wo-mins" type="number" inputmode="numeric" value="'+S.mins+'"></div>'+
-      (woType==='Speed'?'<div class="edfield"><div class="wolbl">Fastest mph</div><input class="wof" id="wo-speed" type="number" inputmode="decimal" value=""></div>':'')+
-    '</div>'+
-    '<div class="edfield" style="margin-top:12px"><div class="wolbl">Notes</div><input class="wof" id="wo-notes" type="text" style="text-align:left"></div>'+
-    '<button class="btn btn-red" style="width:100%;margin-top:16px" id="wo-save">SAVE SESSION</button>'+
-    '<div id="wo-result"></div>';
-    document.getElementById('wo-log').innerHTML=h;
+      woField('wo-mins','Minutes',S.mins,'numeric')+'</div>';
+    if(t==='HiiTS') h+=renderHiitsLog();
+    else if(f==='run'){
+      h+='<div class="edrow" style="margin-top:12px">'+woField('wo-miles','Miles','')+
+        (S.repeats?woField('wo-reps','Hard repeats','','numeric'):'')+'</div>';
+    } else if(f==='ex'){
+      if(t!=='Speed') h+='<div class="wolbl" style="margin-top:16px">Sets and reps are from the plan</div>';
+      h+=S.ex.map(function(e,i){
+        return '<div class="woex"><div class="n">'+e[0]+'</div><div class="edrow">'+
+          '<div class="edfield"><div class="wolbl">Sets</div><input class="wof wo-in" data-i="'+i+'" data-k="sets" type="number" inputmode="numeric" value="'+e[1]+'"></div>'+
+          '<div class="edfield"><div class="wolbl">'+(t==='Speed'?'Swings':'Reps')+'</div><input class="wof wo-in" data-i="'+i+'" data-k="reps" type="number" inputmode="numeric" value="'+e[2]+'"></div>'+
+          (t==='Speed'?'':'<div class="edfield"><div class="wolbl">Lb</div><input class="wof wo-in" data-i="'+i+'" data-k="weight" type="number" inputmode="decimal" value=""></div>')+
+        '</div></div>';
+      }).join('');
+      if(t==='Speed') h+='<div class="edrow" style="margin-top:12px">'+woField('wo-speed','Fastest mph','')+'</div>';
+    }
+    h+='<div class="edfield" style="margin-top:12px"><div class="wolbl">Notes</div><input class="wof" id="wo-notes" type="text" style="text-align:left"></div>'+
+      '<button class="btn btn-red" style="width:100%;margin-top:16px" id="wo-save">SAVE SESSION</button>'+
+      '<div id="wo-result"></div>';
+    return h;
   }
   function woMsg(t){
     document.getElementById('wo-result').innerHTML='<div style="font-size:18px;color:var(--cream);padding:12px 2px;line-height:1.5">'+esc(t)+'</div>';
   }
+  function woVal(id){ var el=document.getElementById(id); return el?String(el.value).trim():''; }
   function saveWorkout(){
-    var S=WO_SESSIONS[woType], hx=woType==='HiiTS'?hiitsEx():null;
+    var S=WO_SESSIONS[woType], f=S.form||'ex', hx=woType==='HiiTS'?hiitsEx():null;
     var ex=hx?hx.map(function(e){
         /* Every HiiTS row sends speed and ball, so none borrows the session's. */
         return {name:e.name,sets:e.sets,reps:e.reps,weight:'',speed:'',ball:''};
-      }):S.ex.map(function(e){return {name:e[0],sets:'',reps:'',weight:''};});
+      }):(f==='ex'?S.ex.map(function(e){return {name:e[0],sets:'',reps:'',weight:''};}):[]);
     document.querySelectorAll('.wo-in').forEach(function(inp){
       ex[+inp.dataset.i][inp.dataset.k]=String(inp.value).trim();
     });
@@ -5876,13 +6005,14 @@ all();
       var dv=ex.filter(function(e){return e.name===HIITS_DRIVER;})[0];
       if(dv) hball=dv.ball;
     }
-    var date=document.getElementById('wo-date').value;
+    var reps=woVal('wo-reps');
+    if(f==='run'&&reps!=='') ex=[{name:'Hard repeats',sets:'',reps:reps,weight:''}];
+    var date=woVal('wo-date');
     if(!date){ woMsg('Give it a date.'); return; }
-    var sp=document.getElementById('wo-speed');
     var dvs=hx?(ex.filter(function(e){return e.name===HIITS_DRIVER;})[0]||{}).speed||'':'';
     var body={token:WO_TOKEN,kind:'workout',session:{date:date,type:woType,
-      minutes:document.getElementById('wo-mins').value.trim(),speed:hx?dvs:(sp?sp.value.trim():''),ball:hball,
-      notes:document.getElementById('wo-notes').value.trim(),exercises:ex}};
+      minutes:woVal('wo-mins'),speed:hx?dvs:woVal('wo-speed'),ball:hball,distance:woVal('wo-miles'),
+      notes:woVal('wo-notes'),exercises:ex}};
     var btn=document.getElementById('wo-save'); btn.disabled=true; btn.textContent='SAVING…';
     fetch(HOOK,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(body)})
       .then(function(r){return r.json();})
@@ -5900,21 +6030,23 @@ all();
 
   /* Rows -> sessions. Header row 1: Date | Session | Exercise | Sets | Reps |
      Weight (lb) | Minutes | Fastest Club Speed (mph) | Notes | Fastest Ball
-     Speed (mph). One session is the run of rows sharing a date and a session
-     name. A HiiTS session's speed is its own-driver row, never a HiiTS weight's;
-     its baseline row is kept apart. */
+     Speed (mph) | Distance (mi). One session is the run of rows sharing a date
+     and a session name. A HiiTS session's speed is its own-driver row, never a
+     HiiTS weight's; its baseline row is kept apart. */
   function woSessions(rows){
     var out=[], key=null, cur=null;
     (rows||[]).slice(1).forEach(function(r){
       if(!r||!r[0]||!r[1]) return;
       var k=r[0]+'|'+r[1];
       if(k!==key){
-        cur={date:String(r[0]),type:String(r[1]),mins:r[6],speed:String(r[1])==='HiiTS'?'':r[7],ball:'',w:{}};
+        cur={date:String(r[0]),type:String(r[1]),mins:r[6],speed:String(r[1])==='HiiTS'?'':r[7],ball:'',w:{},
+          dist:r[10]==null?'':r[10],reps:''};
         out.push(cur); key=k;
       }
+      if(String(r[2]||'')==='Hard repeats') cur.reps=r[4];
       if(cur.type!=='HiiTS') return;
       var ex=String(r[2]||'');
-      if(ex===HIITS_DRIVER){ cur.speed=r[7]; cur.ball=r[9]==null?'':r[9]; }
+      if(ex===HIITS_DRIVER||ex===HIITS_DRIVER_OLD){ cur.speed=r[7]; cur.ball=r[9]==null?'':r[9]; }
       else if(ex===HIITS_BASE){ cur.base=r[7]; cur.baseBall=r[9]==null?'':r[9]; }
       else if(/^HiiTS /.test(ex)) cur.w[ex.slice(6)]=r[7];
     });
@@ -5924,17 +6056,34 @@ all();
     var m=/^(\d{4})-(\d{2})-(\d{2})/.exec(iso); if(!m) return iso;
     return new Date(+m[1],+m[2]-1,+m[3]).toLocaleDateString('en-US',{month:'long',day:'numeric'});
   }
-  function renderWoProgress(){
-    var el=document.getElementById('wo-progress');
+  function woPace(mins,miles){
+    if(!(+mins>0&&+miles>0)) return '';
+    var s=Math.round(60*(+mins)/(+miles));
+    return Math.floor(s/60)+':'+('0'+(s%60)).slice(-2)+' per mile';
+  }
+
+  /* ---- History: what he actually leans toward, plus speed ---- */
+  function renderWoHistory(){
+    var el=document.getElementById('wo-history');
     if(woRows===null){ el.innerHTML='<div class="woline" style="margin-top:16px">Loading from the sheet…</div>'; return; }
-    var ss=woSessions(woRows);
-    var now=new Date(), dow=(now.getDay()+6)%7;
-    var mon=new Date(now.getFullYear(),now.getMonth(),now.getDate()-dow);
-    var monIso=mon.getFullYear()+'-'+('0'+(mon.getMonth()+1)).slice(-2)+'-'+('0'+mon.getDate()).slice(-2);
-    var wk=ss.filter(function(x){return x.date>=monIso;});
-    var n=function(t){return wk.filter(function(x){return x.type===t;}).length;};
-    var lifts=n('Lift A')+n('Lift B');
-    var h=woLines('This Week',[['Lift:',lifts+' of 2'],['HiiTS:',n('HiiTS')+' of 1 to 2'],['Speed blocks:',n('Speed')+' of 1 to 2'],['Mobility:',n('Mobility')+' of 1']]);
+    var ss=woSessions(woRows), wk=woThisWeek();
+    var h=woLines('This Week',wk.length?wk.map(function(x){
+      return [woWeekday(x.date)+':',woName(x.type)+(x.mins!==''&&x.mins!=null?', '+x.mins+' min':'')];
+    }):[['Nothing logged yet this week']]);
+    var since=new Date(woWeekStart()); since.setDate(since.getDate()-21);
+    var four=ss.filter(function(x){return x.date>=woIso(since);});
+    h+=woLines('Last 4 Weeks',WO_CATS.map(function(c){
+      var mine=four.filter(function(x){return c[1].indexOf(x.type)>-1;}), by={};
+      mine.forEach(function(x){by[woName(x.type)]=(by[woName(x.type)]||0)+1;});
+      var parts=Object.keys(by).map(function(k){return k+' '+by[k];});
+      return [c[0]+':',mine.length?mine.length+' ('+parts.join(', ')+')':'none'];
+    }));
+    var runs=ss.filter(function(x){return /run$/.test(x.type);});
+    if(runs.length) h+=woLines('Runs',runs.slice(-6).reverse().map(function(x){
+      var p=woPace(x.mins,x.dist);
+      return [woFmtDate(x.date)+':',woName(x.type)+(x.dist!==''?', '+x.dist+' mi':'')+(x.mins!==''&&x.mins!=null?', '+x.mins+' min':'')+
+        (p?', '+p:'')+(x.reps!==''?', '+x.reps+' hard repeats':'')];
+    }));
     h+=hiitsProgress(ss);
     var sp=ss.filter(function(x){return x.speed!==''&&x.speed!=null&&isFinite(+x.speed);});
     var best=sp.reduce(function(a,x){return (a==null||+x.speed>+a.speed)?x:a;},null);
@@ -5942,10 +6091,11 @@ all();
     h+=woLines('Driver Speed',best?[
       ['Fastest logged:',(+best.speed).toFixed(1)+' mph, '+woFmtDate(best.date)],
       ['Last session:',(+last.speed).toFixed(1)+' mph, '+woFmtDate(last.date)],
-      ['Spring target:','115 mph'],['Stretch:','118 mph']]
-      :[['No speed sessions logged yet'],['Spring target:','115 mph'],['Stretch:','118 mph']]);
+      ['Spring goal:','115 mph'],['Stretch:','118 mph']]
+      :[['No speed sessions logged yet'],['Spring goal:','115 mph'],['Stretch:','118 mph']]);
+    h+=driverSpeedCard();
     h+=woLines('Recent',ss.length?ss.slice(-8).reverse().map(function(x){
-      return [woFmtDate(x.date)+':',x.type+(x.mins!==''&&x.mins!=null?', '+x.mins+' min':'')];
+      return [woFmtDate(x.date)+':',woName(x.type)+(x.mins!==''&&x.mins!=null?', '+x.mins+' min':'')];
     }):[['Nothing logged yet']]);
     el.innerHTML=h;
   }
@@ -5970,16 +6120,48 @@ all();
     HIITS_WEIGHTS.forEach(function(w){ if(woMph(lw[w[0]])) L.push(['Last '+w[0].toLowerCase()+':',woMph(lw[w[0]])]); });
     return woLines('HiiTS',L);
   }
+
+  /* ---- Notes: the standing plan behind the menus ---- */
+  function renderWoNotes(){
+    var h=guideCard('speed')+guideCard('workout');
+    h+=woLines('How a Week Works',[
+      ['Open a category, pick a workout, do it, log it'],
+      ['No set number per category. The week shows what you have done so far'],
+      ['HiiTS still moves by week: its sets follow how many weeks you have trained']]);
+    h+=woLines('Spacing',[
+      ['No HiiTS or Three Strikes the day after a leg day: Lift A, Lift B or the interval run'],
+      ['At least one day between the two lifts'],
+      ['Low WHOOP recovery: Flexibility instead of a lift'],
+      ['These show as a heads-up when you open a workout. You can still do it']]);
+    h+=woLines('Phases',[
+      ['November:','base. Both feet, 3 sets of 10, controlled'],
+      ['December:','single leg'],
+      ['January:','slow tempo. 4 seconds down, 2-second pause, drive up fast'],
+      ['February and March:','power. Lighter and explosive, more GolfTrk time']]);
+    h+=woLines('Picking the Weight',[['Stop each set with about 2 good reps left'],
+      ['Every set at the top rep count: up one setting next week']]);
+    h+=woLines('Speed Goal',[['Spring goal:','115 mph'],['Stretch:','118 mph'],['Hub Driver goal:','112 mph']]);
+    h+=woLines('Equipment',[['TRX'],['Bowflex dumbbells, up to 52.5 lb each'],['Stability ball'],
+      ['Swing trainer, bar and bands'],['Loop bands'],['Medicine ball, 6 to 8 lb: not bought yet. Throws go in the power slot once you have one']]);
+    document.getElementById('wo-notes-pane').innerHTML=h;
+  }
+
   /* The HiiTS form follows the sheet (this week's sets, baseline or not), but
      a form he has typed in, or one just saved, is never redrawn under him. */
   var hiitsFormStart;
   function hiitsRefreshLog(){
     var st=hiitsStart();
-    if(woType!=='HiiTS'||st===hiitsFormStart) return;
+    if(woView.t!=='HiiTS'||st===hiitsFormStart) return;
     var btn=document.getElementById('wo-save');
     var typed=[].some.call(document.querySelectorAll('.wo-in[data-k="speed"],.wo-in[data-k="ball"]'),function(i){return i.value!=='';});
     if(btn&&(btn.disabled||btn.textContent!=='SAVE SESSION'||typed)) return;
-    renderWoLog();
+    renderWoWeek();
+  }
+  /* A workout he has open is never redrawn by a sheet read: the week and the
+     category menus refresh, an open form does not. */
+  function woRefresh(){
+    if(!woView.t) renderWoWeek(); else hiitsRefreshLog();
+    renderWoHistory();
   }
   function loadWorkouts(){
     fetch(HOOK+'?tab=workouts&_ts='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();})
@@ -5991,11 +6173,11 @@ all();
         else if(j&&/No "Workouts" tab/.test(String(j.error))) woRows=[];
         else throw new Error(j&&j.error||'no rows');
         try{localStorage.setItem(WO_CACHE,JSON.stringify(woRows));}catch(e){}
-        renderWoPlan(); hiitsRefreshLog(); renderWoProgress();
+        woRefresh();
       })
       .catch(function(){
         try{var c=JSON.parse(localStorage.getItem(WO_CACHE)||'null'); if(c) woRows=c;}catch(e){}
-        renderWoProgress();
+        woRefresh();
       });
   }
   document.addEventListener('click',function(e){
@@ -6005,13 +6187,16 @@ all();
       document.querySelectorAll('[data-wopane]').forEach(function(p){p.hidden=p.dataset.wopane!==t.dataset.wotab;});
       return;
     }
+    var c=e.target.closest('[data-wocat]');
+    if(c){ woView={cat:c.dataset.wocat,t:null}; renderWoWeek(); window.scrollTo(0,0); return; }
+    var it=e.target.closest('[data-woitem]');
+    if(it){ woView={cat:woView.cat||woCatOf(it.dataset.woitem),t:it.dataset.woitem}; renderWoWeek(); window.scrollTo(0,0); return; }
+    var bk=e.target.closest('[data-woback]');
+    if(bk){ woView=bk.dataset.woback==='cat'?{cat:woView.cat,t:null}:{cat:null,t:null}; renderWoWeek(); window.scrollTo(0,0); return; }
     if(e.target.id==='wo-save') saveWorkout();
   });
-  document.addEventListener('change',function(e){
-    if(e.target.id==='wo-type'){ woType=e.target.value; renderWoLog(); }
-  });
   try{var c0=JSON.parse(localStorage.getItem(WO_CACHE)||'null'); if(c0) woRows=c0;}catch(e){}
-  renderWoPlan(); renderWoLog(); renderWoProgress(); loadWorkouts();
+  renderWoWeek(); renderWoHistory(); renderWoNotes(); loadWorkouts();
 
   /* =====================================================================
      HUB USAGE (2026-10-22). Hub size check: "in a month cut whatever you have
