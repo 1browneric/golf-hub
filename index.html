@@ -191,6 +191,8 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
 .ltab td:first-child{font-family:var(--font-body);font-size:11px;color:var(--steel);text-align:left}
 .ltab td.tg{color:#D08A2E;font-weight:600}
 .ltab td.tr2{color:var(--steel)}
+.stab th{font-size:13px}
+.stab td,.stab td:first-child{font-size:18px;padding:9px 4px}
 .ltab tr:last-child td{border-bottom:none}
 /* bottom nav — raised white golf-ball buttons, label underneath */
 .nav{flex:0 0 auto;background:linear-gradient(180deg,var(--red),var(--red-dark));border-top:1px solid rgba(255,255,255,.14);display:flex;
@@ -559,6 +561,7 @@ body{background:var(--navy-deep);font-family:var(--font-body);color:var(--cream)
         <button class="pgtab on" data-cdtab="numbers">Numbers</button>
         <button class="pgtab" data-cdtab="strike">Strike</button>
         <button class="pgtab" data-cdtab="gear">Gear</button>
+        <button class="pgtab" data-cdtab="sessions">Sessions</button>
       </div>
       <div class="lchips" id="launch-chips" style="margin-top:14px"></div>
       <div data-cdpane="numbers">
@@ -640,6 +643,11 @@ document.addEventListener('click',function(e){var b=e.target.closest('[data-hmsh
 all();
 })();
 </script></div>
+      <div data-cdpane="sessions" hidden>
+        <div class="lchips" id="sess-days"></div>
+        <div style="display:flex;gap:8px;margin-top:12px" id="sess-tabs"></div>
+        <div id="sess-body"></div>
+      </div>
       <div data-cdpane="gear" hidden>
         <div class="card" style="padding:6px 18px;margin-top:12px" id="gear-body"></div>
       <div class="card" style="padding:16px 18px;margin-top:12px">
@@ -3168,6 +3176,7 @@ all();
   /* The driver's latest Lessons line split by hosel, written by trackman_sheet.py
      `hub` from the Shots tab (council 2026-10-22): the block average blends every
      hosel he hit in it, so the split sits under the table, most recent first. */
+  var TRACKMAN_THROUGH="2026-11-13";
   var DRIVER_SETUPS={"block":"Lessons 3","rows":[{"setup":"GTS2 + Tensei","good":22,"playable":54,"carry":"263.7","total":"278.1","cs":"110.0","bs":"158.6","smash":"1.44","la":"11.9","spin":"3252","side":"+0.4"},{"setup":"GTS2 + Steadfast Lite","good":7,"playable":20,"carry":"263.3","total":"277.7","cs":"110.3","bs":"158.0","smash":"1.43","la":"12.4","spin":"3173","side":"-2.0"},{"setup":"GT3 + Steadfast","good":6,"playable":22,"carry":"270.6","total":"282.9","cs":"110.9","bs":"159.0","smash":"1.43","la":"13.6","spin":"3073","side":"-1.0"},{"setup":"GTS2 + Steadfast","good":1,"playable":6,"carry":"259.6","total":"268.1","cs":"111.2","bs":"156.6","smash":"1.41","la":"14.0","spin":"3565","side":"+23.9"}]};
   var DRIVER_HOSEL={"block":"Lessons 3","rows":[]};
   var launchClub="D";
@@ -3250,7 +3259,78 @@ all();
     document.querySelectorAll('[data-cdtab]').forEach(function(b){b.classList.toggle('on',b===t);});
     document.querySelectorAll('[data-cdpane]').forEach(function(p){p.hidden=p.dataset.cdpane!==k;});
     /* the strike map carries its own SHOTS / PERIOD pills and shows every club */
-    document.getElementById('launch-chips').hidden=(k==='strike');
+    document.getElementById('launch-chips').hidden=(k==='strike'||k==='sessions');
+    if(k==='sessions') loadSessions();
+  });
+  /* Club Data > Sessions (Eric, 2026-11-17): each session email as the hub shows
+     it. sessions.json is written by the VM (agents/trackpull/hub_sessions.py)
+     beside this page; nothing here re-derives a number. */
+  var SESS=null, sessDay=null, sessTab='summary';
+  var SESS_TABS=[['summary','Summary'],['numbers','Numbers'],['coach','Coach'],['pdfs','PDFs']];
+  function sessEsc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function sessLines(title,rows){
+    return (title?'<div class="h-title" style="font-size:20px;margin:20px 0 8px">'+sessEsc(sessTitle(title))+'</div>':'')+
+      '<div class="card" style="padding:4px 18px">'+rows.map(function(r){
+        return '<div class="woline">'+(r.length>1?'<span class="d">'+sessEsc(r[0])+':</span> '+sessEsc(r[1]):sessEsc(r[0]))+'</div>';
+      }).join('')+'</div>';
+  }
+  function sessCase(s){ s=String(s||'').toLowerCase().replace(/hiits/g,'HiiTS'); return s.charAt(0).toUpperCase()+s.slice(1); }
+  /* "HIITS  ·  LEVEL 3, WEEK 5" -> "HiiTS, level 3, week 5"; club names stay as written. */
+  function sessTitle(s){ return /[a-z]/.test(s)?s:sessCase(String(s).replace(/\s*\u00b7\s*/g,', ')); }
+  function loadSessions(){
+    if(SESS){ renderSessions(); return; }
+    document.getElementById('sess-body').innerHTML='<div class="woline" style="margin-top:16px">Loading sessions…</div>';
+    fetch('sessions.json',{cache:'no-store'}).then(function(r){ if(!r.ok) throw 0; return r.json(); })
+      .then(function(j){ SESS=j||[]; sessDay=SESS.length?SESS[0].date:null; renderSessions(); })
+      .catch(function(){ document.getElementById('sess-body').innerHTML='<div class="woline" style="margin-top:16px">Sessions could not be loaded</div>'; });
+  }
+  function renderSessions(){
+    var body=document.getElementById('sess-body');
+    if(!SESS.length){ body.innerHTML='<div class="woline" style="margin-top:16px">No sessions yet</div>'; return; }
+    document.getElementById('sess-days').innerHTML=SESS.map(function(s){
+      var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s.date);
+      var lab=m?new Date(+m[1],+m[2]-1,+m[3]).toLocaleDateString('en-US',{month:'long',day:'numeric'}):s.date;
+      return '<button class="lchip'+(s.date===sessDay?' on':'')+'" data-sessday="'+s.date+'">'+lab+'</button>';
+    }).join('');
+    document.getElementById('sess-tabs').innerHTML=SESS_TABS.map(function(x){
+      return '<button class="pgtab'+(x[0]===sessTab?' on':'')+'" data-sesstab="'+x[0]+'">'+x[1]+'</button>';
+    }).join('');
+    var s=SESS.filter(function(x){return x.date===sessDay;})[0]||SESS[0], h='';
+    var secs=s.sections||[];
+    var coach=secs.filter(function(x){return x.groups;})[0];
+    var next=coach?coach.groups.filter(function(g){return g.name==='NEXT SESSION';})[0]:null;
+    if(sessTab==='summary'){
+      h+=sessLines(s.subtitle,(s.tiles||[]).map(function(t){
+        var pct=/%$/.test(t.value)&&/ of /.test(t.sub||'');
+        return [sessCase(t.label),pct?t.value+' ('+t.sub+')':t.value+(t.sub?', '+t.sub:'')];
+      }));
+      secs.filter(function(x){return x.rows;}).forEach(function(x){ h+=sessLines(x.title,x.rows); });
+      if(next) h+=sessLines('NEXT SESSION',next.rows);
+    } else if(sessTab==='numbers'){
+      var tb=secs.filter(function(x){return x.table;})[0];
+      if(tb) tb.table.groups.forEach(function(g){
+        h+='<div class="h-title" style="font-size:20px;margin:20px 0 8px">'+sessEsc(g.name)+'</div>'+
+          '<div class="ctable" style="padding:6px 14px"><table class="ltab stab" style="width:100%"><thead><tr>'+
+          tb.table.headers.map(function(x){return '<th>'+sessEsc(sessCase(x))+'</th>';}).join('')+'</tr></thead><tbody>'+
+          g.rows.map(function(r){return '<tr>'+r.map(function(c){return '<td>'+sessEsc(c)+'</td>';}).join('')+'</tr>';}).join('')+
+          '</tbody></table></div>';
+      });
+      else h+=sessLines('',[['No table for this session']]);
+    } else if(sessTab==='coach'){
+      var gs=coach?coach.groups.filter(function(g){return g.name!=='NEXT SESSION';}):[];
+      gs.forEach(function(g){ h+=sessLines(g.name,g.rows.filter(function(r){return r[1];})); });
+      if(!gs.length) h+=sessLines('',[['No coach notes for this session']]);
+    } else {
+      h+='<div class="card" style="padding:4px 18px;margin-top:16px">'+((s.pdfs||[]).length?s.pdfs.map(function(p){
+        return '<div class="woline"><a href="'+sessEsc(p.url)+'" target="_blank" rel="noopener" style="color:var(--cream)">'+sessEsc(p.title)+'</a></div>';
+      }).join(''):'<div class="woline">No PDFs linked for this session</div>')+'</div>';
+    }
+    body.innerHTML=h;
+  }
+  document.addEventListener('click',function(e){
+    var d=e.target.closest('[data-sessday]'), b=e.target.closest('[data-sesstab]');
+    if(d){ sessDay=d.getAttribute('data-sessday'); renderSessions(); }
+    else if(b){ sessTab=b.getAttribute('data-sesstab'); renderSessions(); }
   });
 
   document.getElementById('club-list').innerHTML=CLUBS.map(function(c){
