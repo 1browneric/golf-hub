@@ -5678,6 +5678,10 @@ all();
   };
   /* What the sheet accepts, in the sheet's order (GolfTracker_Workout.gs). */
   var WO_ORDER=['Lift A','Lift B','Mobility','Speed','HiiTS','Swing training','Distance run','Interval run','Easy recovery run','Stretch and yoga'];
+  /* Imported from WHOOP (Eric, 2026-11-17: runs and lifts only; type, date,
+     minutes, miles). They count in their category but are not menu items. */
+  var WO_IMPORTED={'WHOOP run':'Cardio','WHOOP lift':'Lift'};
+  function woInCat(c,t){ return c[1].indexOf(t)>-1||WO_IMPORTED[t]===c[0]; }
   var WO_CATS=[
     ['Simulator',['Swing training','HiiTS','Speed','tempo']],
     ['Lift',['Lift A','Lift B']],
@@ -5800,7 +5804,7 @@ all();
   }
   function woName(t){ var S=WO_SESSIONS[t]; return (S&&S.label)||t; }
   function woCatOf(t){
-    for(var i=0;i<WO_CATS.length;i++) if(WO_CATS[i][1].indexOf(t)>-1) return WO_CATS[i][0];
+    for(var i=0;i<WO_CATS.length;i++) if(woInCat(WO_CATS[i],t)) return WO_CATS[i][0];
     return null;
   }
   function woIso(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
@@ -5847,7 +5851,7 @@ all();
     var wk=woThisWeek(), hw=hiitsWeek(woToday());
     var h=woLines('Week '+hw,[[woRange()],['Done:',wk.length?woDoneLine(wk):'nothing yet this week']]);
     WO_CATS.forEach(function(c){
-      var mine=wk.filter(function(x){return c[1].indexOf(x.type)>-1;});
+      var mine=wk.filter(function(x){return woInCat(c,x.type);});
       h+='<div class="card wocat" data-wocat="'+c[0]+'">'+
         '<div class="h-title" style="font-size:20px">'+c[0]+'</div>'+
         '<div class="wosub">'+c[1].map(function(t){return t==='tempo'?'Tempo Trainer':woName(t);}).join(', ')+'</div>'+
@@ -6055,7 +6059,8 @@ all();
     var out=[], key=null, cur=null;
     (rows||[]).slice(1).forEach(function(r){
       if(!r||!r[0]||!r[1]) return;
-      var k=r[0]+'|'+r[1];
+      /* One imported workout per row: two WHOOP runs in a day are two runs. */
+      var k=r[0]+'|'+r[1]+(WO_IMPORTED[r[1]]?'|'+r[8]:'');
       if(k!==key){
         cur={date:String(r[0]),type:String(r[1]),mins:r[6],speed:String(r[1])==='HiiTS'?'':r[7],ball:'',w:{},
           dist:r[10]==null?'':r[10],reps:''};
@@ -6068,6 +6073,9 @@ all();
       else if(ex===HIITS_BASE){ cur.base=r[7]; cur.baseBall=r[9]==null?'':r[9]; }
       else if(/^HiiTS /.test(ex)) cur.w[ex.slice(6)]=r[7];
     });
+    /* Rows arrive in the order they were written (imports land after the fact),
+       so order by date; the sort is stable within a day. */
+    out.sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:0;});
     return out;
   }
   function woFmtDate(iso){
@@ -6104,7 +6112,7 @@ all();
     var since=new Date(woWeekStart()); since.setDate(since.getDate()-21);
     var four=ss.filter(function(x){return x.date>=woIso(since);});
     h+=woLines('Last 4 Weeks',WO_CATS.map(function(c){
-      var mine=four.filter(function(x){return c[1].indexOf(x.type)>-1;}), by={};
+      var mine=four.filter(function(x){return woInCat(c,x.type);}), by={};
       mine.forEach(function(x){by[woName(x.type)]=(by[woName(x.type)]||0)+1;});
       var parts=Object.keys(by).map(function(k){return k+' '+by[k];});
       return [c[0]+':',mine.length?mine.length+' ('+parts.join(', ')+')':'none'];
