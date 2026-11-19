@@ -5760,7 +5760,7 @@ all();
   var WO_ORDER=['Lift A','Lift B','Mobility','Speed','HiiTS','Swing training','Distance run','Interval run','Easy recovery run','Stretch and yoga'];
   /* Imported from WHOOP (Eric, 2026-11-17: runs and lifts only; type, date,
      minutes, miles). They count in their category but are not menu items. */
-  var WO_IMPORTED={'WHOOP run':'Cardio','WHOOP lift':'Lift'};
+  var WO_IMPORTED={'WHOOP run':'Cardio','WHOOP lift':'Lift','Health run':'Cardio'};
   function woInCat(c,t){ return c[1].indexOf(t)>-1||WO_IMPORTED[t]===c[0]; }
   var WO_CATS=[
     ['Simulator',['Swing training','HiiTS','Speed','tempo']],
